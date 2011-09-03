@@ -1,0 +1,219 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>What’s new in PyTables 1.2 &mdash; PyTables v2.3b1.dev documentation</title>
+    <link rel="stylesheet" href="../_static/altered_nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.3b1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="PyTables v2.3b1.dev documentation" href="../index.html" />
+    <link rel="up" title="PyTables Release Notes" href="../release_notes.html" />
+    <link rel="next" title="What’s new in PyTables 1.1.1" href="RELEASE_NOTES_v1.1.1.html" />
+    <link rel="prev" title="What’s new in PyTables 1.2.1" href="RELEASE_NOTES_v1.2.1.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="RELEASE_NOTES_v1.1.1.html" title="What’s new in PyTables 1.1.1"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="RELEASE_NOTES_v1.2.1.html" title="What’s new in PyTables 1.2.1"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PyTables v2.3b1.dev documentation</a> &raquo;</li>
+          <li><a href="../release_notes.html" accesskey="U">PyTables Release Notes</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="what-s-new-in-pytables-1-2">
+<h1>What&#8217;s new in PyTables 1.2<a class="headerlink" href="#what-s-new-in-pytables-1-2" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Author:</th><td class="field-body">Francesc Altet</td>
+</tr>
+<tr class="field"><th class="field-name">Contact:</th><td class="field-body"><a class="reference external" href="mailto:faltet&#37;&#52;&#48;carabos&#46;com">faltet<span>&#64;</span>carabos<span>&#46;</span>com</a></td>
+</tr>
+<tr class="field"><th class="field-name">Author:</th><td class="field-body">Ivan Vilata i Balaguer</td>
+</tr>
+<tr class="field"><th class="field-name">Contact:</th><td class="field-body"><a class="reference external" href="mailto:ivilata&#37;&#52;&#48;carabos&#46;com">ivilata<span>&#64;</span>carabos<span>&#46;</span>com</a></td>
+</tr>
+</tbody>
+</table>
+<p>This document details the modifications to PyTables since version 1.1.  Its
+main purpose is help you ensure that your programs will be runnable when you
+switch from PyTables 1.1 to PyTables 1.2.</p>
+<div class="section" id="api-additions">
+<h2>API additions<a class="headerlink" href="#api-additions" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">The user is now allowed to set arbitrary Python (non-persistent) attributes
+on any instance of <tt class="docutils literal"><span class="pre">Node</span></tt>.  If the name matches that of a child node, the
+later will no longer be accessible via natural naming, but it will still be
+available via <tt class="docutils literal"><span class="pre">File.getNode()</span></tt>, <tt class="docutils literal"><span class="pre">Group._f_getChild()</span></tt> and the group
+children dictionaries.</p>
+<p>Of course, this allows the user to overwrite internal (<tt class="docutils literal"><span class="pre">^_[cfgv]_</span></tt>)
+PyTables variables, but this is the way most Python packages work.</p>
+</li>
+<li><p class="first">The new <tt class="docutils literal"><span class="pre">Group._f_getChild()</span></tt> method allows to get a child node (be it
+visible or not) by its name.  This should be more intuitive that using
+<tt class="docutils literal"><span class="pre">getattr()</span></tt> or using the group children dictionaries.</p>
+</li>
+<li><p class="first">The new <tt class="docutils literal"><span class="pre">File.isVisibleNode()</span></tt>, <tt class="docutils literal"><span class="pre">Node._f_isVisible()</span></tt> and
+<tt class="docutils literal"><span class="pre">Leaf.isVisible()</span></tt> methods tell whether a node is visible or not, i.e. if
+the node will appear in listing operations such as <tt class="docutils literal"><span class="pre">Group._f_listNodes()</span></tt>.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="backward-incompatible-changes">
+<h2>Backward-incompatible changes<a class="headerlink" href="#backward-incompatible-changes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">File.objects</span></tt>, <tt class="docutils literal"><span class="pre">File.groups</span></tt> and <tt class="docutils literal"><span class="pre">File.leaves</span></tt> can no longer be used
+to iterate over all the nodes in the file.  However, they still may be used
+to access any node by its path.</li>
+<li><tt class="docutils literal"><span class="pre">File.__contains__()</span></tt> returns a true value when it is asked for an
+existent node, be it visible or not.  This is more consistent with
+<tt class="docutils literal"><span class="pre">Group.__contains__()</span></tt>.</li>
+<li>Using <tt class="docutils literal"><span class="pre">Group.__delattr__()</span></tt> to remove a child is no longer supported.
+Please use <tt class="docutils literal"><span class="pre">Group._f_remove()</span></tt> instead.</li>
+<li>The <tt class="docutils literal"><span class="pre">indexprops</span></tt> attribute is now present on all <tt class="docutils literal"><span class="pre">Table</span></tt> instances, be
+they indexed or not.  In the last case, it is <tt class="xref docutils literal"><span class="pre">None</span></tt>.</li>
+<li>Table.getWhereList() now has flavor parameter equal to &#8220;NumArray&#8221; by
+default, which is more consistent with other methods. Before, flavor
+defaulted to &#8220;List&#8221;.</li>
+<li>The <tt class="docutils literal"><span class="pre">extVersion</span></tt> variable does no longer exist.  It did not make much
+sense either, since the canonical version of the whole PyTables package is
+that of <tt class="docutils literal"><span class="pre">__version__</span></tt>.</li>
+<li>The <tt class="docutils literal"><span class="pre">Row.nrow()</span></tt> has been converted into a property, so you have to
+replace any call to <tt class="docutils literal"><span class="pre">Row.nrow()</span></tt> into <tt class="docutils literal"><span class="pre">Row.nrow</span></tt>.</li>
+</ul>
+</div>
+<div class="section" id="deprecated-features">
+<h2>Deprecated features<a class="headerlink" href="#deprecated-features" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">The <tt class="docutils literal"><span class="pre">objects</span></tt>, <tt class="docutils literal"><span class="pre">groups</span></tt> and <tt class="docutils literal"><span class="pre">leaves</span></tt> mappings in <tt class="docutils literal"><span class="pre">File</span></tt> are retained
+only for compatibility purposes.  Using <tt class="docutils literal"><span class="pre">File.getNode()</span></tt> is recommended to
+access nodes, <tt class="docutils literal"><span class="pre">File.__contains__()</span></tt> to check for node existence, and
+<tt class="docutils literal"><span class="pre">File.walkNodes()</span></tt> for iteration purposes.  Using <tt class="docutils literal"><span class="pre">isinstance()</span></tt> and
+<tt class="docutils literal"><span class="pre">*isVisible*()</span></tt> methods is the preferred way of checking node type and
+visibility.</p>
+<p>Please note that the aforementioned mappings use the named methods
+internally, so the former have no special performance gains over the later.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="api-refinements">
+<h2>API refinements<a class="headerlink" href="#api-refinements" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>The <tt class="docutils literal"><span class="pre">isHDF5File()</span></tt> and <tt class="docutils literal"><span class="pre">isPyTablesFile()</span></tt> functions know how to handle
+nonexistent or unreadable files.  An <tt class="docutils literal"><span class="pre">IOError</span></tt> is raised in those cases.</li>
+</ul>
+</div>
+<div class="section" id="bug-fixes-affecting-api">
+<h2>Bug fixes (affecting API)<a class="headerlink" href="#bug-fixes-affecting-api" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>None</li>
+</ul>
+<hr class="docutils" />
+<blockquote>
+<div><p><strong>Enjoy data!</strong></p>
+<p class="attribution">&mdash;The PyTables Team</p>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/logo-pytables-small.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">What&#8217;s new in PyTables 1.2</a><ul>
+<li><a class="reference internal" href="#api-additions">API additions</a></li>
+<li><a class="reference internal" href="#backward-incompatible-changes">Backward-incompatible changes</a></li>
+<li><a class="reference internal" href="#deprecated-features">Deprecated features</a></li>
+<li><a class="reference internal" href="#api-refinements">API refinements</a></li>
+<li><a class="reference internal" href="#bug-fixes-affecting-api">Bug fixes (affecting API)</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="RELEASE_NOTES_v1.2.1.html"
+                        title="previous chapter">What&#8217;s new in PyTables 1.2.1</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="RELEASE_NOTES_v1.1.1.html"
+                        title="next chapter">What&#8217;s new in PyTables 1.1.1</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/release-notes/RELEASE_NOTES_v1.2.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="RELEASE_NOTES_v1.1.1.html" title="What’s new in PyTables 1.1.1"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="RELEASE_NOTES_v1.2.1.html" title="What’s new in PyTables 1.2.1"
+             >previous</a> |</li>
+        <li><a href="../index.html">PyTables v2.3b1.dev documentation</a> &raquo;</li>
+          <li><a href="../release_notes.html" >PyTables Release Notes</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,423 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PyTables parameter files &mdash; PyTables v2.3b1.dev documentation</title>
+    <link rel="stylesheet" href="../_static/altered_nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.3b1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="PyTables v2.3b1.dev documentation" href="../index.html" />
+    <link rel="up" title="PyTables User’s Guide" href="index.html" />
+    <link rel="next" title="Using nested record arrays (deprecated)" href="nested_rec_arrays.html" />
+    <link rel="prev" title="Condition Syntax" href="condition_syntax.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="nested_rec_arrays.html" title="Using nested record arrays (deprecated)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="condition_syntax.html" title="Condition Syntax"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PyTables v2.3b1.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">PyTables User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pytables-parameter-files">
+<span id="parameter-files"></span><h1>PyTables parameter files<a class="headerlink" href="#pytables-parameter-files" title="Permalink to this headline">¶</a></h1>
+<p>PyTables issues warnings when certain limits are exceeded.  Those
+limits are not intrinsic limitations of the underlying software, but
+rather are proactive measures to avoid large resource consumptions.  The
+default limits should be enough for most of cases, and users should try
+to respect them.  However, in some situations, it can be convenient to
+increase (or decrease) these limits.</p>
+<p>Also, and in order to get maximum performance, PyTables implements
+a series of sophisticated features, like I/O buffers or different kind
+of caches (for nodes, chunks and other internal metadata).  These
+features comes with a default set of parameters that ensures a decent
+performance in most of situations.  But, as there is always a need for
+every case, it is handy to have the possibility to fine-tune some of
+these parameters.</p>
+<p>Because of these reasons, PyTables implements a couple of ways to
+change the values of these parameters.  All
+the <em>tunable</em> parameters live in
+the tables/parameters.py.  The user can choose to
+change them in the parameter files themselves for a global and
+persistent change.  Moreover, if he wants a finer control, he can pass
+any of these parameters directly to the <a class="reference internal" href="libref.html#tables.openFile" title="tables.openFile"><tt class="xref py py-func docutils literal"><span class="pre">tables.openFile()</span></tt></a>
+function, and the new parameters
+will only take effect in the corresponding file (the defaults will
+continue to be in the parameter files).</p>
+<p>A description of all of the tunable parameters follows.  As the
+defaults stated here may change from release to release, please check
+with your actual parameter files so as to know your actual default
+values.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Changing the next parameters may have a very bad effect
+in the resource consumption and performance of your PyTables scripts.
+Please be careful when touching these!</p>
+</div>
+<div class="section" id="tunable-parameters-in-parameters-py">
+<h2>Tunable parameters in parameters.py.<a class="headerlink" href="#tunable-parameters-in-parameters-py" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="recommended-maximum-values">
+<h3>Recommended maximum values<a class="headerlink" href="#recommended-maximum-values" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.MAX_COLUMNS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_COLUMNS</tt><a class="headerlink" href="#tables.parameters.MAX_COLUMNS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number of columns in Table
+objects before a PerformanceWarning is
+issued.  This limit is somewhat arbitrary and can be increased.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.MAX_NODE_ATTRS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_NODE_ATTRS</tt><a class="headerlink" href="#tables.parameters.MAX_NODE_ATTRS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum allowed number of attributes in a node</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.MAX_GROUP_WIDTH">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_GROUP_WIDTH</tt><a class="headerlink" href="#tables.parameters.MAX_GROUP_WIDTH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum depth in object tree allowed.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.MAX_UNDO_PATH_LENGTH">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_UNDO_PATH_LENGTH</tt><a class="headerlink" href="#tables.parameters.MAX_UNDO_PATH_LENGTH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum length of paths allowed in undo/redo operations.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="cache-limits">
+<h3>Cache limits<a class="headerlink" href="#cache-limits" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.CHUNK_CACHE_NELMTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">CHUNK_CACHE_NELMTS</tt><a class="headerlink" href="#tables.parameters.CHUNK_CACHE_NELMTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of elements for HDF5 chunk cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.CHUNK_CACHE_PREEMPT">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">CHUNK_CACHE_PREEMPT</tt><a class="headerlink" href="#tables.parameters.CHUNK_CACHE_PREEMPT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chunk preemption policy.  This value should be between 0
+and 1 inclusive and indicates how much chunks that have been
+fully read are favored for preemption. A value of zero means
+fully read chunks are treated no differently than other
+chunks (the preemption is strictly LRU) while a value of one
+means fully read chunks are always preempted before other chunks.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.CHUNK_CACHE_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">CHUNK_CACHE_SIZE</tt><a class="headerlink" href="#tables.parameters.CHUNK_CACHE_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Size (in bytes) for HDF5 chunk cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.COND_CACHE_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">COND_CACHE_SLOTS</tt><a class="headerlink" href="#tables.parameters.COND_CACHE_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number of conditions for table queries to be
+kept in memory.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.METADATA_CACHE_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">METADATA_CACHE_SIZE</tt><a class="headerlink" href="#tables.parameters.METADATA_CACHE_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Size (in bytes) of the HDF5 metadata cache.  This only
+takes effect if using HDF5 1.8.x series.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.NODE_CACHE_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">NODE_CACHE_SLOTS</tt><a class="headerlink" href="#tables.parameters.NODE_CACHE_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number of unreferenced nodes to be kept in
+memory.</p>
+<p>If positive, this is the number
+of <em>unreferenced</em> nodes to be kept in the
+metadata cache.  Least recently used nodes are unloaded from
+memory when this number of loaded nodes is reached. To load
+a node again, simply access it as usual. Nodes referenced by
+user variables are not taken into account nor
+unloaded.</p>
+<p>Negative value means that all the touched nodes will be
+kept in an internal dictionary.  This is the faster way to
+load/retrieve nodes.  However, and in order to avoid a large
+memory consumption, the user will be warned when the number
+of loaded nodes will reach
+the -NODE_CACHE_SLOTS value.</p>
+<p>Finally, a value of zero means that any cache mechanism
+is disabled.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="parameters-for-the-different-internal-caches">
+<h3>Parameters for the different internal caches<a class="headerlink" href="#parameters-for-the-different-internal-caches" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.BOUNDS_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">BOUNDS_MAX_SIZE</tt><a class="headerlink" href="#tables.parameters.BOUNDS_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum size for bounds values cached during index lookups.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.BOUNDS_MAX_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">BOUNDS_MAX_SLOTS</tt><a class="headerlink" href="#tables.parameters.BOUNDS_MAX_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of slots for the BOUNDS cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.ITERSEQ_MAX_ELEMENTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">ITERSEQ_MAX_ELEMENTS</tt><a class="headerlink" href="#tables.parameters.ITERSEQ_MAX_ELEMENTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of iterator elements cached in data lookups.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.ITERSEQ_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">ITERSEQ_MAX_SIZE</tt><a class="headerlink" href="#tables.parameters.ITERSEQ_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum space that will take ITERSEQ cache (in bytes).</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.ITERSEQ_MAX_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">ITERSEQ_MAX_SLOTS</tt><a class="headerlink" href="#tables.parameters.ITERSEQ_MAX_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of slots in ITERSEQ cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.LIMBOUNDS_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">LIMBOUNDS_MAX_SIZE</tt><a class="headerlink" href="#tables.parameters.LIMBOUNDS_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum size for the query limits (for example,
+(lim1, lim2) in conditions like
+lim1 &lt;= col &lt; lim2) cached during
+index lookups (in bytes).</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.LIMBOUNDS_MAX_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">LIMBOUNDS_MAX_SLOTS</tt><a class="headerlink" href="#tables.parameters.LIMBOUNDS_MAX_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of slots for LIMBOUNDS cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.TABLE_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">TABLE_MAX_SIZE</tt><a class="headerlink" href="#tables.parameters.TABLE_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum size for table chunks cached during index queries.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.SORTED_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">SORTED_MAX_SIZE</tt><a class="headerlink" href="#tables.parameters.SORTED_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum size for sorted values cached during index lookups.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.SORTEDLR_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">SORTEDLR_MAX_SIZE</tt><a class="headerlink" href="#tables.parameters.SORTEDLR_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum size for chunks in last row cached in index
+lookups (in bytes).</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.SORTEDLR_MAX_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">SORTEDLR_MAX_SLOTS</tt><a class="headerlink" href="#tables.parameters.SORTEDLR_MAX_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of chunks for SORTEDLR cache.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="parameters-for-general-cache-behaviour">
+<h3>Parameters for general cache behaviour<a class="headerlink" href="#parameters-for-general-cache-behaviour" title="Permalink to this headline">¶</a></h3>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The next parameters will not take any effect if passed to
+the openFile() function, so they can only be
+changed in a <em>global</em> way.  You can change
+them in the file, but this is strongly discouraged unless you know
+well what you are doing.</p>
+</div>
+<dl class="data">
+<dt id="tables.parameters.DISABLE_EVERY_CYCLES">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">DISABLE_EVERY_CYCLES</tt><a class="headerlink" href="#tables.parameters.DISABLE_EVERY_CYCLES" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of cycles in which a cache will be forced to
+be disabled if the hit ratio is lower than the
+LOWEST_HIT_RATIO (see below).  This value
+should provide time enough to check whether the cache is being
+efficient or not.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.ENABLE_EVERY_CYCLES">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">ENABLE_EVERY_CYCLES</tt><a class="headerlink" href="#tables.parameters.ENABLE_EVERY_CYCLES" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of cycles in which a cache will be forced to
+be (re-)enabled, irregardless of the hit ratio. This will
+provide a chance for checking if we are in a better scenario
+for doing caching again.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.LOWEST_HIT_RATIO">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">LOWEST_HIT_RATIO</tt><a class="headerlink" href="#tables.parameters.LOWEST_HIT_RATIO" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimum acceptable hit ratio for a cache to avoid
+disabling (and freeing) it.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="parameters-for-the-i-o-buffer-in-leaf-objects">
+<h3>Parameters for the I/O buffer in Leaf objects<a class="headerlink" href="#parameters-for-the-i-o-buffer-in-leaf-objects" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.IO_BUFFER_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">IO_BUFFER_SIZE</tt><a class="headerlink" href="#tables.parameters.IO_BUFFER_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The PyTables internal buffer size for I/O purposes.
+Should not exceed the amount of highest level cache size in
+your CPU.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.BUFFER_TIMES">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">BUFFER_TIMES</tt><a class="headerlink" href="#tables.parameters.BUFFER_TIMES" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum buffersize/rowsize ratio before issuing a
+PerformanceWarning.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="miscellaneous">
+<h3>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.EXPECTED_ROWS_EARRAY">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">EXPECTED_ROWS_EARRAY</tt><a class="headerlink" href="#tables.parameters.EXPECTED_ROWS_EARRAY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default expected number of rows for EArray objects.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.EXPECTED_ROWS_TABLE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">EXPECTED_ROWS_TABLE</tt><a class="headerlink" href="#tables.parameters.EXPECTED_ROWS_TABLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default expected number of rows for Table objects.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.PYTABLES_SYS_ATTRS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">PYTABLES_SYS_ATTRS</tt><a class="headerlink" href="#tables.parameters.PYTABLES_SYS_ATTRS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set this to False if you don&#8217;t want
+to create PyTables system attributes in datasets.  Also, if
+set to False the possible existing system
+attributes are not considered for guessing the class of the
+node during its loading from disk (this work is delegated to
+the PyTables&#8217; class discoverer function for general HDF5 files).</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.MAX_THREADS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_THREADS</tt><a class="headerlink" href="#tables.parameters.MAX_THREADS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of threads that PyTables should use
+internally (mainly in Blosc and Numexpr currently).  If
+None, it is automatically set to the
+number of cores in your machine. In general, it is a good
+idea to set this to the number of cores in your machine or,
+when your machine has many of them (e.g. &gt; 4), perhaps one
+less than this.</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/logo-pytables-small.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">PyTables parameter files</a><ul>
+<li><a class="reference internal" href="#tunable-parameters-in-parameters-py">Tunable parameters in parameters.py.</a><ul>
+<li><a class="reference internal" href="#recommended-maximum-values">Recommended maximum values</a></li>
+<li><a class="reference internal" href="#cache-limits">Cache limits</a></li>
+<li><a class="reference internal" href="#parameters-for-the-different-internal-caches">Parameters for the different internal caches</a></li>
+<li><a class="reference internal" href="#parameters-for-general-cache-behaviour">Parameters for general cache behaviour</a></li>
+<li><a class="reference internal" href="#parameters-for-the-i-o-buffer-in-leaf-objects">Parameters for the I/O buffer in Leaf objects</a></li>
+<li><a class="reference internal" href="#miscellaneous">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="condition_syntax.html"
+                        title="previous chapter">Condition Syntax</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="nested_rec_arrays.html"
+                        title="next chapter">Using nested record arrays (deprecated)</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/usersguide/parameter_files.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="nested_rec_arrays.html" title="Using nested record arrays (deprecated)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="condition_syntax.html" title="Condition Syntax"
+             >previous</a> |</li>
+        <li><a href="../index.html">PyTables v2.3b1.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >PyTables User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>
