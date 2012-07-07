@@ -183,11 +183,10 @@ Global functions
 
     Set the maximum number of threads that Blosc can use.
 
-    This actually overrides the :data:`parameters.MAX_THREADS`
-    setting in :file:`tables/parameters.py`, so the new
-    value will be effective until this function is called again or a
-    new file with a different :data:`parameters.MAX_THREADS` value
-    is specified.
+    This actually overrides the :data:`tables.parameters.MAX_BLOSC_THREADS`
+    setting in :mod:`tables.parameters`, so the new value will be effective
+    until this function is called again or a new file with a different
+    :data:`tables.parameters.MAX_BLOSC_THREADS` value is specified.
 
     Returns the previous setting for maximum threads.
 
@@ -255,6 +254,16 @@ Global functions
     hdf5, zlib,
     lzo and bzip2. If another
     name is given, a ValueError is raised.
+
+.. function:: silenceHDF5Messages(silence=True)
+
+   Silence (or re-enable) messages from the HDF5 C library.
+
+   The *silence* parameter can be used control the behaviour and reset the
+   standard HDF5 logging.
+
+   .. versionadded:: 2.4
+
 
 .. _FileClassDescr:
 
@@ -589,34 +598,20 @@ File methods - hierarchy manipulation
 
 .. method:: File.createExternalLink(where, name, target, createparents=False, warn16incompat=False)
 
-    Create an external link to a target node
-    with the given name
-    in where location.  target
-    can be a node object in another file or a path string in the
-    form `file:/path/to/node`.  If
-    createparents is true, the intermediate
-    groups required for reaching where are
-    created (the default is not doing so).
+    Create an external link to a target node with the given name in where
+    location.
+    target can be a node object in another file or a path string in the form
+    `file:/path/to/node`.
+    If createparents is true, the intermediate groups required for reaching
+    where are created (the default is not doing so).
 
-    The purpose of the warn16incompat
-    argument is to avoid an Incompat16Warning
-    (see below).  The default is to issue the warning.
+    The returned node is an ExternalLink instance.
+    See the ExternalLink class (in :ref:`ExternalLinkClassDescr`) for more
+    information on external links.
 
-    The returned node is an ExternalLink
-    instance.  See the
-    ExternalLink class (in
-    :ref:`ExternalLinkClassDescr`) for more information on external links.
-
-    .. warning:: External links are only supported when PyTables is
-       compiled against HDF5 1.8.x series.  When using PyTables with
-       HDF5 1.6.x, the *parent* group containing
-       external link objects will be mapped to
-       an Unknown instance (see :ref:`UnknownClassDescr`)
-       and you won't be able to access *any*
-       node hanging of this parent group.  It follows that if the
-       parent group containing the external link is the root group,
-       you won't be able to read *any* information
-       contained in the file when using HDF5 1.6.x.
+    .. note::
+        The warn16incompat arrgument is deprected since version 2.4.
+        It will be ignored.
 
 
 .. method:: File.createGroup(where, name, title='', filters=None, createparents=False)
@@ -696,21 +691,22 @@ File methods - hierarchy manipulation
         can be any of the following:
 
         * *A user-defined class*: This should inherit from the IsDescription
-          class (see :ref:`IsDescriptionClassDescr`) where table fields are specified.
-        * *A dictionary*: For example, when you do not know beforehand which structure
-          your table will have).
-        * *A Description instance*: You can use the description attribute of another
-          table to create a new one with the same structure.
+          class (see :ref:`IsDescriptionClassDescr`) where table fields are
+          specified.
+        * *A dictionary*: For example, when you do not know beforehand which
+          structure your table will have).
+        * *A Description instance*: You can use the description attribute of
+          another table to create a new one with the same structure.
         * *A NumPy dtype*: A completely general structured NumPy dtype.
-        * *A NumPy (record) array instance*: The dtype of this record array will be used
-          as the description.  Also, in case the array has actual data, it will be injected
-          into the newly created table.
-        * *A RecArray instance (deprecated)*: Object from the numarray package.  This does
-          not give you the possibility to create a nested table.  Array data is injected into
-          the new table.
-        * *A NestedRecArray instance (deprecated)*: If you want to have nested columns in
-          your table and you are using numarray, you can use this object. Array data is
-          injected into the new table.
+        * *A NumPy (structured) array instance*: The dtype of this structured
+          array will be used as the description.  Also, in case the array has
+          actual data, it will be injected into the newly created table.
+        * *A RecArray instance (deprecated)*: Object from the numarray
+          package.  This does not give you the possibility to create a nested
+          table.  Array data is injected into the new table.
+        * *A NestedRecArray instance (deprecated)*: If you want to have
+          nested columns in your table and you are using numarray, you can use
+          this object. Array data is injected into the new table.
     title : str
         A description for this node (it sets the TITLE HDF5 attribute on disk).
     filters : Filters
@@ -1864,6 +1860,12 @@ Node (see :ref:`NodeClassDescr`):
     dataset is not extendable, and self.extdim
     (where available) for extendable ones.
 
+.. attribute:: Leaf.ndim
+
+    The number of dimensions of the leaf data.
+
+    .. versionadded: 2.4
+
 .. attribute:: Leaf.nrows
 
     The length of the main dimension of the leaf data.
@@ -1879,6 +1881,18 @@ Node (see :ref:`NodeClassDescr`):
 
     The shape of data in the leaf.
 
+.. attribute:: Leaf.size_on_disk
+
+    The size of this leaf's data in bytes as it is stored on disk.  If the data
+    is compressed, this shows the compressed size.  In the case of uncompressed,
+    chunked data, this may be slightly larger than the amount of data, due to
+    partially filled chunks.
+
+.. attribute:: Leaf.size_in_memory
+
+    The size of this leaf's data in bytes when it is fully loaded into memory.
+    This may be used in combination with size_on_disk to calculate the
+    compression ratio of the data.
 
 
 Leaf instance variables - aliases
@@ -2049,16 +2063,6 @@ Leaf methods
     The truncation operation can only be applied to
     *enlargeable* datasets, else a
     TypeError will be raised.
-
-    .. warning:: If you are using the HDF5 1.6.x series, and due to
-       limitations of them, size must be greater
-       than zero (i.e. the dataset can not be completely emptied).  A
-       ValueError will be issued if you are using
-       HDF5 1.6.x and try to pass a zero size to this method.  Also,
-       HDF5 1.6.x has the problem that it cannot work against
-       CArray objects (again, a
-       ValueError will be issued).  HDF5 1.8.x
-       doesn't undergo these problems.
 
 
 .. method:: Leaf.__len__()
@@ -2266,6 +2270,21 @@ Table.cols.
     The size in bytes of each row in the table.
 
 
+.. attribute:: Table.size_on_disk
+
+    The size of this table's data in bytes as it is stored on disk.  If the data
+    is compressed, this shows the compressed size.  In the case of uncompressed,
+    chunked data, this may be slightly larger than the amount of data, due to
+    partially filled chunks.
+
+.. attribute:: Table.size_in_memory
+
+    The size of this table's data in bytes when it is fully loaded into memory.
+    This may be used in combination with size_on_disk to calculate the
+    compression ratio of the data.
+
+
+
 Table methods - reading
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2358,16 +2377,14 @@ Table methods - reading
     *all the rows* in the table are
     selected.
 
-    If field is supplied only the named
-    column will be selected.  If the column is not nested, an
-    *array* of the current flavor will be returned;
-    if it is, a *record array* will be used
-    instead.  I no field is specified, all the
-    columns will be returned in a record array of the current flavor.
+    If field is supplied only the named column will be selected.
+    If the column is not nested, an *array* of the current flavor will be
+    returned; if it is, a *structured array* will be used instead.
+    If no field is specified, all the columns will be returned in a
+    structured array of the current flavor.
 
-    Columns under a nested column can be specified in the
-    field parameter by using a slash character
-    (/) as a separator (e.g. 'position/x').
+    Columns under a nested column can be specified in the field parameter by
+    using a slash character (/) as a separator (e.g. 'position/x').
 
 
 .. method:: Table.readCoordinates(coords, field=None)
@@ -2379,8 +2396,8 @@ Table methods - reading
     (coords) of row indexes to select the wanted
     columns, instead of a column range.
 
-    The selected rows are returned in an array or record array
-    of the current flavor.
+    The selected rows are returned in an array or structured array of the
+    current flavor.
 
 
 .. method:: Table.readSorted(sortby, checkCSI=False, field=None, start=None, stop=None, step=None)
@@ -2393,30 +2410,25 @@ Table methods - reading
     the checkCSI argument in order to explicitly
     check for the existence of a CSI index.
 
-    If field is supplied only the named
-    column will be selected.  If the column is not nested, an
-    *array* of the current flavor will be returned;
-    if it is, a *record array* will be used
-    instead.  If no field is specified, all the
-    columns will be returned in a record array of the current
-    flavor.
+    If field is supplied only the named column will be selected.
+    If the column is not nested, an *array* of the current flavor will be
+    returned; if it is, a *structured array* will be used instead.
+    If no field is specified, all the columns will be returned in a
+    structured array of the current flavor.
 
-    The meaning of the start,
-    stop and step arguments is
-    the same as in :meth:`Table.read`.  However, in this case a negative value
-    of step is supported, meaning that the results
-    will be returned in reverse sorted order.
+    The meaning of the start, stop and step arguments is the same as in
+    :meth:`Table.read`.  However, in this case a negative value of step is
+    supported, meaning that the results will be returned in reverse sorted
+    order.
 
 
 .. method:: Table.__getitem__(key)
 
     Get a row or a range of rows from the table.
 
-    If key argument is an integer, the
-    corresponding table row is returned as a record of the current
-    flavor. If key is a slice, the range of rows
-    determined by it is returned as a record array of the current
-    flavor.
+    If key argument is an integer, the corresponding table row is returned as
+    a record of the current flavor. If key is a slice, the range of rows
+    determined by it is returned as a structured array of the current flavor.
 
     In addition, NumPy-style point selections are supported.  In
     particular, if key is a list of row
@@ -2473,12 +2485,11 @@ Table methods - writing
 
     Append a sequence of rows to the end of the table.
 
-    The rows argument may be any object which
-    can be converted to a record array compliant with the table
-    structure (otherwise, a ValueError is raised).
-    This includes NumPy record arrays, RecArray
-    (depracated) or NestedRecArray (deprecated)
-    objects if numarray is available, lists of
+    The rows argument may be any object which can be converted to a record
+    array compliant with the table structure (otherwise, a ValueError is
+    raised).
+    This includes NumPy structured arrays, RecArray (depracated) or
+    NestedRecArray (deprecated) objects if numarray is available, lists of
     tuples or array records, and a string or Python buffer.
 
     Example of use::
@@ -2535,15 +2546,12 @@ Table methods - writing
     rows modified.  Should the modification exceed the length of the
     table, an IndexError is raised before changing data.
 
-    The columns argument may be any object
-    which can be converted to a record array compliant with the
-    structure of the columns to be modified (otherwise, a
-    ValueError is raised).  This includes NumPy
-    record arrays, RecArray (deprecated) or
-    NestedRecArray (deprecated) objects if
-    numarray is available, lists of tuples or array
-    records, and a string or Python buffer.
-
+    The columns argument may be any object which can be converted to a
+    structured array compliant with the structure of the columns to be
+    modified (otherwise, a ValueError is raised).  This includes NumPy
+    structured arrays, RecArray (deprecated) or NestedRecArray (deprecated)
+    objects if numarray is available, lists of tuples or array records, and
+    a string or Python buffer.
 
 
 .. method:: Table.modifyCoordinates(coords, rows)
@@ -2967,6 +2975,10 @@ Description instance variables
     column. You can use this as the names argument of NumPy array and
     NestedRecArray (see :ref:`NestedRecArrayClassDescr`) factories.
 
+.. attribute:: Description._v_pathname
+
+    Pathname of the table or nested column.
+
 .. attribute:: Description._v_pathnames
 
     A list of the pathnames of all the columns under this
@@ -3269,11 +3281,10 @@ Cols methods
 
     Get a row or a range of rows from a table or nested column.
 
-    If key argument is an integer, the
-    corresponding nested type row is returned as a record of the
-    current flavor. If key is a slice, the range
-    of rows determined by it is returned as a record array of the
-    current flavor.
+    If key argument is an integer, the corresponding nested type row is
+    returned as a record of the current flavor. If key is a slice, the range
+    of rows determined by it is returned as a structured array of the current
+    flavor.
 
     Example of use::
 
@@ -3621,12 +3632,26 @@ Array instance variables
 
 .. attribute:: Array.rowsize
 
-    The size of the rows in dimensions orthogonal to
+    The size of the rows in bytes in dimensions orthogonal to
     *maindim*.
+
+.. attribute:: Array.nrows
+
+    The number of rows in the array.
 
 .. attribute:: Array.nrow
 
     On iterators, this is the index of the current row.
+
+.. attribute:: Array.size_on_disk
+
+    The size of this array's data in bytes as it is stored on disk.
+
+.. attribute:: Array.size_in_memory
+
+    The size of this array's data in bytes when it is fully loaded into memory.
+    Since arrays do not support compression or chunking, this will always
+    equal size_on_disk.
 
 
 Array methods
@@ -3789,6 +3814,27 @@ The CArray class
     chunked layout and, as a consequence, it supports compression.
     You can use datasets of this class to easily save or load arrays to or
     from disk, with compression support included.
+
+    CArray includes all the instance variables and methods of Array.  Only those
+    with different behavior are mentioned here.
+
+.. _CArrayClassInstanceVariables:
+
+CArray instance variables
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attribute:: CArray.size_on_disk
+
+    The size of this carray's data in bytes as it is stored on disk.  If the data
+    is compressed, this shows the compressed size.  In the case of uncompressed,
+    chunked data, this may be slightly larger than the amount of data, due to
+    partially filled chunks.
+
+.. attribute:: CArray.size_in_memory
+
+    The size of this carray's data in bytes when it is fully loaded into memory.
+    This may be used in combination with size_on_disk to calculate the
+    compression ratio of the data.
 
 
 Examples of use
@@ -3956,6 +4002,33 @@ VLArray instance variables
 .. attribute:: VLArray.nrow
 
     On iterators, this is the index of the current row.
+
+.. attribute:: VLArray.extdim
+
+   The index of the enlargeable dimension (always 0 for vlarrays).
+
+.. attribute:: VLArray.nrows
+
+    The current number of rows in the array.
+
+
+.. attribute:: VLArray.size_on_disk
+
+    The HDF5 library does not include a function to determine size_on_disk for
+    variable-length arrays.  Accessing this attribute will return a
+    NotImplementedError.
+
+
+.. attribute:: VLArray.size_in_memory
+
+    The size of this array's data in bytes when it is fully loaded into memory.
+
+    .. note:: When data is stored in a VLArray using the ObjectAtom type, it is
+        first serialized using cPickle, and then converted to a NumPy array
+        suitable for storage in an HDF5 file.  This attribute will return the
+        size of that NumPy representation.  If you wish to know the size of the
+        Python objects after they are loaded from disk, you can use this
+        `ActiveState recipe <http://code.activestate.com/recipes/577504/>`_.
 
 
 
@@ -4321,21 +4394,9 @@ The ExternalLink class
 
     Represents an external link.
 
-    An external link is a reference to a node
-    in *another* file.  Getting access to the pointed
-    node (this action is called *dereferrencing*) is
-    done via the __call__ special method (see
-    below).
-
-    .. warning:: External links are only supported when PyTables is compiled
-       against HDF5 1.8.x series.  When using PyTables with HDF5 1.6.x,
-       the *parent* group containing external link
-       objects will be mapped to an Unknown instance
-       (see :ref:`UnknownClassDescr`) and you won't be able to access *any* node
-       hanging of this parent group.  It follows that if the parent group
-       containing the external link is the root group, you won't be able
-       to read *any* information contained in the file
-       when using HDF5 1.6.x.
+    An external link is a reference to a node in *another* file.
+    Getting access to the pointed node (this action is called
+    *dereferrencing*) is done via the __call__ special method (see below).
 
 
 ExternalLink instance variables
@@ -4700,6 +4761,11 @@ Atom instance variables
 
     The PyTables kind of the atom (a string).
 
+.. attribute:: Atom.ndim
+
+    The number of dimensions of the atom.
+
+    .. versionadded:: 2.4
 
 .. attribute:: Atom.recarrtype
 
@@ -5432,6 +5498,21 @@ creation.
     own descriptive object.
 
 
+Description helper functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. function:: tables.description.descr_from_dtype(dtype_)
+
+    Get a description instance and byteorder from a (nested) NumPy dtype.
+
+.. function:: tables.description.dtype_from_descr(descr, byteorder=None)
+
+    Get a (nested) NumPy dtype from a description instance and byteorder.
+
+    The description parameter can be a :class:`Description` or
+    :class:`IsDescription` instance, any sub-class of :class:`IsDescription`
+    or a dictionary.
+
 
 Helper classes
 --------------
@@ -5838,7 +5919,7 @@ The Expr class - a general-purpose expression evaluator
     (like "3*a+4*b") that operate on arbitrary large
     arrays while optimizing the resources required to perform them
     (basically main memory and CPU cache memory).  It is similar to the
-    Numexpr package (see ), but in addition
+    Numexpr package (see :ref:`[NUMEXPR] <NUMEXPR>`), but in addition
     to NumPy objects, it also accepts disk-based homogeneous arrays, like
     the Array, CArray, EArray and Column PyTables objects.
 
@@ -6073,4 +6154,169 @@ Expr special methods
     The :meth:`Expr.eval` documentation for
     details on how the computation is carried out.  Also, for some
     examples of use see the :meth:`Expr.__init__` docs.
+
+
+
+.. _ExceptionsDescr:
+
+Exceptions module
+-----------------
+
+In the :mod:`exceptions` module exceptions and warnings that are specific
+to PyTables are declared.
+
+:HDF5ExtError:
+    A low level HDF5 operation failed.
+:ClosedNodeError:
+    The operation can not be completed because the node is closed.
+:ClosedFileError:
+    The operation can not be completed because the hosting file is
+    closed.
+:FileModeError:
+    The operation can not be carried out because the mode in which the
+    hosting file is opened is not adequate.
+:NodeError:
+    Invalid hierarchy manipulation operation requested.
+:NoSuchNodeError:
+    An operation was requested on a node that does not exist.
+:UndoRedoError:
+    Problems with doing/redoing actions with Undo/Redo feature.
+:UndoRedoWarning:
+    Issued when an action not supporting undo/redo is run.
+:NaturalNameWarning:
+    Issued when a non-pythonic name is given for a node.
+:PerformanceWarning:
+    Warning for operations which may cause a performance drop.
+:FlavorError:
+    Unsupported or unavailable flavor or flavor conversion.
+:FlavorWarning:
+    Unsupported or unavailable flavor conversion.
+:FiltersWarning:
+    Unavailable filters.
+:OldIndexWarning:
+    Unsupported index format.
+:DataTypeWarning:
+    Unsupported data type.
+:Incompat16Warning:
+    Format incompatible with HDF5 1.6.x series.
+
+    .. deprecated:: 2.4
+
+        Support for HDF5 1.6.x has been dropped.
+
+
+The HDF5ExtError exception
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. exception:: exceptions.HDF5ExtError(RuntimeError)
+
+    A low level HDF5 operation failed.
+
+    This exception is raised the low level PyTables components used for
+    accessing HDF5 files.  It usually signals that something is not
+    going well in the HDF5 library or even at the Input/Output level.
+
+    Errors in the HDF5 C library may be accompanied by an extensive
+    HDF5 back trace on standard error (see also
+    :func:`tables.silenceHDF5Messages`).
+
+    .. versionchanged:: 2.4
+
+
+HDF5ExtError class variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. attribute:: HDF5ExtError.DEFAULT_H5_BACKTRACE_POLICY
+
+    Default policy for HDF5 backtrace handling:
+
+    * if set to False the HDF5 back trace is ignored and the
+      :attr:`HDF5ExtError.h5backtrace` attribute is set to None
+    * if set to True the back trace is retrieved from the HDF5
+      library and stored in the :attr:`HDF5ExtError.h5backtrace`
+      attribute as a list of tuples
+    * if set to "VERBOSE" (default) the HDF5 back trace is
+      stored in the :attr:`HDF5ExtError.h5backtrace` attribute
+      and also included in the string representation of the
+      exception
+
+    This parameter can be set using the
+    :envvar:`PT_DEFAULT_H5_BACKTRACE_POLICY` environment variable.
+    Allowed values are "IGNORE" (or "FALSE"), "SAVE" (or "TRUE") and
+    "VERBOSE" to set the policy to False, True and "VERBOSE"
+    respectively.  The special value "DEFAULT" can be used to reset
+    the policy to the default value
+
+    .. versionadded:: 2.4
+
+
+HDF5ExtError instance variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. attribute:: HDF5ExtError.h5backtrace
+
+    Contains the HDF5 back trace as a (possibly empty) list of
+    tuples.  Each tuple has the following format::
+
+        (filename, line number, function name, text)
+
+    Depending on the value of the *h5bt* parameter passed to the
+    initializer the h5backtrace attribute can be set to None.
+    This means that the HDF5 back trace has been simply ignored
+    (not retrieved from the HDF5 C library error stack) or that
+    there has been an error (silently ignored) during the HDF5 back
+    trace retrieval.
+
+    .. versionadded:: 2.4
+    .. seealso:: :func:`traceback.format_list`
+
+
+HDF5ExtError special methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: HDF5ExtError.__init__(message, h5bt=None)
+
+    Initializer parameters:
+
+    :param message:
+        error message
+    :param h5bt:
+        This parameter (keyword only) controls the HDF5 back trace
+        handling:
+
+        * if set to False the HDF5 back trace is ignored and the
+          :attr:`HDF5ExtError.h5backtrace` attribute is set to None
+        * if set to True the back trace is retrieved from the HDF5
+          library and stored in the :attr:`HDF5ExtError.h5backtrace`
+          attribute as a list of tuples
+        * if set to "VERBOSE" (default) the HDF5 back trace is
+          stored in the :attr:`HDF5ExtError.h5backtrace` attribute
+          and also included in the string representation of the
+          exception
+        * if not set (or set to None) the default policy is used
+          (see :attr:`HDF5ExtError.DEFAULT_H5_BACKTRACE_POLICY`)
+
+    Keyword arguments different from 'h5bt' are ignored.
+
+    .. versionchanged:: 2.4
+
+.. method::  HDF5ExtError.__str__
+
+    Returns a sting representation of the exception.
+
+    The actual result depends on policy set in the initializer
+    :meth:`HDF5ExtError.__init__`.
+
+    .. versionadded:: 2.4
+
+
+HDF5ExtError methods
+^^^^^^^^^^^^^^^^^^^^
+
+.. method:: HDF5ExtError.format_h5_backtrace(backtrace=None)
+
+    Convert the HDF5 trace back represented as a list of tuples
+    (see :attr:`HDF5ExtError.h5backtrace`) into string.
+
+    .. versionadded:: 2.4
 

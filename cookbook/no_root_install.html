@@ -1,0 +1,356 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Installing PyTables when you’re not root &mdash; PyTables 2.4.0b1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/altered_nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.4.0b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="PyTables 2.4.0b1 documentation" href="../index.html" />
+    <link rel="up" title="PyTables Cookbook" href="index.html" />
+    <link rel="next" title="Tailoring atexit hooks" href="tailoring_atexit_hooks.html" />
+    <link rel="prev" title="How to integrate PyTables in your application by using py2exe" href="py2exe_howto.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="tailoring_atexit_hooks.html" title="Tailoring atexit hooks"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="py2exe_howto.html" title="How to integrate PyTables in your application by using py2exe"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PyTables 2.4.0b1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">PyTables Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="installing-pytables-when-you-re-not-root">
+<h1>Installing PyTables when you&#8217;re not root<a class="headerlink" href="#installing-pytables-when-you-re-not-root" title="Permalink to this headline">¶</a></h1>
+<p>By <a class="reference external" href="http://www.tibed.net">Koen van de Sande</a>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">contents of this recipe recipe may be outdated.</p>
+</div>
+<p>This guide describes how to install PyTables and its dependencies on Linux or
+other *nix systems when your user account is not root.
+Installing the <a class="reference external" href="http://www.hdfgroup.org/HDF5">HDF5</a> <a class="footnote-reference" href="#id1" id="id2">[1]</a> shared libraries and Python extensions NumArray and
+NumPy requires some non-trivial steps to work.
+We describe all steps needed.
+They only assumption is that you have Python 2.3 or higher and a C/C++ compiler
+(gcc) installed.</p>
+<div class="section" id="installing-hdf5">
+<h2>Installing HDF5<a class="headerlink" href="#installing-hdf5" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">First go to or make a temporary folder where we can download and compile
+software.
+We&#8217;ll assume you&#8217;re in this temporary folder in the rest of this section.</p>
+</li>
+<li><p class="first">Download <cite>hdf5-1.6.5.tar.gz</cite> from <a class="reference external" href="ftp://ftp.hdfgroup.org/HDF5/current16/src/">ftp://ftp.hdfgroup.org/HDF5/current16/src/</a>:</p>
+<div class="highlight-python"><pre>wget ftp://ftp.hdfgroup.org/HDF5/current16/src/hdf5-1.6.5.tar.gz</pre>
+</div>
+</li>
+<li><p class="first">Extract the archive to the current folder:</p>
+<div class="highlight-python"><pre>tar xzvf hdf5-1.6.5.tar.gz</pre>
+</div>
+</li>
+<li><p class="first">Go to the extracted HDF5 folder:</p>
+<div class="highlight-python"><pre>cd hdf5-1.6.5</pre>
+</div>
+</li>
+<li><p class="first">Run the configure script:</p>
+<div class="highlight-python"><pre>./configure</pre>
+</div>
+</li>
+<li><p class="first">Run make:</p>
+<div class="highlight-python"><pre>make install</pre>
+</div>
+</li>
+<li><p class="first">We&#8217;ve now compiled <a class="reference external" href="http://www.hdfgroup.org/HDF5">HDF5</a> <a class="footnote-reference" href="#id1" id="id3">[1]</a> into the <cite>hdf5</cite> folder inside the source tree.
+We&#8217;ll need to move this to its final location.
+For this guide, we&#8217;ll make a <cite>software</cite> folder inside your home directory
+to store installed libraries:</p>
+<div class="highlight-python"><pre>mkdir ~/software</pre>
+</div>
+</li>
+<li><p class="first">Move the files to the right location:</p>
+<div class="highlight-python"><pre>mv hdf5 ~/software/</pre>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="installing-numarray">
+<h2>Installing NumArray<a class="headerlink" href="#installing-numarray" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">From the <a class="reference external" href="http://sourceforge.net/project/showfiles.php?group_id=1369">NumArray SourceForge page</a> download
+NumArray 1.5.2 to our temporary folder.</p>
+</li>
+<li><p class="first">Extract the archive:</p>
+<div class="highlight-python"><pre>tar xzvf numarray-1.5.2.tar.gz</pre>
+</div>
+</li>
+<li><p class="first">Go to the NumArray folder:</p>
+<div class="highlight-python"><pre>cd numarray-1.5.2</pre>
+</div>
+</li>
+<li><p class="first">Build and install the Python module into our software folder (it will
+actually end up in <cite>~/software/lib/python</cite>:</p>
+<div class="highlight-python"><pre>python setup.py install --home=~/software</pre>
+</div>
+<p>We will also need to copy the header files of NumArray so PyTables can use
+them later on for compilation.
+Skipping this step will lead to compilation errors for PyTables.</p>
+</li>
+<li><p class="first">Go into the header file folder:</p>
+<div class="highlight-python"><pre>cd include</pre>
+</div>
+</li>
+<li><p class="first">Copy the header files. We&#8217;ll put them together with the <a class="reference external" href="http://www.hdfgroup.org/HDF5">HDF5</a> <a class="footnote-reference" href="#id1" id="id4">[1]</a> header files:</p>
+<div class="highlight-python"><pre>cp -r numarray ~/software/hdf5/include/</pre>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="installing-numpy-optional">
+<h2>Installing NumPy (optional)<a class="headerlink" href="#installing-numpy-optional" title="Permalink to this headline">¶</a></h2>
+<p>It is not required to install NumPy; PyTables will work with just NumArray
+installed.
+However, I do recommend that you install NumPy as well, because PyTables
+can optionally use it.</p>
+<ul>
+<li><p class="first">From the <a class="reference external" href="http://sourceforge.net/project/showfiles.php?group_id=1369">NumPy SourceForge page</a> download
+NumPy 1.0 (at time of writing) to our temporary folder.</p>
+</li>
+<li><p class="first">Extract the archive:</p>
+<div class="highlight-python"><pre>tar xzvf numpy-1.0.tar.gz</pre>
+</div>
+</li>
+<li><p class="first">Go to the NumPy folder:</p>
+<div class="highlight-python"><pre>cd numpy-1.0</pre>
+</div>
+</li>
+<li><p class="first">Build and install the Python module into our software folder:</p>
+<div class="highlight-python"><pre>python setup.py install --home=~/software</pre>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="python-wrapper-script">
+<h2>Python wrapper script<a class="headerlink" href="#python-wrapper-script" title="Permalink to this headline">¶</a></h2>
+<p>We&#8217;ve installed all dependencies of PyTables.
+We need to create a wrapper script for Python to let PyTables actually find
+all these dependencies.
+Had we installed them as root, they&#8217;d be trivial to find, but now we need to
+help a bit.</p>
+<ul>
+<li><p class="first">Create a script with the following contents (I&#8217;ve called this script <cite>p</cite> on
+my machine):</p>
+<div class="highlight-python"><pre>#!/bin/bash
+export PYTHONPATH=~/software/lib/python
+export HDF5_DIR=~/software/hdf5
+export LD_LIBRARY_PATH=~/software/lib/python/tables:~/software/hdf5/lib
+python $*</pre>
+</div>
+</li>
+<li><p class="first">Make the script executable:</p>
+<div class="highlight-python"><pre>chmod 755 p</pre>
+</div>
+</li>
+<li><p class="first">Place the script somewhere on your path (for example, inside a folder
+called <cite>bin</cite> inside your home dir, which is normally added to the path
+automatically).
+If you do not add this script to your path, you&#8217;ll have to replace <cite>p</cite> in
+scripts below by the full path (and name of) your script, e.g.
+<cite>~/pytablespython.sh</cite> if you called it <cite>pytablespython.sh</cite> and put it in
+your home dir.</p>
+</li>
+<li><p class="first">Test your Python wrapper script:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">p</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">It should now start Python. And you should be able to import <cite>numarray</cite>
+(and optionally <cite>numpy</cite>) without errors:</p>
+<div class="highlight-python"><pre>Python 2.3.4 (#1, Feb  2 2005, 12:11:53)
+[GCC 3.4.2 20041017 (Red Hat 3.4.2-6.fc3)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; import numarray
+&gt;&gt;&gt; import numpy
+&gt;&gt;&gt;</pre>
+</div>
+</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">you could do this differently by defining these environment settings
+somewhere in your startup scripts, but this wrapper script approach is
+cleaner.</p>
+</div>
+</div>
+<div class="section" id="installing-pytables">
+<h2>Installing PyTables<a class="headerlink" href="#installing-pytables" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">From the <a class="reference external" href="http://sourceforge.net/project/showfiles.php?group_id=63486">SourceForge page</a>
+download PyTables 1.3.3 (at time of writing) to our temporary folder.</p>
+</li>
+<li><p class="first">Extract the archive:</p>
+<div class="highlight-python"><pre>tar xzvf pytables-1.3.3.tar.gz</pre>
+</div>
+</li>
+<li><p class="first">Go to the PyTables folder:</p>
+<div class="highlight-python"><pre>cd pytables-1.3.3</pre>
+</div>
+</li>
+<li><p class="first">Install PyTables using our wrapper script:</p>
+<div class="highlight-python"><pre>p setup.py install --home=~/software</pre>
+</div>
+</li>
+<li><p class="first">If you get the following error then you are not using the wrapper script
+properly!</p>
+<div class="highlight-python"><pre>.. ERROR:: Can't find a local numarray Python installation.
+   Please, read carefully the ``README`` file and remember that
+   PyTables needs the numarray package to compile and run.}}}</pre>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="running-python-with-pytables-support">
+<h2>Running Python with PyTables support<a class="headerlink" href="#running-python-with-pytables-support" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Use your Python wrapper script to start Python:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">p</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">You can now import <cite>tables</cite> without errors:</p>
+<div class="highlight-python"><pre>Python 2.3.4 (#1, Feb  2 2005, 12:11:53)
+[GCC 3.4.2 20041017 (Red Hat 3.4.2-6.fc3)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; import tables
+&gt;&gt;&gt; tables.__version__
+'1.3.3'
+&gt;&gt;&gt;</pre>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="concluding-remarks">
+<h2>Concluding remarks<a class="headerlink" href="#concluding-remarks" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>It is safe to remove the temporary folder we have used in this guide,
+there are no dependencies on it.</li>
+<li>This guide was written for and tested with HDF5 1.6.5, PyTables 1.3.3 and
+NumArray 1.5.2.</li>
+</ul>
+<p>Enjoy working with PyTables!</p>
+<p><em>Koen</em></p>
+<hr class="docutils" />
+<table class="docutils footnote" frame="void" id="id1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[1]</td><td><em>(<a class="fn-backref" href="#id2">1</a>, <a class="fn-backref" href="#id3">2</a>, <a class="fn-backref" href="#id4">3</a>)</em> <a class="reference external" href="http://www.hdfgroup.org/HDF5">http://www.hdfgroup.org/HDF5</a></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/logo-pytables-small.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Installing PyTables when you&#8217;re not root</a><ul>
+<li><a class="reference internal" href="#installing-hdf5">Installing HDF5</a></li>
+<li><a class="reference internal" href="#installing-numarray">Installing NumArray</a></li>
+<li><a class="reference internal" href="#installing-numpy-optional">Installing NumPy (optional)</a></li>
+<li><a class="reference internal" href="#python-wrapper-script">Python wrapper script</a></li>
+<li><a class="reference internal" href="#installing-pytables">Installing PyTables</a></li>
+<li><a class="reference internal" href="#running-python-with-pytables-support">Running Python with PyTables support</a></li>
+<li><a class="reference internal" href="#concluding-remarks">Concluding remarks</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="py2exe_howto.html"
+                        title="previous chapter">How to integrate PyTables in your application by using py2exe</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tailoring_atexit_hooks.html"
+                        title="next chapter">Tailoring <cite>atexit</cite> hooks</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/cookbook/no_root_install.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="tailoring_atexit_hooks.html" title="Tailoring atexit hooks"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="py2exe_howto.html" title="How to integrate PyTables in your application by using py2exe"
+             >previous</a> |</li>
+        <li><a href="../index.html">PyTables 2.4.0b1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >PyTables Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

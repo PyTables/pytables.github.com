@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Library Reference &mdash; PyTables 2.3.1 documentation</title>
+    <title>Library Reference &mdash; PyTables 2.4.0b1 documentation</title>
     
     <link rel="stylesheet" href="../_static/altered_nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.1',
+        VERSION:     '2.4.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="PyTables 2.3.1 documentation" href="../index.html" />
+    <link rel="top" title="PyTables 2.4.0b1 documentation" href="../index.html" />
     <link rel="up" title="PyTables User’s Guide" href="index.html" />
     <link rel="next" title="Optimization tips" href="optimization.html" />
     <link rel="prev" title="Tutorials" href="tutorials.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="tutorials.html" title="Tutorials"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">PyTables 2.3.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">PyTables 2.4.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">PyTables User&#8217;s Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -254,11 +254,10 @@ the integrated node cache engine.</p>
 <dt id="tables.setBloscMaxThreads">
 <tt class="descclassname">tables.</tt><tt class="descname">setBloscMaxThreads</tt><big>(</big><em>nthreads</em><big>)</big><a class="headerlink" href="#tables.setBloscMaxThreads" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the maximum number of threads that Blosc can use.</p>
-<p>This actually overrides the <a class="reference internal" href="parameter_files.html#tables.parameters.MAX_THREADS" title="tables.parameters.MAX_THREADS"><tt class="xref py py-data docutils literal"><span class="pre">parameters.MAX_THREADS</span></tt></a>
-setting in <tt class="file docutils literal"><span class="pre">tables/parameters.py</span></tt>, so the new
-value will be effective until this function is called again or a
-new file with a different <a class="reference internal" href="parameter_files.html#tables.parameters.MAX_THREADS" title="tables.parameters.MAX_THREADS"><tt class="xref py py-data docutils literal"><span class="pre">parameters.MAX_THREADS</span></tt></a> value
-is specified.</p>
+<p>This actually overrides the <a class="reference internal" href="parameter_files.html#tables.parameters.MAX_BLOSC_THREADS" title="tables.parameters.MAX_BLOSC_THREADS"><tt class="xref py py-data docutils literal"><span class="pre">tables.parameters.MAX_BLOSC_THREADS</span></tt></a>
+setting in <tt class="xref py py-mod docutils literal"><span class="pre">tables.parameters</span></tt>, so the new value will be effective
+until this function is called again or a new file with a different
+<a class="reference internal" href="parameter_files.html#tables.parameters.MAX_BLOSC_THREADS" title="tables.parameters.MAX_BLOSC_THREADS"><tt class="xref py py-data docutils literal"><span class="pre">tables.parameters.MAX_BLOSC_THREADS</span></tt></a> value is specified.</p>
 <p>Returns the previous setting for maximum threads.</p>
 </dd></dl>
 
@@ -332,6 +331,16 @@ None is returned.</p>
 hdf5, zlib,
 lzo and bzip2. If another
 name is given, a ValueError is raised.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tables.silenceHDF5Messages">
+<tt class="descclassname">tables.</tt><tt class="descname">silenceHDF5Messages</tt><big>(</big><em>silence=True</em><big>)</big><a class="headerlink" href="#tables.silenceHDF5Messages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Silence (or re-enable) messages from the HDF5 C library.</p>
+<p>The <em>silence</em> parameter can be used control the behaviour and reset the
+standard HDF5 logging.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.4.</span></p>
 </dd></dl>
 
 </div>
@@ -735,33 +744,19 @@ information on the rest of parameters.</p>
 <dl class="method">
 <dt id="tables.File.createExternalLink">
 <tt class="descclassname">File.</tt><tt class="descname">createExternalLink</tt><big>(</big><em>where</em>, <em>name</em>, <em>target</em>, <em>createparents=False</em>, <em>warn16incompat=False</em><big>)</big><a class="headerlink" href="#tables.File.createExternalLink" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create an external link to a target node
-with the given name
-in where location.  target
-can be a node object in another file or a path string in the
-form <cite>file:/path/to/node</cite>.  If
-createparents is true, the intermediate
-groups required for reaching where are
-created (the default is not doing so).</p>
-<p>The purpose of the warn16incompat
-argument is to avoid an Incompat16Warning
-(see below).  The default is to issue the warning.</p>
-<p>The returned node is an ExternalLink
-instance.  See the
-ExternalLink class (in
-<a class="reference internal" href="#externallinkclassdescr"><em>The ExternalLink class</em></a>) for more information on external links.</p>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">External links are only supported when PyTables is
-compiled against HDF5 1.8.x series.  When using PyTables with
-HDF5 1.6.x, the <em>parent</em> group containing
-external link objects will be mapped to
-an Unknown instance (see <a class="reference internal" href="#unknownclassdescr"><em>The Unknown class</em></a>)
-and you won&#8217;t be able to access <em>any</em>
-node hanging of this parent group.  It follows that if the
-parent group containing the external link is the root group,
-you won&#8217;t be able to read <em>any</em> information
-contained in the file when using HDF5 1.6.x.</p>
+<dd><p>Create an external link to a target node with the given name in where
+location.
+target can be a node object in another file or a path string in the form
+<cite>file:/path/to/node</cite>.
+If createparents is true, the intermediate groups required for reaching
+where are created (the default is not doing so).</p>
+<p>The returned node is an ExternalLink instance.
+See the ExternalLink class (in <a class="reference internal" href="#externallinkclassdescr"><em>The ExternalLink class</em></a>) for more
+information on external links.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The warn16incompat arrgument is deprected since version 2.4.
+It will be ignored.</p>
 </div>
 </dd></dl>
 
@@ -855,21 +850,22 @@ many columns it has, their names, types, shapes, etc.  It
 can be any of the following:</p>
 <ul class="simple">
 <li><em>A user-defined class</em>: This should inherit from the IsDescription
-class (see <a class="reference internal" href="#isdescriptionclassdescr"><em>The IsDescription class</em></a>) where table fields are specified.</li>
-<li><em>A dictionary</em>: For example, when you do not know beforehand which structure
-your table will have).</li>
-<li><em>A Description instance</em>: You can use the description attribute of another
-table to create a new one with the same structure.</li>
+class (see <a class="reference internal" href="#isdescriptionclassdescr"><em>The IsDescription class</em></a>) where table fields are
+specified.</li>
+<li><em>A dictionary</em>: For example, when you do not know beforehand which
+structure your table will have).</li>
+<li><em>A Description instance</em>: You can use the description attribute of
+another table to create a new one with the same structure.</li>
 <li><em>A NumPy dtype</em>: A completely general structured NumPy dtype.</li>
-<li><em>A NumPy (record) array instance</em>: The dtype of this record array will be used
-as the description.  Also, in case the array has actual data, it will be injected
-into the newly created table.</li>
-<li><em>A RecArray instance (deprecated)</em>: Object from the numarray package.  This does
-not give you the possibility to create a nested table.  Array data is injected into
-the new table.</li>
-<li><em>A NestedRecArray instance (deprecated)</em>: If you want to have nested columns in
-your table and you are using numarray, you can use this object. Array data is
-injected into the new table.</li>
+<li><em>A NumPy (structured) array instance</em>: The dtype of this structured
+array will be used as the description.  Also, in case the array has
+actual data, it will be injected into the newly created table.</li>
+<li><em>A RecArray instance (deprecated)</em>: Object from the numarray
+package.  This does not give you the possibility to create a nested
+table.  Array data is injected into the new table.</li>
+<li><em>A NestedRecArray instance (deprecated)</em>: If you want to have
+nested columns in your table and you are using numarray, you can use
+this object. Array data is injected into the new table.</li>
 </ul>
 </div></blockquote>
 <p><strong>title</strong> : str</p>
@@ -2148,6 +2144,12 @@ dataset is not extendable, and self.extdim
 </dd></dl>
 
 <dl class="attribute">
+<dt id="tables.Leaf.ndim">
+<tt class="descclassname">Leaf.</tt><tt class="descname">ndim</tt><a class="headerlink" href="#tables.Leaf.ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of dimensions of the leaf data.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="tables.Leaf.nrows">
 <tt class="descclassname">Leaf.</tt><tt class="descname">nrows</tt><a class="headerlink" href="#tables.Leaf.nrows" title="Permalink to this definition">¶</a></dt>
 <dd><p>The length of the main dimension of the leaf data.</p>
@@ -2165,6 +2167,23 @@ requirements of your application.</p>
 <dt id="tables.Leaf.shape">
 <tt class="descclassname">Leaf.</tt><tt class="descname">shape</tt><a class="headerlink" href="#tables.Leaf.shape" title="Permalink to this definition">¶</a></dt>
 <dd><p>The shape of data in the leaf.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.size_on_disk">
+<tt class="descclassname">Leaf.</tt><tt class="descname">size_on_disk</tt><a class="headerlink" href="#tables.Leaf.size_on_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this leaf&#8217;s data in bytes as it is stored on disk.  If the data
+is compressed, this shows the compressed size.  In the case of uncompressed,
+chunked data, this may be slightly larger than the amount of data, due to
+partially filled chunks.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.size_in_memory">
+<tt class="descclassname">Leaf.</tt><tt class="descname">size_in_memory</tt><a class="headerlink" href="#tables.Leaf.size_in_memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this leaf&#8217;s data in bytes when it is fully loaded into memory.
+This may be used in combination with size_on_disk to calculate the
+compression ratio of the data.</p>
 </dd></dl>
 
 </div>
@@ -2359,18 +2378,6 @@ part is filled with the default values.</p>
 <p>The truncation operation can only be applied to
 <em>enlargeable</em> datasets, else a
 TypeError will be raised.</p>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">If you are using the HDF5 1.6.x series, and due to
-limitations of them, size must be greater
-than zero (i.e. the dataset can not be completely emptied).  A
-ValueError will be issued if you are using
-HDF5 1.6.x and try to pass a zero size to this method.  Also,
-HDF5 1.6.x has the problem that it cannot work against
-CArray objects (again, a
-ValueError will be issued).  HDF5 1.8.x
-doesn&#8217;t undergo these problems.</p>
-</div>
 </dd></dl>
 
 <dl class="method">
@@ -2587,6 +2594,23 @@ reflecting the structure of the table.</p>
 <dd><p>The size in bytes of each row in the table.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="tables.Table.size_on_disk">
+<tt class="descclassname">Table.</tt><tt class="descname">size_on_disk</tt><a class="headerlink" href="#tables.Table.size_on_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this table&#8217;s data in bytes as it is stored on disk.  If the data
+is compressed, this shows the compressed size.  In the case of uncompressed,
+chunked data, this may be slightly larger than the amount of data, due to
+partially filled chunks.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Table.size_in_memory">
+<tt class="descclassname">Table.</tt><tt class="descname">size_in_memory</tt><a class="headerlink" href="#tables.Table.size_in_memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this table&#8217;s data in bytes when it is fully loaded into memory.
+This may be used in combination with size_on_disk to calculate the
+compression ratio of the data.</p>
+</dd></dl>
+
 </div>
 <div class="section" id="table-methods-reading">
 <h3>Table methods - reading<a class="headerlink" href="#table-methods-reading" title="Permalink to this headline">¶</a></h3>
@@ -2683,15 +2707,13 @@ start+1. If you do not specify neither
 start nor stop, then
 <em>all the rows</em> in the table are
 selected.</p>
-<p>If field is supplied only the named
-column will be selected.  If the column is not nested, an
-<em>array</em> of the current flavor will be returned;
-if it is, a <em>record array</em> will be used
-instead.  I no field is specified, all the
-columns will be returned in a record array of the current flavor.</p>
-<p>Columns under a nested column can be specified in the
-field parameter by using a slash character
-(/) as a separator (e.g. &#8216;position/x&#8217;).</p>
+<p>If field is supplied only the named column will be selected.
+If the column is not nested, an <em>array</em> of the current flavor will be
+returned; if it is, a <em>structured array</em> will be used instead.
+If no field is specified, all the columns will be returned in a
+structured array of the current flavor.</p>
+<p>Columns under a nested column can be specified in the field parameter by
+using a slash character (/) as a separator (e.g. &#8216;position/x&#8217;).</p>
 </dd></dl>
 
 <dl class="method">
@@ -2702,8 +2724,8 @@ field parameter by using a slash character
 method, but it uses a sequence
 (coords) of row indexes to select the wanted
 columns, instead of a column range.</p>
-<p>The selected rows are returned in an array or record array
-of the current flavor.</p>
+<p>The selected rows are returned in an array or structured array of the
+current flavor.</p>
 </dd></dl>
 
 <dl class="method">
@@ -2715,29 +2737,24 @@ full index.  If you want to ensure a fully
 sorted order, the index must be a CSI one.  You may want to use
 the checkCSI argument in order to explicitly
 check for the existence of a CSI index.</p>
-<p>If field is supplied only the named
-column will be selected.  If the column is not nested, an
-<em>array</em> of the current flavor will be returned;
-if it is, a <em>record array</em> will be used
-instead.  If no field is specified, all the
-columns will be returned in a record array of the current
-flavor.</p>
-<p>The meaning of the start,
-stop and step arguments is
-the same as in <a class="reference internal" href="#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">Table.read()</span></tt></a>.  However, in this case a negative value
-of step is supported, meaning that the results
-will be returned in reverse sorted order.</p>
+<p>If field is supplied only the named column will be selected.
+If the column is not nested, an <em>array</em> of the current flavor will be
+returned; if it is, a <em>structured array</em> will be used instead.
+If no field is specified, all the columns will be returned in a
+structured array of the current flavor.</p>
+<p>The meaning of the start, stop and step arguments is the same as in
+<a class="reference internal" href="#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">Table.read()</span></tt></a>.  However, in this case a negative value of step is
+supported, meaning that the results will be returned in reverse sorted
+order.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="tables.Table.__getitem__">
 <tt class="descclassname">Table.</tt><tt class="descname">__getitem__</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#tables.Table.__getitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a row or a range of rows from the table.</p>
-<p>If key argument is an integer, the
-corresponding table row is returned as a record of the current
-flavor. If key is a slice, the range of rows
-determined by it is returned as a record array of the current
-flavor.</p>
+<p>If key argument is an integer, the corresponding table row is returned as
+a record of the current flavor. If key is a slice, the range of rows
+determined by it is returned as a structured array of the current flavor.</p>
 <p>In addition, NumPy-style point selections are supported.  In
 particular, if key is a list of row
 coordinates, the set of rows determined by it is returned.
@@ -2794,12 +2811,11 @@ example).</p>
 <dt id="tables.Table.append">
 <tt class="descclassname">Table.</tt><tt class="descname">append</tt><big>(</big><em>rows</em><big>)</big><a class="headerlink" href="#tables.Table.append" title="Permalink to this definition">¶</a></dt>
 <dd><p>Append a sequence of rows to the end of the table.</p>
-<p>The rows argument may be any object which
-can be converted to a record array compliant with the table
-structure (otherwise, a ValueError is raised).
-This includes NumPy record arrays, RecArray
-(depracated) or NestedRecArray (deprecated)
-objects if numarray is available, lists of
+<p>The rows argument may be any object which can be converted to a record
+array compliant with the table structure (otherwise, a ValueError is
+raised).
+This includes NumPy structured arrays, RecArray (depracated) or
+NestedRecArray (deprecated) objects if numarray is available, lists of
 tuples or array records, and a string or Python buffer.</p>
 <p>Example of use:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="o">*</span>
@@ -2853,14 +2869,12 @@ the columns in the table to be modified with the data given in
 columns.  This method returns the number of
 rows modified.  Should the modification exceed the length of the
 table, an IndexError is raised before changing data.</p>
-<p>The columns argument may be any object
-which can be converted to a record array compliant with the
-structure of the columns to be modified (otherwise, a
-ValueError is raised).  This includes NumPy
-record arrays, RecArray (deprecated) or
-NestedRecArray (deprecated) objects if
-numarray is available, lists of tuples or array
-records, and a string or Python buffer.</p>
+<p>The columns argument may be any object which can be converted to a
+structured array compliant with the structure of the columns to be
+modified (otherwise, a ValueError is raised).  This includes NumPy
+structured arrays, RecArray (deprecated) or NestedRecArray (deprecated)
+objects if numarray is available, lists of tuples or array records, and
+a string or Python buffer.</p>
 </dd></dl>
 
 <dl class="method">
@@ -3305,6 +3319,12 @@ NestedRecArray (see <a class="reference internal" href="nested_rec_arrays.html#n
 </dd></dl>
 
 <dl class="attribute">
+<dt id="tables.Description._v_pathname">
+<tt class="descclassname">Description.</tt><tt class="descname">_v_pathname</tt><a class="headerlink" href="#tables.Description._v_pathname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pathname of the table or nested column.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="tables.Description._v_pathnames">
 <tt class="descclassname">Description.</tt><tt class="descname">_v_pathnames</tt><a class="headerlink" href="#tables.Description._v_pathnames" title="Permalink to this definition">¶</a></dt>
 <dd><p>A list of the pathnames of all the columns under this
@@ -3604,11 +3624,10 @@ not valid Python identifiers.</p>
 <dt id="tables.Cols.__getitem__">
 <tt class="descclassname">Cols.</tt><tt class="descname">__getitem__</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#tables.Cols.__getitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a row or a range of rows from a table or nested column.</p>
-<p>If key argument is an integer, the
-corresponding nested type row is returned as a record of the
-current flavor. If key is a slice, the range
-of rows determined by it is returned as a record array of the
-current flavor.</p>
+<p>If key argument is an integer, the corresponding nested type row is
+returned as a record of the current flavor. If key is a slice, the range
+of rows determined by it is returned as a structured array of the current
+flavor.</p>
 <p>Example of use:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">record</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">cols</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>  <span class="c"># equivalent to table[4]</span>
 <span class="n">recarray</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">Info</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">1000</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
@@ -3978,14 +3997,34 @@ saved.</p>
 <dl class="attribute">
 <dt id="tables.Array.rowsize">
 <tt class="descclassname">Array.</tt><tt class="descname">rowsize</tt><a class="headerlink" href="#tables.Array.rowsize" title="Permalink to this definition">¶</a></dt>
-<dd><p>The size of the rows in dimensions orthogonal to
+<dd><p>The size of the rows in bytes in dimensions orthogonal to
 <em>maindim</em>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Array.nrows">
+<tt class="descclassname">Array.</tt><tt class="descname">nrows</tt><a class="headerlink" href="#tables.Array.nrows" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of rows in the array.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="tables.Array.nrow">
 <tt class="descclassname">Array.</tt><tt class="descname">nrow</tt><a class="headerlink" href="#tables.Array.nrow" title="Permalink to this definition">¶</a></dt>
 <dd><p>On iterators, this is the index of the current row.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Array.size_on_disk">
+<tt class="descclassname">Array.</tt><tt class="descname">size_on_disk</tt><a class="headerlink" href="#tables.Array.size_on_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this array&#8217;s data in bytes as it is stored on disk.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Array.size_in_memory">
+<tt class="descclassname">Array.</tt><tt class="descname">size_in_memory</tt><a class="headerlink" href="#tables.Array.size_in_memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this array&#8217;s data in bytes when it is fully loaded into memory.
+Since arrays do not support compression or chunking, this will always
+equal size_on_disk.</p>
 </dd></dl>
 
 </div>
@@ -4143,8 +4182,30 @@ NumPy-style point and boolean selections are supported as well.</p>
 chunked layout and, as a consequence, it supports compression.
 You can use datasets of this class to easily save or load arrays to or
 from disk, with compression support included.</p>
+<p>CArray includes all the instance variables and methods of Array.  Only those
+with different behavior are mentioned here.</p>
 </dd></dl>
 
+<div class="section" id="carray-instance-variables">
+<span id="carrayclassinstancevariables"></span><h3>CArray instance variables<a class="headerlink" href="#carray-instance-variables" title="Permalink to this headline">¶</a></h3>
+<dl class="attribute">
+<dt id="tables.CArray.size_on_disk">
+<tt class="descclassname">CArray.</tt><tt class="descname">size_on_disk</tt><a class="headerlink" href="#tables.CArray.size_on_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this carray&#8217;s data in bytes as it is stored on disk.  If the data
+is compressed, this shows the compressed size.  In the case of uncompressed,
+chunked data, this may be slightly larger than the amount of data, due to
+partially filled chunks.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.CArray.size_in_memory">
+<tt class="descclassname">CArray.</tt><tt class="descname">size_in_memory</tt><a class="headerlink" href="#tables.CArray.size_in_memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this carray&#8217;s data in bytes when it is fully loaded into memory.
+This may be used in combination with size_on_disk to calculate the
+compression ratio of the data.</p>
+</dd></dl>
+
+</div>
 <div class="section" id="examples-of-use">
 <h3>Examples of use<a class="headerlink" href="#examples-of-use" title="Permalink to this headline">¶</a></h3>
 <p>See below a small example of the use of the
@@ -4301,6 +4362,41 @@ list, not to the list itself.</p>
 <dt id="tables.VLArray.nrow">
 <tt class="descclassname">VLArray.</tt><tt class="descname">nrow</tt><a class="headerlink" href="#tables.VLArray.nrow" title="Permalink to this definition">¶</a></dt>
 <dd><p>On iterators, this is the index of the current row.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.VLArray.extdim">
+<tt class="descclassname">VLArray.</tt><tt class="descname">extdim</tt><a class="headerlink" href="#tables.VLArray.extdim" title="Permalink to this definition">¶</a></dt>
+<dd><p>The index of the enlargeable dimension (always 0 for vlarrays).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.VLArray.nrows">
+<tt class="descclassname">VLArray.</tt><tt class="descname">nrows</tt><a class="headerlink" href="#tables.VLArray.nrows" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current number of rows in the array.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.VLArray.size_on_disk">
+<tt class="descclassname">VLArray.</tt><tt class="descname">size_on_disk</tt><a class="headerlink" href="#tables.VLArray.size_on_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The HDF5 library does not include a function to determine size_on_disk for
+variable-length arrays.  Accessing this attribute will return a
+NotImplementedError.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.VLArray.size_in_memory">
+<tt class="descclassname">VLArray.</tt><tt class="descname">size_in_memory</tt><a class="headerlink" href="#tables.VLArray.size_in_memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this array&#8217;s data in bytes when it is fully loaded into memory.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When data is stored in a VLArray using the ObjectAtom type, it is
+first serialized using cPickle, and then converted to a NumPy array
+suitable for storage in an HDF5 file.  This attribute will return the
+size of that NumPy representation.  If you wish to know the size of the
+Python objects after they are loaded from disk, you can use this
+<a class="reference external" href="http://code.activestate.com/recipes/577504/">ActiveState recipe</a>.</p>
+</div>
 </dd></dl>
 
 </div>
@@ -4660,23 +4756,9 @@ pointed object.</p>
 <dt id="tables.ExternalLink">
 <em class="property">class </em><tt class="descclassname">tables.</tt><tt class="descname">ExternalLink</tt><a class="headerlink" href="#tables.ExternalLink" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents an external link.</p>
-<p>An external link is a reference to a node
-in <em>another</em> file.  Getting access to the pointed
-node (this action is called <em>dereferrencing</em>) is
-done via the __call__ special method (see
-below).</p>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">External links are only supported when PyTables is compiled
-against HDF5 1.8.x series.  When using PyTables with HDF5 1.6.x,
-the <em>parent</em> group containing external link
-objects will be mapped to an Unknown instance
-(see <a class="reference internal" href="#unknownclassdescr"><em>The Unknown class</em></a>) and you won&#8217;t be able to access <em>any</em> node
-hanging of this parent group.  It follows that if the parent group
-containing the external link is the root group, you won&#8217;t be able
-to read <em>any</em> information contained in the file
-when using HDF5 1.6.x.</p>
-</div>
+<p>An external link is a reference to a node in <em>another</em> file.
+Getting access to the pointed node (this action is called
+<em>dereferrencing</em>) is done via the __call__ special method (see below).</p>
 </dd></dl>
 
 <div class="section" id="externallink-instance-variables">
@@ -5032,6 +5114,14 @@ are kept internally as NumPy objects.</p>
 <dt id="tables.Atom.kind">
 <tt class="descclassname">Atom.</tt><tt class="descname">kind</tt><a class="headerlink" href="#tables.Atom.kind" title="Permalink to this definition">¶</a></dt>
 <dd><p>The PyTables kind of the atom (a string).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Atom.ndim">
+<tt class="descclassname">Atom.</tt><tt class="descname">ndim</tt><a class="headerlink" href="#tables.Atom.ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of dimensions of the atom.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.4.</span></p>
 </dd></dl>
 
 <dl class="attribute">
@@ -5810,6 +5900,24 @@ own descriptive object.</p>
 
 </div>
 </div>
+<div class="section" id="description-helper-functions">
+<h3>Description helper functions<a class="headerlink" href="#description-helper-functions" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="tables.tables.description.descr_from_dtype">
+<tt class="descclassname">tables.description.</tt><tt class="descname">descr_from_dtype</tt><big>(</big><em>dtype_</em><big>)</big><a class="headerlink" href="#tables.tables.description.descr_from_dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a description instance and byteorder from a (nested) NumPy dtype.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tables.tables.description.dtype_from_descr">
+<tt class="descclassname">tables.description.</tt><tt class="descname">dtype_from_descr</tt><big>(</big><em>descr</em>, <em>byteorder=None</em><big>)</big><a class="headerlink" href="#tables.tables.description.dtype_from_descr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a (nested) NumPy dtype from a description instance and byteorder.</p>
+<p>The description parameter can be a <a class="reference internal" href="#tables.Description" title="tables.Description"><tt class="xref py py-class docutils literal"><span class="pre">Description</span></tt></a> or
+<a class="reference internal" href="#tables.IsDescription" title="tables.IsDescription"><tt class="xref py py-class docutils literal"><span class="pre">IsDescription</span></tt></a> instance, any sub-class of <a class="reference internal" href="#tables.IsDescription" title="tables.IsDescription"><tt class="xref py py-class docutils literal"><span class="pre">IsDescription</span></tt></a>
+or a dictionary.</p>
+</dd></dl>
+
+</div>
 </div>
 <div class="section" id="helper-classes">
 <h2>Helper classes<a class="headerlink" href="#helper-classes" title="Permalink to this headline">¶</a></h2>
@@ -6238,7 +6346,7 @@ containing array-like objects.  With it, you can evaluate expressions
 (like &#8220;3*a+4*b&#8221;) that operate on arbitrary large
 arrays while optimizing the resources required to perform them
 (basically main memory and CPU cache memory).  It is similar to the
-Numexpr package (see ), but in addition
+Numexpr package (see <a class="reference internal" href="bibliography.html#numexpr"><em>[NUMEXPR]</em></a>), but in addition
 to NumPy objects, it also accepts disk-based homogeneous arrays, like
 the Array, CArray, EArray and Column PyTables objects.</p>
 <p>All the internal computations are performed via the Numexpr
@@ -6488,6 +6596,208 @@ examples of use see the <a class="reference internal" href="#tables.Expr.__init_
 
 </div>
 </div>
+<div class="section" id="exceptions-module">
+<span id="exceptionsdescr"></span><h2>Exceptions module<a class="headerlink" href="#exceptions-module" title="Permalink to this headline">¶</a></h2>
+<p>In the <tt class="xref py py-mod docutils literal"><span class="pre">exceptions</span></tt> module exceptions and warnings that are specific
+to PyTables are declared.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">HDF5ExtError:</th><td class="field-body"><p class="first">A low level HDF5 operation failed.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">ClosedNodeError:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first">The operation can not be completed because the node is closed.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">ClosedFileError:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first">The operation can not be completed because the hosting file is
+closed.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">FileModeError:</th><td class="field-body"><p class="first">The operation can not be carried out because the mode in which the
+hosting file is opened is not adequate.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">NodeError:</th><td class="field-body"><p class="first">Invalid hierarchy manipulation operation requested.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">NoSuchNodeError:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first">An operation was requested on a node that does not exist.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">UndoRedoError:</th><td class="field-body"><p class="first">Problems with doing/redoing actions with Undo/Redo feature.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">UndoRedoWarning:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first">Issued when an action not supporting undo/redo is run.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">NaturalNameWarning:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first">Issued when a non-pythonic name is given for a node.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">PerformanceWarning:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first">Warning for operations which may cause a performance drop.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">FlavorError:</th><td class="field-body"><p class="first">Unsupported or unavailable flavor or flavor conversion.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">FlavorWarning:</th><td class="field-body"><p class="first">Unsupported or unavailable flavor conversion.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">FiltersWarning:</th><td class="field-body"><p class="first">Unavailable filters.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">OldIndexWarning:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first">Unsupported index format.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">DataTypeWarning:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first">Unsupported data type.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Incompat16Warning:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first">Format incompatible with HDF5 1.6.x series.</p>
+<p class="last deprecated">
+<span class="versionmodified">Deprecated since version 2.4.</span></p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="the-hdf5exterror-exception">
+<h3>The HDF5ExtError exception<a class="headerlink" href="#the-hdf5exterror-exception" title="Permalink to this headline">¶</a></h3>
+<dl class="exception">
+<dt id="tables.exceptions.HDF5ExtError">
+<em class="property">exception </em><tt class="descclassname">exceptions.</tt><tt class="descname">HDF5ExtError</tt><big>(</big><em>RuntimeError</em><big>)</big><a class="headerlink" href="#tables.exceptions.HDF5ExtError" title="Permalink to this definition">¶</a></dt>
+<dd><p>A low level HDF5 operation failed.</p>
+<p>This exception is raised the low level PyTables components used for
+accessing HDF5 files.  It usually signals that something is not
+going well in the HDF5 library or even at the Input/Output level.</p>
+<p>Errors in the HDF5 C library may be accompanied by an extensive
+HDF5 back trace on standard error (see also
+<a class="reference internal" href="#tables.silenceHDF5Messages" title="tables.silenceHDF5Messages"><tt class="xref py py-func docutils literal"><span class="pre">tables.silenceHDF5Messages()</span></tt></a>).</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 2.4.</span></p>
+</dd></dl>
+
+<div class="section" id="hdf5exterror-class-variables">
+<h4>HDF5ExtError class variables<a class="headerlink" href="#hdf5exterror-class-variables" title="Permalink to this headline">¶</a></h4>
+<dl class="attribute">
+<dt id="tables.HDF5ExtError.DEFAULT_H5_BACKTRACE_POLICY">
+<tt class="descclassname">HDF5ExtError.</tt><tt class="descname">DEFAULT_H5_BACKTRACE_POLICY</tt><a class="headerlink" href="#tables.HDF5ExtError.DEFAULT_H5_BACKTRACE_POLICY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default policy for HDF5 backtrace handling:</p>
+<ul class="simple">
+<li>if set to False the HDF5 back trace is ignored and the
+<a class="reference internal" href="#tables.HDF5ExtError.h5backtrace" title="tables.HDF5ExtError.h5backtrace"><tt class="xref py py-attr docutils literal"><span class="pre">HDF5ExtError.h5backtrace</span></tt></a> attribute is set to None</li>
+<li>if set to True the back trace is retrieved from the HDF5
+library and stored in the <a class="reference internal" href="#tables.HDF5ExtError.h5backtrace" title="tables.HDF5ExtError.h5backtrace"><tt class="xref py py-attr docutils literal"><span class="pre">HDF5ExtError.h5backtrace</span></tt></a>
+attribute as a list of tuples</li>
+<li>if set to &#8220;VERBOSE&#8221; (default) the HDF5 back trace is
+stored in the <a class="reference internal" href="#tables.HDF5ExtError.h5backtrace" title="tables.HDF5ExtError.h5backtrace"><tt class="xref py py-attr docutils literal"><span class="pre">HDF5ExtError.h5backtrace</span></tt></a> attribute
+and also included in the string representation of the
+exception</li>
+</ul>
+<p>This parameter can be set using the
+<span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">PT_DEFAULT_H5_BACKTRACE_POLICY</span></tt> environment variable.
+Allowed values are &#8220;IGNORE&#8221; (or &#8220;FALSE&#8221;), &#8220;SAVE&#8221; (or &#8220;TRUE&#8221;) and
+&#8220;VERBOSE&#8221; to set the policy to False, True and &#8220;VERBOSE&#8221;
+respectively.  The special value &#8220;DEFAULT&#8221; can be used to reset
+the policy to the default value</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.4.</span></p>
+</dd></dl>
+
+</div>
+<div class="section" id="hdf5exterror-instance-variables">
+<h4>HDF5ExtError instance variables<a class="headerlink" href="#hdf5exterror-instance-variables" title="Permalink to this headline">¶</a></h4>
+<dl class="attribute">
+<dt id="tables.HDF5ExtError.h5backtrace">
+<tt class="descclassname">HDF5ExtError.</tt><tt class="descname">h5backtrace</tt><a class="headerlink" href="#tables.HDF5ExtError.h5backtrace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains the HDF5 back trace as a (possibly empty) list of
+tuples.  Each tuple has the following format:</p>
+<div class="highlight-python"><pre>(filename, line number, function name, text)</pre>
+</div>
+<p>Depending on the value of the <em>h5bt</em> parameter passed to the
+initializer the h5backtrace attribute can be set to None.
+This means that the HDF5 back trace has been simply ignored
+(not retrieved from the HDF5 C library error stack) or that
+there has been an error (silently ignored) during the HDF5 back
+trace retrieval.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.4.</span></p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><tt class="xref py py-func docutils literal"><span class="pre">traceback.format_list()</span></tt></p>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="hdf5exterror-special-methods">
+<h4>HDF5ExtError special methods<a class="headerlink" href="#hdf5exterror-special-methods" title="Permalink to this headline">¶</a></h4>
+<dl class="method">
+<dt id="tables.HDF5ExtError.__init__">
+<tt class="descclassname">HDF5ExtError.</tt><tt class="descname">__init__</tt><big>(</big><em>message</em>, <em>h5bt=None</em><big>)</big><a class="headerlink" href="#tables.HDF5ExtError.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer parameters:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>message</strong> &#8211; error message</li>
+<li><strong>h5bt</strong> &#8211; <p>This parameter (keyword only) controls the HDF5 back trace
+handling:</p>
+<ul>
+<li>if set to False the HDF5 back trace is ignored and the
+<a class="reference internal" href="#tables.HDF5ExtError.h5backtrace" title="tables.HDF5ExtError.h5backtrace"><tt class="xref py py-attr docutils literal"><span class="pre">HDF5ExtError.h5backtrace</span></tt></a> attribute is set to None</li>
+<li>if set to True the back trace is retrieved from the HDF5
+library and stored in the <a class="reference internal" href="#tables.HDF5ExtError.h5backtrace" title="tables.HDF5ExtError.h5backtrace"><tt class="xref py py-attr docutils literal"><span class="pre">HDF5ExtError.h5backtrace</span></tt></a>
+attribute as a list of tuples</li>
+<li>if set to &#8220;VERBOSE&#8221; (default) the HDF5 back trace is
+stored in the <a class="reference internal" href="#tables.HDF5ExtError.h5backtrace" title="tables.HDF5ExtError.h5backtrace"><tt class="xref py py-attr docutils literal"><span class="pre">HDF5ExtError.h5backtrace</span></tt></a> attribute
+and also included in the string representation of the
+exception</li>
+<li>if not set (or set to None) the default policy is used
+(see <a class="reference internal" href="#tables.HDF5ExtError.DEFAULT_H5_BACKTRACE_POLICY" title="tables.HDF5ExtError.DEFAULT_H5_BACKTRACE_POLICY"><tt class="xref py py-attr docutils literal"><span class="pre">HDF5ExtError.DEFAULT_H5_BACKTRACE_POLICY</span></tt></a>)</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Keyword arguments different from &#8216;h5bt&#8217; are ignored.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 2.4.</span></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.HDF5ExtError.__str__">
+<tt class="descclassname">HDF5ExtError.</tt><tt class="descname">__str__</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.HDF5ExtError.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a sting representation of the exception.</p>
+<p>The actual result depends on policy set in the initializer
+<a class="reference internal" href="#tables.HDF5ExtError.__init__" title="tables.HDF5ExtError.__init__"><tt class="xref py py-meth docutils literal"><span class="pre">HDF5ExtError.__init__()</span></tt></a>.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.4.</span></p>
+</dd></dl>
+
+</div>
+<div class="section" id="hdf5exterror-methods">
+<h4>HDF5ExtError methods<a class="headerlink" href="#hdf5exterror-methods" title="Permalink to this headline">¶</a></h4>
+<dl class="method">
+<dt id="tables.HDF5ExtError.format_h5_backtrace">
+<tt class="descclassname">HDF5ExtError.</tt><tt class="descname">format_h5_backtrace</tt><big>(</big><em>backtrace=None</em><big>)</big><a class="headerlink" href="#tables.HDF5ExtError.format_h5_backtrace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the HDF5 trace back represented as a list of tuples
+(see <a class="reference internal" href="#tables.HDF5ExtError.h5backtrace" title="tables.HDF5ExtError.h5backtrace"><tt class="xref py py-attr docutils literal"><span class="pre">HDF5ExtError.h5backtrace</span></tt></a>) into string.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.4.</span></p>
+</dd></dl>
+
+</div>
+</div>
+</div>
 </div>
 
 
@@ -6572,6 +6882,7 @@ examples of use see the <a class="reference internal" href="#tables.Expr.__init_
 </ul>
 </li>
 <li><a class="reference internal" href="#the-carray-class">The CArray class</a><ul>
+<li><a class="reference internal" href="#carray-instance-variables">CArray instance variables</a></li>
 <li><a class="reference internal" href="#examples-of-use">Examples of use</a></li>
 </ul>
 </li>
@@ -6635,6 +6946,7 @@ examples of use see the <a class="reference internal" href="#tables.Expr.__init_
 <li><a class="reference internal" href="#isdescription-class-variables">IsDescription class variables</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#description-helper-functions">Description helper functions</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#helper-classes">Helper classes</a><ul>
@@ -6660,6 +6972,16 @@ examples of use see the <a class="reference internal" href="#tables.Expr.__init_
 <li><a class="reference internal" href="#expr-special-tuning-variables-for-input-output">Expr special tuning variables for input/output</a></li>
 <li><a class="reference internal" href="#expr-methods">Expr methods</a></li>
 <li><a class="reference internal" href="#expr-special-methods">Expr special methods</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exceptions-module">Exceptions module</a><ul>
+<li><a class="reference internal" href="#the-hdf5exterror-exception">The HDF5ExtError exception</a><ul>
+<li><a class="reference internal" href="#hdf5exterror-class-variables">HDF5ExtError class variables</a></li>
+<li><a class="reference internal" href="#hdf5exterror-instance-variables">HDF5ExtError instance variables</a></li>
+<li><a class="reference internal" href="#hdf5exterror-special-methods">HDF5ExtError special methods</a></li>
+<li><a class="reference internal" href="#hdf5exterror-methods">HDF5ExtError methods</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -6706,13 +7028,13 @@ examples of use see the <a class="reference internal" href="#tables.Expr.__init_
         <li class="right" >
           <a href="tutorials.html" title="Tutorials"
              >previous</a> |</li>
-        <li><a href="../index.html">PyTables 2.3.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">PyTables 2.4.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >PyTables User&#8217;s Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2011, The PyTables Governance Team.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.
+        &copy; Copyright 2011-2012, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>
