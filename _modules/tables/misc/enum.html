@@ -1,0 +1,588 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.misc.enum &mdash; PyTables 2.4.0b1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.4.0b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 2.4.0b1 documentation" href="../../../index.html" />
+    <link rel="up" title="tables" href="../../tables.html" /> 
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../../index.html">PyTables 2.4.0b1 documentation</a> &raquo;</li>
+
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../tables.html" accesskey="U">tables</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tables.misc.enum</h1><div class="highlight"><pre>
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: May 4, 2005</span>
+<span class="c"># Author:  Ivan Vilata i Balaguer - reverse:net.selidor@ivan</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Implementation of enumerated types.</span>
+
+<span class="sd">This module provides the `Enum` class, which can be used to construct</span>
+<span class="sd">enumerated types.  Those types are defined by providing an *exhaustive</span>
+<span class="sd">set or list* of possible, named values for a variable of that type.</span>
+<span class="sd">Enumerated variables of the same type are usually compared between them</span>
+<span class="sd">for equality and sometimes for order, but are not usually operated upon.</span>
+
+<span class="sd">Enumerated values have an associated *name* and *concrete value*.  Every</span>
+<span class="sd">name is unique and so are concrete values.  An enumerated variable</span>
+<span class="sd">always takes the concrete value, not its name.  Usually, the concrete</span>
+<span class="sd">value is not used directly, and frequently it is entirely irrelevant.</span>
+<span class="sd">For the same reason, an enumerated variable is not usually compared with</span>
+<span class="sd">concrete values out of its enumerated type.  For that kind of use,</span>
+<span class="sd">standard variables and constants are more adequate.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;reStructuredText&#39;</span>
+<span class="sd">&quot;&quot;&quot;The format of documentation strings in this module.&quot;&quot;&quot;</span>
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&#39;$Revision$&#39;</span>
+<span class="sd">&quot;&quot;&quot;Repository version of this file.&quot;&quot;&quot;</span>
+
+
+
+<div class="viewcode-block" id="Enum"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum">[docs]</a><span class="k">class</span> <span class="nc">Enum</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enumerated type.</span>
+
+<span class="sd">    Each instance of this class represents an enumerated type. The</span>
+<span class="sd">    values of the type must be declared</span>
+<span class="sd">    *exhaustively* and named with</span>
+<span class="sd">    *strings*, and they might be given explicit</span>
+<span class="sd">    concrete values, though this is not compulsory. Once the type is</span>
+<span class="sd">    defined, it can not be modified.</span>
+
+<span class="sd">    There are three ways of defining an enumerated type. Each one</span>
+<span class="sd">    of them corresponds to the type of the only argument in the</span>
+<span class="sd">    constructor of Enum:</span>
+
+<span class="sd">    - *Sequence of names*: each enumerated</span>
+<span class="sd">      value is named using a string, and its order is determined by</span>
+<span class="sd">      its position in the sequence; the concrete value is assigned</span>
+<span class="sd">      automatically::</span>
+
+<span class="sd">          &gt;&gt;&gt; boolEnum = Enum([&#39;True&#39;, &#39;False&#39;])</span>
+
+<span class="sd">    - *Mapping of names*: each enumerated</span>
+<span class="sd">      value is named by a string and given an explicit concrete value.</span>
+<span class="sd">      All of the concrete values must be different, or a</span>
+<span class="sd">      ValueError will be raised::</span>
+
+<span class="sd">          &gt;&gt;&gt; priority = Enum({&#39;red&#39;: 20, &#39;orange&#39;: 10, &#39;green&#39;: 0})</span>
+<span class="sd">          &gt;&gt;&gt; colors = Enum({&#39;red&#39;: 1, &#39;blue&#39;: 1})</span>
+<span class="sd">          Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">          ValueError: enumerated values contain duplicate concrete values: 1</span>
+
+<span class="sd">    - *Enumerated type*: in that case, a copy</span>
+<span class="sd">      of the original enumerated type is created. Both enumerated</span>
+<span class="sd">      types are considered equal::</span>
+
+<span class="sd">          &gt;&gt;&gt; prio2 = Enum(priority)</span>
+<span class="sd">          &gt;&gt;&gt; priority == prio2</span>
+<span class="sd">          True</span>
+
+<span class="sd">    Please note that names starting with _ are</span>
+<span class="sd">    not allowed, since they are reserved for internal usage::</span>
+
+<span class="sd">        &gt;&gt;&gt; prio2 = Enum([&#39;_xx&#39;])</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">        ValueError: name of enumerated value can not start with ``_``: &#39;_xx&#39;</span>
+
+<span class="sd">    The concrete value of an enumerated value is obtained by</span>
+<span class="sd">    getting its name as an attribute of the Enum</span>
+<span class="sd">    instance (see __getattr__()) or as an item (see</span>
+<span class="sd">    __getitem__()). This allows comparisons between</span>
+<span class="sd">    enumerated values and assigning them to ordinary Python</span>
+<span class="sd">    variables::</span>
+
+<span class="sd">        &gt;&gt;&gt; redv = priority.red</span>
+<span class="sd">        &gt;&gt;&gt; redv == priority[&#39;red&#39;]</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; redv &gt; priority.green</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; priority.red == priority.orange</span>
+<span class="sd">        False</span>
+
+<span class="sd">    The name of the enumerated value corresponding to a concrete</span>
+<span class="sd">    value can also be obtained by using the</span>
+<span class="sd">    __call__() method of the enumerated type. In this</span>
+<span class="sd">    way you get the symbolic name to use it later with</span>
+<span class="sd">    __getitem__()::</span>
+
+<span class="sd">        &gt;&gt;&gt; priority(redv)</span>
+<span class="sd">        &#39;red&#39;</span>
+<span class="sd">        &gt;&gt;&gt; priority.red == priority[priority(priority.red)]</span>
+<span class="sd">        True</span>
+
+<span class="sd">    (If you ask, the __getitem__() method is</span>
+<span class="sd">    not used for this purpose to avoid ambiguity in the case of using</span>
+<span class="sd">    strings as concrete values.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enum</span><span class="p">):</span>
+        <span class="n">mydict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
+
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&#39;_names&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&#39;_values&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enum</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enum</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">enum</span><span class="p">):</span>  <span class="c"># values become 0, 1, 2...</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_checkAndSetPair</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enum</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">enum</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_checkAndSetPair</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enum</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">enum</span><span class="o">.</span><span class="n">_names</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_checkAndSetPair</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">enumerations can only be created from </span><span class="se">\</span>
+<span class="s">sequences, mappings and other enumerations&quot;&quot;&quot;</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_checkAndSetPair</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check validity of enumerated value and insert it into type.&quot;&quot;&quot;</span>
+
+        <span class="n">names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;name of enumerated value is not a string: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;name of enumerated value can not start with ``_``: </span><span class="si">%r</span><span class="s">&quot;</span>
+                <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        <span class="c"># This check is only necessary with a sequence base object.</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;enumerated values contain duplicate names: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        <span class="c"># This check is only necessary with a mapping base object.</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;enumerated values contain duplicate concrete values: </span><span class="si">%r</span><span class="s">&quot;</span>
+                <span class="o">%</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="n">names</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">values</span><span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+
+<div class="viewcode-block" id="Enum.__getitem__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the concrete value of the enumerated value with that name.</span>
+
+<span class="sd">        The name of the enumerated value must be a string. If there is no value</span>
+<span class="sd">        with that name in the enumeration, a KeyError is raised.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        Let ``enum`` be an enumerated type defined as:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum = Enum({&#39;T0&#39;: 0, &#39;T1&#39;: 2, &#39;T2&#39;: 5})</span>
+
+<span class="sd">        then:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum[&#39;T1&#39;]</span>
+<span class="sd">        2</span>
+<span class="sd">        &gt;&gt;&gt; enum[&#39;foo&#39;]</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        KeyError: &quot;no enumerated value with that name: &#39;foo&#39;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s">&quot;no enumerated value with that name: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,))</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__setitem__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__setitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This operation is forbidden.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;operation not allowed&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__delitem__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__delitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This operation is forbidden.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;operation not allowed&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__getattr__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__getattr__">[docs]</a>    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the concrete value of the enumerated value with that name.</span>
+
+<span class="sd">        The name of the enumerated value must be a string. If there is no value</span>
+<span class="sd">        with that name in the enumeration, an AttributeError is raised.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Let ``enum`` be an enumerated type defined as:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum = Enum({&#39;T0&#39;: 0, &#39;T1&#39;: 2, &#39;T2&#39;: 5})</span>
+
+<span class="sd">        then:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum.T1</span>
+<span class="sd">        2</span>
+<span class="sd">        &gt;&gt;&gt; enum.foo</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        AttributeError: no enumerated value with that name: &#39;foo&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="n">ke</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="o">*</span><span class="n">ke</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__setattr__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__setattr__">[docs]</a>    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This operation is forbidden.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&quot;operation not allowed&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__delattr__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__delattr__">[docs]</a>    <span class="k">def</span> <span class="nf">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This operation is forbidden.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&quot;operation not allowed&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__contains__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__contains__">[docs]</a>    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Is there an enumerated value with that name in the type?</span>
+
+<span class="sd">        If the enumerated type has an enumerated value with that name, True is</span>
+<span class="sd">        returned.  Otherwise, False is returned. The name must be a string.</span>
+
+<span class="sd">        This method does *not* check for concrete values matching a value in an</span>
+<span class="sd">        enumerated type. For that, please use the :meth:`Enum.__call__` method.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Let ``enum`` be an enumerated type defined as:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum = Enum({&#39;T0&#39;: 0, &#39;T1&#39;: 2, &#39;T2&#39;: 5})</span>
+
+<span class="sd">        then:</span>
+
+<span class="sd">        &gt;&gt;&gt; &#39;T1&#39; in enum</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; &#39;foo&#39; in enum</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; 0 in enum</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        TypeError: name of enumerated value is not a string: 0</span>
+<span class="sd">        &gt;&gt;&gt; enum.T1 in enum  # Be careful with this!</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        TypeError: name of enumerated value is not a string: 2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;name of enumerated value is not a string: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,))</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__call__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">*</span><span class="n">default</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of the enumerated value with that concrete value.</span>
+
+<span class="sd">        If there is no value with that concrete value in the enumeration and a</span>
+<span class="sd">        second argument is given as a default, this is returned. Else, a</span>
+<span class="sd">        ValueError is raised.</span>
+
+<span class="sd">        This method can be used for checking that a concrete value belongs to</span>
+<span class="sd">        the set of concrete values in an enumerated type.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Let ``enum`` be an enumerated type defined as:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum = Enum({&#39;T0&#39;: 0, &#39;T1&#39;: 2, &#39;T2&#39;: 5})</span>
+
+<span class="sd">        then:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum(5)</span>
+<span class="sd">        &#39;T2&#39;</span>
+<span class="sd">        &gt;&gt;&gt; enum(42, None) is None</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; enum(42)</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">          ...</span>
+<span class="sd">        ValueError: no enumerated value with that concrete value: 42</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">default</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">default</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;no enumerated value with that concrete value: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">value</span><span class="p">,))</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__len__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__len__">[docs]</a>    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the number of enumerated values in the enumerated type.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; len(Enum([&#39;e%d&#39; % i for i in range(10)]))</span>
+<span class="sd">        10</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_names</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__iter__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iterate over the enumerated values.</span>
+
+<span class="sd">        Enumerated values are returned as (name, value) pairs *in no particular</span>
+<span class="sd">        order*.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; enumvals = {&#39;red&#39;: 4, &#39;green&#39;: 2, &#39;blue&#39;: 1}</span>
+<span class="sd">        &gt;&gt;&gt; enum = Enum(enumvals)</span>
+<span class="sd">        &gt;&gt;&gt; enumdict = dict([(name, value) for (name, value) in enum])</span>
+<span class="sd">        &gt;&gt;&gt; enumvals == enumdict</span>
+<span class="sd">        True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">name_value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">yield</span> <span class="n">name_value</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__eq__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__eq__">[docs]</a>    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Is the other enumerated type equivalent to this one?</span>
+
+<span class="sd">        Two enumerated types are equivalent if they have exactly the same</span>
+<span class="sd">        enumerated values (i.e. with the same names and concrete values).</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        Let ``enum*`` be enumerated types defined as:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum1 = Enum({&#39;T0&#39;: 0, &#39;T1&#39;: 2})</span>
+<span class="sd">        &gt;&gt;&gt; enum2 = Enum(enum1)</span>
+<span class="sd">        &gt;&gt;&gt; enum3 = Enum({&#39;T1&#39;: 2, &#39;T0&#39;: 0})</span>
+<span class="sd">        &gt;&gt;&gt; enum4 = Enum({&#39;T0&#39;: 0, &#39;T1&#39;: 2, &#39;T2&#39;: 5})</span>
+<span class="sd">        &gt;&gt;&gt; enum5 = Enum({&#39;T0&#39;: 0})</span>
+<span class="sd">        &gt;&gt;&gt; enum6 = Enum({&#39;T0&#39;: 10, &#39;T1&#39;: 20})</span>
+
+<span class="sd">        then:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum1 == enum1</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; enum1 == enum2 == enum3</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; enum1 == enum4</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; enum5 == enum1</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; enum1 == enum6</span>
+<span class="sd">        False</span>
+
+<span class="sd">        Comparing enumerated types with other kinds of objects produces</span>
+<span class="sd">        a false result:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum1 == {&#39;T0&#39;: 0, &#39;T1&#39;: 2}</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; enum1 == [&#39;T0&#39;, &#39;T1&#39;]</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; enum1 == 2</span>
+<span class="sd">        False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_names</span>
+
+</div>
+<div class="viewcode-block" id="Enum.__ne__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__ne__">[docs]</a>    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Is the `other` enumerated type different from this one?</span>
+
+<span class="sd">        Two enumerated types are different if they don&#39;t have exactly</span>
+<span class="sd">        the same enumerated values (i.e. with the same names and</span>
+<span class="sd">        concrete values).</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        Let ``enum*`` be enumerated types defined as:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum1 = Enum({&#39;T0&#39;: 0, &#39;T1&#39;: 2})</span>
+<span class="sd">        &gt;&gt;&gt; enum2 = Enum(enum1)</span>
+<span class="sd">        &gt;&gt;&gt; enum3 = Enum({&#39;T1&#39;: 2, &#39;T0&#39;: 0})</span>
+<span class="sd">        &gt;&gt;&gt; enum4 = Enum({&#39;T0&#39;: 0, &#39;T1&#39;: 2, &#39;T2&#39;: 5})</span>
+<span class="sd">        &gt;&gt;&gt; enum5 = Enum({&#39;T0&#39;: 0})</span>
+<span class="sd">        &gt;&gt;&gt; enum6 = Enum({&#39;T0&#39;: 10, &#39;T1&#39;: 20})</span>
+
+<span class="sd">        then:</span>
+
+<span class="sd">        &gt;&gt;&gt; enum1 != enum1</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; enum1 != enum2 != enum3</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; enum1 != enum4</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; enum5 != enum1</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; enum1 != enum6</span>
+<span class="sd">        True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+
+    <span class="c"># XXX: API incompatible change for PyTables 3 line</span>
+    <span class="c"># Overriding __eq__ blocks inheritance of __hash__ in 3.x</span>
+    <span class="c">#def __hash__(self):</span>
+    <span class="c">#    return hash((self.__class__, tuple(self._names.items())))</span>
+</div>
+<div class="viewcode-block" id="Enum.__repr__"><a class="viewcode-back" href="../../../usersguide/libref.html#tables.misc.enum.Enum.__repr__">[docs]</a>    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the canonical string representation of the enumeration. The</span>
+<span class="sd">        output of this method can be evaluated to give a new enumeration object</span>
+<span class="sd">        that will compare equal to this one.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; repr(Enum({&#39;name&#39;: 10}))</span>
+<span class="sd">        &quot;Enum({&#39;name&#39;: 10})&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="s">&#39;Enum(</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span>
+
+
+</div></div>
+<span class="k">def</span> <span class="nf">_test</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">doctest</span>
+    <span class="k">return</span> <span class="n">doctest</span><span class="o">.</span><span class="n">testmod</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">_test</span><span class="p">()</span>
+
+
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## fill-column: 72</span>
+<span class="c">## End:</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../../index.html">
+          <img class="logo" src="../../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../../index.html">PyTables 2.4.0b1 documentation</a> &raquo;</li>
+
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../tables.html" >tables</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2011-2012, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

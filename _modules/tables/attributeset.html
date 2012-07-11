@@ -1,0 +1,770 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.attributeset &mdash; PyTables 2.4.0b1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.4.0b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 2.4.0b1 documentation" href="../../index.html" />
+    <link rel="up" title="tables" href="../tables.html" /> 
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">PyTables 2.4.0b1 documentation</a> &raquo;</li>
+
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../tables.html" accesskey="U">tables</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tables.attributeset</h1><div class="highlight"><pre>
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: May 26, 2003</span>
+<span class="c"># Author: Francesc Alted - faltet@pytables.com</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Here is defined the AttributeSet class.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">cPickle</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">hdf5Extension</span>
+<span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="n">SizeType</span>
+<span class="kn">from</span> <span class="nn">tables.registry</span> <span class="kn">import</span> <span class="n">classNameDict</span>
+<span class="kn">from</span> <span class="nn">tables.exceptions</span> <span class="kn">import</span> <span class="n">ClosedNodeError</span><span class="p">,</span> <span class="n">PerformanceWarning</span>
+<span class="kn">from</span> <span class="nn">tables.path</span> <span class="kn">import</span> <span class="n">checkNameValidity</span>
+<span class="kn">from</span> <span class="nn">tables.undoredo</span> <span class="kn">import</span> <span class="n">attrToShadow</span>
+<span class="kn">from</span> <span class="nn">tables.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
+
+
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&quot;$Revision$&quot;</span>
+
+<span class="c"># System attributes</span>
+<span class="n">SYS_ATTRS</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;CLASS&quot;</span><span class="p">,</span> <span class="s">&quot;VERSION&quot;</span><span class="p">,</span> <span class="s">&quot;TITLE&quot;</span><span class="p">,</span> <span class="s">&quot;NROWS&quot;</span><span class="p">,</span> <span class="s">&quot;EXTDIM&quot;</span><span class="p">,</span>
+             <span class="s">&quot;ENCODING&quot;</span><span class="p">,</span> <span class="s">&quot;PYTABLES_FORMAT_VERSION&quot;</span><span class="p">,</span>
+             <span class="s">&quot;FLAVOR&quot;</span><span class="p">,</span> <span class="s">&quot;FILTERS&quot;</span><span class="p">,</span> <span class="s">&quot;AUTO_INDEX&quot;</span><span class="p">,</span>
+             <span class="s">&quot;DIRTY&quot;</span><span class="p">,</span> <span class="s">&quot;NODE_TYPE&quot;</span><span class="p">,</span> <span class="s">&quot;NODE_TYPE_VERSION&quot;</span><span class="p">,</span>
+             <span class="s">&quot;PSEUDOATOM&quot;</span><span class="p">]</span>
+<span class="c"># Prefixes of other system attributes</span>
+<span class="n">SYS_ATTRS_PREFIXES</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;FIELD_&quot;</span><span class="p">]</span>
+<span class="c"># RO_ATTRS will be disabled and let the user modify them if they</span>
+<span class="c"># want to. The user is still not allowed to remove or rename</span>
+<span class="c"># system attributes. Francesc Alted 2004-12-19</span>
+<span class="c"># Read-only attributes:</span>
+<span class="c"># RO_ATTRS = [&quot;CLASS&quot;, &quot;FLAVOR&quot;, &quot;VERSION&quot;, &quot;NROWS&quot;, &quot;EXTDIM&quot;,</span>
+<span class="c">#             &quot;PYTABLES_FORMAT_VERSION&quot;, &quot;FILTERS&quot;,</span>
+<span class="c">#             &quot;NODE_TYPE&quot;, &quot;NODE_TYPE_VERSION&quot;]</span>
+<span class="c">#RO_ATTRS = []</span>
+
+<span class="c"># The next attributes are not meant to be copied during a Node copy process</span>
+<span class="n">SYS_ATTRS_NOTTOBECOPIED</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;CLASS&quot;</span><span class="p">,</span> <span class="s">&quot;VERSION&quot;</span><span class="p">,</span> <span class="s">&quot;TITLE&quot;</span><span class="p">,</span> <span class="s">&quot;NROWS&quot;</span><span class="p">,</span> <span class="s">&quot;EXTDIM&quot;</span><span class="p">,</span>
+                           <span class="s">&quot;PYTABLES_FORMAT_VERSION&quot;</span><span class="p">,</span> <span class="s">&quot;FILTERS&quot;</span><span class="p">,</span> <span class="s">&quot;ENCODING&quot;</span><span class="p">]</span>
+<span class="c"># Attributes forced to be copied during node copies</span>
+<span class="n">FORCE_COPY_CLASS</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;CLASS&#39;</span><span class="p">,</span> <span class="s">&#39;VERSION&#39;</span><span class="p">]</span>
+<span class="c"># Regular expression for column default values.</span>
+<span class="n">_field_fill_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;^FIELD_[0-9]+_FILL$&#39;</span><span class="p">)</span>
+<span class="c"># Regular expression for fixing old pickled filters.</span>
+<span class="n">_old_filters_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;\(([ic])tables\.Leaf\n&#39;</span><span class="p">)</span>
+<span class="c"># Fixed version of the previous string.</span>
+<span class="n">_new_filters_sub</span> <span class="o">=</span> <span class="s">r&#39;(\1tables.filters\n&#39;</span>
+
+<span class="k">def</span> <span class="nf">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="s">&quot;Check if a name is a system attribute or not&quot;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">name</span> <span class="ow">in</span> <span class="n">SYS_ATTRS</span> <span class="ow">or</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">SYS_ATTRS_PREFIXES</span><span class="p">])):</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+
+<div class="viewcode-block" id="AttributeSet"><a class="viewcode-back" href="../../usersguide/libref.html#tables.attributeset.AttributeSet">[docs]</a><span class="k">class</span> <span class="nc">AttributeSet</span><span class="p">(</span><span class="n">hdf5Extension</span><span class="o">.</span><span class="n">AttributeSet</span><span class="p">,</span> <span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Container for the HDF5 attributes of a Node (see :ref:`NodeClassDescr`).</span>
+
+<span class="sd">    This class provides methods to create new HDF5 node attributes,</span>
+<span class="sd">    and to get, rename or delete existing ones.</span>
+
+<span class="sd">    Like in Group instances (see :ref:`GroupClassDescr`), AttributeSet</span>
+<span class="sd">    instances make use of the *natural naming* convention, i.e. you can</span>
+<span class="sd">    access the attributes on disk as if they were normal Python</span>
+<span class="sd">    attributes of the AttributeSet instance.</span>
+
+<span class="sd">    This offers the user a very convenient way to access HDF5 node</span>
+<span class="sd">    attributes. However, for this reason and in order not to pollute the</span>
+<span class="sd">    object namespace, one can not assign *normal* attributes to</span>
+<span class="sd">    AttributeSet instances, and their members use names which start by</span>
+<span class="sd">    special prefixes as happens with Group objects.</span>
+
+<span class="sd">    .. rubric:: Notes on native and pickled attributes</span>
+
+<span class="sd">    The values of most basic types are saved as HDF5 native data in the</span>
+<span class="sd">    HDF5 file.  This includes Python bool, int, float, complex and str</span>
+<span class="sd">    (but not long nor unicode) values, as well as their NumPy scalar</span>
+<span class="sd">    versions and homogeneous or *structured* NumPy arrays of them.  When</span>
+<span class="sd">    read, these values are always loaded as NumPy scalar or array</span>
+<span class="sd">    objects, as needed.</span>
+
+<span class="sd">    For that reason, attributes in native HDF5 files will be always</span>
+<span class="sd">    mapped into NumPy objects.  Specifically, a multidimensional</span>
+<span class="sd">    attribute will be mapped into a multidimensional ndarray and a</span>
+<span class="sd">    scalar will be mapped into a NumPy scalar object (for example, a</span>
+<span class="sd">    scalar H5T_NATIVE_LLONG will be read and returned as a numpy.int64</span>
+<span class="sd">    scalar).</span>
+
+<span class="sd">    However, other kinds of values are serialized using cPickle, so you</span>
+<span class="sd">    only will be able to correctly retrieve them using a Python-aware</span>
+<span class="sd">    HDF5 library.  Thus, if you want to save Python scalar values and</span>
+<span class="sd">    make sure you are able to read them with generic HDF5 tools, you</span>
+<span class="sd">    should make use of *scalar or homogeneous/structured array NumPy</span>
+<span class="sd">    objects* (for example, numpy.int64(1) or numpy.array([1, 2, 3],</span>
+<span class="sd">    dtype=&#39;int16&#39;)).</span>
+
+<span class="sd">    One more advice: because of the various potential difficulties in</span>
+<span class="sd">    restoring a Python object stored in an attribute, you may end up</span>
+<span class="sd">    getting a cPickle string where a Python object is expected. If this</span>
+<span class="sd">    is the case, you may wish to run cPickle.loads() on that string to</span>
+<span class="sd">    get an idea of where things went wrong, as shown in this example::</span>
+
+<span class="sd">        &gt;&gt;&gt; import os, tempfile</span>
+<span class="sd">        &gt;&gt;&gt; import tables</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; class MyClass(object):</span>
+<span class="sd">        ...   foo = &#39;bar&#39;</span>
+<span class="sd">        ...</span>
+<span class="sd">        &gt;&gt;&gt; myObject = MyClass()  # save object of custom class in HDF5 attr</span>
+<span class="sd">        &gt;&gt;&gt; h5fname = tempfile.mktemp(suffix=&#39;.h5&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; h5f = tables.openFile(h5fname, &#39;w&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; h5f.root._v_attrs.obj = myObject  # store the object</span>
+<span class="sd">        &gt;&gt;&gt; print h5f.root._v_attrs.obj.foo  # retrieve it</span>
+<span class="sd">        bar</span>
+<span class="sd">        &gt;&gt;&gt; h5f.close()</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; del MyClass, myObject  # delete class of object and reopen file</span>
+<span class="sd">        &gt;&gt;&gt; h5f = tables.openFile(h5fname, &#39;r&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; print repr(h5f.root._v_attrs.obj)</span>
+<span class="sd">        &#39;ccopy_reg\\n_reconstructor...</span>
+<span class="sd">        &gt;&gt;&gt; import cPickle  # let&#39;s unpickle that to see what went wrong</span>
+<span class="sd">        &gt;&gt;&gt; cPickle.loads(h5f.root._v_attrs.obj)</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">        AttributeError: &#39;module&#39; object has no attribute &#39;MyClass&#39;</span>
+<span class="sd">        &gt;&gt;&gt; # So the problem was not in the stored object,</span>
+<span class="sd">        ... # but in the *environment* where it was restored.</span>
+<span class="sd">        ... h5f.close()</span>
+<span class="sd">        &gt;&gt;&gt; os.remove(h5fname)</span>
+
+
+<span class="sd">    .. rubric:: Notes on AttributeSet methods</span>
+
+<span class="sd">    Note that this class overrides the __getattr__(), __setattr__() and</span>
+<span class="sd">    __delattr__() special methods.  This allows you to read, assign or</span>
+<span class="sd">    delete attributes on disk by just using the next constructs::</span>
+
+<span class="sd">        leaf.attrs.myattr = &#39;str attr&#39;    # set a string (native support)</span>
+<span class="sd">        leaf.attrs.myattr2 = 3            # set an integer (native support)</span>
+<span class="sd">        leaf.attrs.myattr3 = [3, (1, 2)]  # a generic object (Pickled)</span>
+<span class="sd">        attrib = leaf.attrs.myattr        # get the attribute ``myattr``</span>
+<span class="sd">        del leaf.attrs.myattr             # delete the attribute ``myattr``</span>
+
+<span class="sd">    In addition, the dictionary-like __getitem__(), __setitem__() and</span>
+<span class="sd">    __delitem__() methods are available, so you may write things like</span>
+<span class="sd">    this::</span>
+
+<span class="sd">        for name in :attr:`Node._v_attrs`._f_list():</span>
+<span class="sd">            print &quot;name: %s, value: %s&quot; % (name, :attr:`Node._v_attrs`[name])</span>
+
+<span class="sd">    Use whatever idiom you prefer to access the attributes.</span>
+
+<span class="sd">    If an attribute is set on a target node that already has a large</span>
+<span class="sd">    number of attributes, a PerformanceWarning will be issued.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _v_attrnames : str</span>
+<span class="sd">        A list with all attribute names.</span>
+<span class="sd">    _v_attrnamessys : list of strings</span>
+<span class="sd">        A list with system attribute names.</span>
+<span class="sd">    _v_attrnamesuser : list of strings</span>
+<span class="sd">        A list with user attribute names.</span>
+<span class="sd">    _v_unimplemented : list of strings</span>
+<span class="sd">        A list of attribute names with unimplemented native HDF5 types.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_g_getnode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodeFile</span><span class="o">.</span><span class="n">_getNode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__nodePath</span><span class="p">)</span>
+
+    <span class="n">_v_node</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_g_getnode</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+                       <span class="sd">&quot;&quot;&quot;The Node instance (see :ref:`NodeClassDescr`) this</span>
+<span class="sd">                       attribute set is associated with.&quot;&quot;&quot;</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the basic structures to keep the attribute information.</span>
+
+<span class="sd">        Reads all the HDF5 attributes (if any) on disk for the node &quot;node&quot;.</span>
+
+<span class="sd">        node -- The parent node</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Refuse to create an instance of an already closed node</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ClosedNodeError</span><span class="p">(</span><span class="s">&quot;the node for attribute set is closed&quot;</span><span class="p">)</span>
+
+        <span class="n">mydict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_new</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&quot;_v__nodeFile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_file</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&quot;_v__nodePath&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&quot;_v_attrnames&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_listAttr</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="c"># The list of unimplemented attribute names</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&quot;_v_unimplemented&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c"># Get the file version format. This is an optimization</span>
+        <span class="c"># in order to avoid accessing it too much.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">format_version</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">format_version</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">parsed_version</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">format_version</span> <span class="o">==</span> <span class="s">&#39;unknown&#39;</span><span class="p">:</span>
+                <span class="n">parsed_version</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">parsed_version</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">format_version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)))</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&quot;_v__format_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parsed_version</span>
+        <span class="c"># Split the attribute list in system and user lists</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&quot;_v_attrnamessys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&quot;_v_attrnamesuser&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">:</span>
+            <span class="c"># put the attributes on the local dictionary to allow</span>
+            <span class="c"># tab-completion</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__getattr__</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">issysattrname</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+
+        <span class="c"># Sort the attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="AttributeSet._g_updateNodeLocation"><a class="viewcode-back" href="../../usersguide/libref.html#tables.attributeset.AttributeSet._g_updateNodeLocation">[docs]</a>    <span class="k">def</span> <span class="nf">_g_updateNodeLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the location information about the associated `node`.&quot;&quot;&quot;</span>
+
+        <span class="n">myDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
+        <span class="n">myDict</span><span class="p">[</span><span class="s">&#39;_v__nodeFile&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_file</span>
+        <span class="n">myDict</span><span class="p">[</span><span class="s">&#39;_v__nodePath&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="c"># hdf5Extension operations:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_new</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="AttributeSet._f_list"><a class="viewcode-back" href="../../usersguide/libref.html#tables.attributeset.AttributeSet._f_list">[docs]</a>    <span class="k">def</span> <span class="nf">_f_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrset</span><span class="o">=</span><span class="s">&#39;user&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a list of attribute names.</span>
+
+<span class="sd">        The attrset string selects the attribute set to be used.  A</span>
+<span class="sd">        &#39;user&#39; value returns only user attributes (this is the default).</span>
+<span class="sd">        A &#39;sys&#39; value returns only system attributes.  Finally, &#39;all&#39;</span>
+<span class="sd">        returns both system and user attributes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">attrset</span> <span class="o">==</span> <span class="s">&quot;user&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="p">[:]</span>
+        <span class="k">elif</span> <span class="n">attrset</span> <span class="o">==</span> <span class="s">&quot;sys&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="p">[:]</span>
+        <span class="k">elif</span> <span class="n">attrset</span> <span class="o">==</span> <span class="s">&quot;all&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">[:]</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the attribute named &quot;name&quot;.&quot;&quot;&quot;</span>
+
+        <span class="c"># If attribute does not exist, raise AttributeError</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&quot;Attribute &#39;</span><span class="si">%s</span><span class="s">&#39; does not exist in node: &quot;</span>
+                                 <span class="s">&quot;&#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodePath</span><span class="p">))</span>
+
+        <span class="c"># Read the attribute from disk. This is an optimization to read</span>
+        <span class="c"># quickly system attributes that are _string_ values, but it</span>
+        <span class="c"># takes care of other types as well as for example NROWS for</span>
+        <span class="c"># Tables and EXTDIM for EArrays</span>
+        <span class="n">format_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__format_version</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_getAttr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_node</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="c"># Check whether the value is pickled</span>
+        <span class="c"># Pickled values always seems to end with a &quot;.&quot;</span>
+        <span class="n">maybe_pickled</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">generic</span><span class="p">)</span> <span class="ow">and</span>  <span class="c"># NumPy scalar?</span>
+            <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">string_</span> <span class="ow">and</span> <span class="c"># string type?</span>
+            <span class="n">value</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">value</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;.&#39;</span> <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="n">maybe_pickled</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;0&quot;</span><span class="p">,</span> <span class="s">&quot;0.&quot;</span><span class="p">]</span> <span class="p">):</span>
+            <span class="c"># Workaround for a bug in many versions of Python (starting</span>
+            <span class="c"># somewhere after Python 2.6.1).  See ticket #253.</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">elif</span> <span class="p">(</span> <span class="n">maybe_pickled</span> <span class="ow">and</span> <span class="n">_field_fill_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+             <span class="ow">and</span> <span class="n">format_version</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="p">):</span>
+            <span class="c"># This format was used during the first 1.2 releases, just</span>
+            <span class="c"># for string defaults.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="n">cPickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">retval</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c"># signal error avoiding exception</span>
+        <span class="k">elif</span> <span class="n">maybe_pickled</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;FILTERS&#39;</span> <span class="ow">and</span> <span class="n">format_version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="c"># This is a big hack, but we don&#39;t have other way to recognize</span>
+            <span class="c"># pickled filters of PyTables 1.x files.</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">_old_filters_re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">_new_filters_sub</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">cPickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>  <span class="c"># pass unpickling errors through</span>
+        <span class="k">elif</span> <span class="n">maybe_pickled</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="n">cPickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="c">#except cPickle.UnpicklingError:</span>
+            <span class="c"># It seems that cPickle may raise other errors than UnpicklingError</span>
+            <span class="c"># Perhaps it would be better just an &quot;except:&quot; clause?</span>
+            <span class="c">#except (cPickle.UnpicklingError, ImportError):</span>
+            <span class="c"># Definitely (see SF bug #1254636)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="c"># ivb (2005-09-07): It is too hard to tell</span>
+                <span class="c"># whether the unpickling failed</span>
+                <span class="c"># because of the string not being a pickle one at all,</span>
+                <span class="c"># because of a malformed pickle string,</span>
+                <span class="c"># or because of some other problem in object reconstruction,</span>
+                <span class="c"># thus making inconvenient even the issuing of a warning here.</span>
+                <span class="c"># The documentation contains a note on this issue,</span>
+                <span class="c"># explaining how the user can tell where the problem was.</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="c"># Additional check for allowing a workaround for #307</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">retval</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)</span> <span class="ow">and</span> <span class="n">retval</span> <span class="o">==</span> <span class="s">u&#39;&#39;</span><span class="p">:</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">retval</span><span class="p">)[()]</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;FILTERS&#39;</span> <span class="ow">and</span> <span class="n">format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">Filters</span><span class="o">.</span><span class="n">_unpack</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="c"># Put this value in local directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">retval</span>
+        <span class="k">return</span> <span class="n">retval</span>
+
+
+<div class="viewcode-block" id="AttributeSet._g__setattr"><a class="viewcode-back" href="../../usersguide/libref.html#tables.attributeset.AttributeSet._g__setattr">[docs]</a>    <span class="k">def</span> <span class="nf">_g__setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set a PyTables attribute.</span>
+
+<span class="sd">        Sets a (maybe new) PyTables attribute with the specified `name`</span>
+<span class="sd">        and `value`.  If the attribute already exists, it is simply</span>
+<span class="sd">        replaced.</span>
+
+<span class="sd">        It does not log the change.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Save this attribute to disk</span>
+        <span class="c"># (overwriting an existing one if needed)</span>
+        <span class="n">stvalue</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;EXTDIM&quot;</span><span class="p">,</span> <span class="s">&quot;AUTO_INDEX&quot;</span><span class="p">,</span> <span class="s">&quot;DIRTY&quot;</span><span class="p">,</span> <span class="s">&quot;NODE_TYPE_VERSION&quot;</span><span class="p">]:</span>
+                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">stvalue</span><span class="p">[()]</span>
+            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&quot;NROWS&quot;</span><span class="p">:</span>
+                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">stvalue</span><span class="p">[()]</span>
+            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&quot;FILTERS&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">_pack</span><span class="p">()</span>
+                <span class="c"># value will remain as a Filters instance here</span>
+        <span class="c"># Convert value from a Python scalar into a NumPy scalar</span>
+        <span class="c"># (only in case it has not been converted yet)</span>
+        <span class="c"># Fixes ticket #59</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">stvalue</span> <span class="ow">is</span> <span class="n">value</span> <span class="ow">and</span>
+            <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="c"># Additional check for allowing a workaround for #307</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="o">==</span> <span class="s">u&#39;&#39;</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)[()]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">stvalue</span><span class="p">[()]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_setAttr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_node</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">stvalue</span><span class="p">)</span>
+
+        <span class="c"># New attribute or value. Introduce it into the local</span>
+        <span class="c"># directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="c"># Finally, add this attribute to the list if not present</span>
+        <span class="n">attrnames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">attrnames</span><span class="p">:</span>
+            <span class="n">attrnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">attrnames</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                <span class="n">attrnamessys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span>
+                <span class="n">attrnamessys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">attrnamessys</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">attrnamesuser</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamesuser</span>
+                <span class="n">attrnamesuser</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">attrnamesuser</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set a PyTables attribute.</span>
+
+<span class="sd">        Sets a (maybe new) PyTables attribute with the specified `name`</span>
+<span class="sd">        and `value`.  If the attribute already exists, it is simply</span>
+<span class="sd">        replaced.</span>
+
+<span class="sd">        A ``ValueError`` is raised when the name starts with a reserved</span>
+<span class="sd">        prefix or contains a ``/``.  A `NaturalNameWarning` is issued if</span>
+<span class="sd">        the name is not a valid Python identifier.  A</span>
+<span class="sd">        `PerformanceWarning` is issued when the recommended maximum</span>
+<span class="sd">        number of attributes in a node is going to be exceeded.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">nodeFile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodeFile</span>
+        <span class="n">attrnames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span>
+
+        <span class="c"># Check for name validity</span>
+        <span class="n">checkNameValidity</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">nodeFile</span><span class="o">.</span><span class="n">_checkWritable</span><span class="p">()</span>
+
+        <span class="c"># Check if there are too many attributes.</span>
+        <span class="n">maxNodeAttrs</span> <span class="o">=</span> <span class="n">nodeFile</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;MAX_NODE_ATTRS&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attrnames</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">maxNodeAttrs</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">node ``</span><span class="si">%s</span><span class="s">`` is exceeding the recommended maximum number of attributes (</span><span class="si">%d</span><span class="s">);</span><span class="se">\</span>
+<span class="s">be ready to see PyTables asking for *lots* of memory and possibly slow I/O&quot;&quot;&quot;</span>
+                          <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__nodePath</span><span class="p">,</span> <span class="n">maxNodeAttrs</span><span class="p">),</span>
+                          <span class="n">PerformanceWarning</span><span class="p">)</span>
+
+        <span class="n">undoEnabled</span> <span class="o">=</span> <span class="n">nodeFile</span><span class="o">.</span><span class="n">isUndoEnabled</span><span class="p">()</span>
+        <span class="c"># Log old attribute removal (if any).</span>
+        <span class="k">if</span> <span class="n">undoEnabled</span> <span class="ow">and</span> <span class="p">(</span><span class="n">name</span> <span class="ow">in</span> <span class="n">attrnames</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_delAndLog</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="c"># Set the attribute.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g__setattr</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c"># Log new attribute addition.</span>
+        <span class="k">if</span> <span class="n">undoEnabled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_logAdd</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_g_logAdd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodeFile</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s">&#39;ADDATTR&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodePath</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_g_delAndLog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">nodeFile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodeFile</span>
+        <span class="n">nodePathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodePath</span>
+        <span class="c"># Log *before* moving to use the right shadow name.</span>
+        <span class="n">nodeFile</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s">&#39;DELATTR&#39;</span><span class="p">,</span> <span class="n">nodePathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">attrToShadow</span><span class="p">(</span><span class="n">nodeFile</span><span class="p">,</span> <span class="n">nodePathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="AttributeSet._g__delattr"><a class="viewcode-back" href="../../usersguide/libref.html#tables.attributeset.AttributeSet._g__delattr">[docs]</a>    <span class="k">def</span> <span class="nf">_g__delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Delete a PyTables attribute.</span>
+
+<span class="sd">        Deletes the specified existing PyTables attribute.</span>
+
+<span class="sd">        It does not log the change.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Delete the attribute from disk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_node</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="c"># Delete the attribute from local lists</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="c"># Delete the attribute from the local directory</span>
+        <span class="c"># closes (#1049285)</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Delete a PyTables attribute.</span>
+
+<span class="sd">        Deletes the specified existing PyTables attribute from the</span>
+<span class="sd">        attribute set.  If a nonexistent or system attribute is</span>
+<span class="sd">        specified, an ``AttributeError`` is raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">nodeFile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodeFile</span>
+
+        <span class="c"># Check if attribute exists</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s">&quot;Attribute (&#39;</span><span class="si">%s</span><span class="s">&#39;) does not exist in node &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodePath</span><span class="p">))</span>
+
+        <span class="n">nodeFile</span><span class="o">.</span><span class="n">_checkWritable</span><span class="p">()</span>
+
+        <span class="c"># Remove the PyTables attribute or move it to shadow.</span>
+        <span class="k">if</span> <span class="n">nodeFile</span><span class="o">.</span><span class="n">isUndoEnabled</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_delAndLog</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g__delattr</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The dictionary like interface for __getattr__().&quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="c"># Capture the AttributeError an re-raise a KeyError one</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="s">&quot;Attribute (&#39;</span><span class="si">%s</span><span class="s">&#39;) does not exist in node &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodePath</span><span class="p">))</span>
+
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The dictionary like interface for __setattr__().&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The dictionary like interface for __delattr__().&quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__delattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="c"># Capture the AttributeError an re-raise a KeyError one</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="s">&quot;Attribute (&#39;</span><span class="si">%s</span><span class="s">&#39;) does not exist in node &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodePath</span><span class="p">))</span>
+
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Is there an attribute with that name?</span>
+
+<span class="sd">        A true value is returned if the attribute set has an attribute</span>
+<span class="sd">        with the given name, false otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span>
+
+
+<div class="viewcode-block" id="AttributeSet._f_rename"><a class="viewcode-back" href="../../usersguide/libref.html#tables.attributeset.AttributeSet._f_rename">[docs]</a>    <span class="k">def</span> <span class="nf">_f_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">,</span> <span class="n">newattrname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rename an attribute from oldattrname to newattrname.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">oldattrname</span> <span class="o">==</span> <span class="n">newattrname</span><span class="p">:</span>
+            <span class="c"># Do nothing</span>
+            <span class="k">return</span>
+
+        <span class="c"># First, fetch the value of the oldattrname</span>
+        <span class="n">attrvalue</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">)</span>
+
+        <span class="c"># Now, create the new attribute</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newattrname</span><span class="p">,</span> <span class="n">attrvalue</span><span class="p">)</span>
+
+        <span class="c"># Finally, remove the old attribute</span>
+        <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="AttributeSet._g_copy"><a class="viewcode-back" href="../../usersguide/libref.html#tables.attributeset.AttributeSet._g_copy">[docs]</a>    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newSet</span><span class="p">,</span> <span class="n">setAttr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">copyClass</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy set attributes.</span>
+
+<span class="sd">        Copies all user and allowed system PyTables attributes to the</span>
+<span class="sd">        given attribute set, replacing the existing ones.</span>
+
+<span class="sd">        You can specify a *bound* method of the destination set that</span>
+<span class="sd">        will be used to set its attributes.  Else, its `_g__setattr`</span>
+<span class="sd">        method will be used.</span>
+
+<span class="sd">        Changes are logged depending on the chosen setting method.  The</span>
+<span class="sd">        default setting method does not log anything.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">copysysattrs</span> <span class="o">=</span> <span class="n">newSet</span><span class="o">.</span><span class="n">_v__nodeFile</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;PYTABLES_SYS_ATTRS&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">setAttr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">setAttr</span> <span class="o">=</span> <span class="n">newSet</span><span class="o">.</span><span class="n">_g__setattr</span>
+
+        <span class="k">for</span> <span class="n">attrname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="p">:</span>
+            <span class="c"># Do not copy the unimplemented attributes.</span>
+            <span class="k">if</span> <span class="n">attrname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_unimplemented</span><span class="p">:</span>
+                <span class="n">setAttr</span><span class="p">(</span><span class="n">attrname</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">))</span>
+        <span class="c"># Copy the system attributes that we are allowed to.</span>
+        <span class="k">if</span> <span class="n">copysysattrs</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">attrname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">((</span><span class="n">attrname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SYS_ATTRS_NOTTOBECOPIED</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="c"># Do not copy the FIELD_ attributes in tables as this can</span>
+                    <span class="c"># be really *slow* (don&#39;t know exactly the reason).</span>
+                    <span class="c"># See #304.</span>
+                    <span class="ow">not</span> <span class="n">attrname</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;FIELD_&quot;</span><span class="p">)):</span>
+                    <span class="n">setAttr</span><span class="p">(</span><span class="n">attrname</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">))</span>
+            <span class="c"># Copy CLASS and VERSION attributes if requested</span>
+            <span class="k">if</span> <span class="n">copyClass</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">attrname</span> <span class="ow">in</span> <span class="n">FORCE_COPY_CLASS</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">attrname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="p">:</span>
+                        <span class="n">setAttr</span><span class="p">(</span><span class="n">attrname</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="AttributeSet._f_copy"><a class="viewcode-back" href="../../usersguide/libref.html#tables.attributeset.AttributeSet._f_copy">[docs]</a>    <span class="k">def</span> <span class="nf">_f_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy attributes to the where node.</span>
+
+<span class="sd">        Copies all user and certain system attributes to the given where</span>
+<span class="sd">        node (a Node instance - see :ref:`NodeClassDescr`), replacing</span>
+<span class="sd">        the existing ones.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># AttributeSet must be defined in order to define a Node.</span>
+        <span class="c"># However, we need to know Node here.</span>
+        <span class="c"># Using classNameDict avoids a circular import.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">classNameDict</span><span class="p">[</span><span class="s">&#39;Node&#39;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;destination object is not a node: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">where</span><span class="p">,))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">)</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">_g_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># Nothing will be done here, as the existing instance is completely</span>
+        <span class="c"># operative now.</span>
+        <span class="k">pass</span>
+
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The string representation for this object.&quot;&quot;&quot;</span>
+
+        <span class="c"># The pathname</span>
+        <span class="n">pathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodePath</span>
+        <span class="c"># Get this class name</span>
+        <span class="n">classname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="c"># The attribute names</span>
+        <span class="n">attrnumber</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span> <span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span> <span class="p">])</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">._v_attrs (</span><span class="si">%s</span><span class="s">), </span><span class="si">%s</span><span class="s"> attributes&quot;</span> <span class="o">%</span> \
+               <span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="n">attrnumber</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A detailed string representation for this object.&quot;&quot;&quot;</span>
+
+        <span class="c"># print additional info only if there are attributes to show</span>
+        <span class="n">attrnames</span> <span class="o">=</span> <span class="p">[</span> <span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span> <span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attrnames</span><span class="p">):</span>
+            <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> := </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span>  <span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrnames</span> <span class="p">]</span>
+            <span class="n">attrlist</span> <span class="o">=</span> <span class="s">&#39;[</span><span class="si">%s</span><span class="s">]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&#39;,</span><span class="se">\n</span><span class="s">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rep</span><span class="p">))</span>
+
+            <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">:</span><span class="se">\n</span><span class="s">   </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> \
+                   <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">attrlist</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+</div>
+<span class="k">class</span> <span class="nc">NotLoggedAttributeSet</span><span class="p">(</span><span class="n">AttributeSet</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_logAdd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_g_delAndLog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g__delattr</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## fill-column: 72</span>
+<span class="c">## End:</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">PyTables 2.4.0b1 documentation</a> &raquo;</li>
+
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../tables.html" >tables</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2011-2012, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>
