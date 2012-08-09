@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Hints for SQL users &mdash; PyTables 2.4.0 documentation</title>
+    <title>Hints for SQL users &mdash; PyTables 2.4.0+1.dev documentation</title>
     
     <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0',
+        VERSION:     '2.4.0+1.dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 2.4.0 documentation" href="../index.html" />
+    <link rel="top" title="PyTables 2.4.0+1.dev documentation" href="../index.html" />
     <link rel="up" title="PyTables Cookbook" href="index.html" />
     <link rel="next" title="How to integrate PyTables in your application by using py2exe" href="py2exe_howto.html" />
     <link rel="prev" title="PyTables Cookbook" href="index.html" /> 
@@ -46,12 +46,18 @@
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
           <a href="py2exe_howto.html" title="How to integrate PyTables in your application by using py2exe"
              accesskey="N">next</a> &nbsp; &nbsp;</li>
         <li class="right" >
           <a href="index.html" title="PyTables Cookbook"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 2.4.0 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
 
           <li><a href="index.html" accesskey="U">PyTables Cookbook</a> &raquo;</li> 
       </ul>
@@ -65,7 +71,7 @@
           <div class="body">
             
   <div class="section" id="hints-for-sql-users">
-<h1><a class="toc-backref" href="#id16">Hints for SQL users</a><a class="headerlink" href="#hints-for-sql-users" title="Permalink to this headline">¶</a></h1>
+<h1>Hints for SQL users<a class="headerlink" href="#hints-for-sql-users" title="Permalink to this headline">¶</a></h1>
 <p>This page is intended to be <strong>a guide to new PyTables for users who are used
 to writing SQL code</strong> to access their relational databases.
 It will cover the most usual SQL statements.
@@ -82,56 +88,15 @@ this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">tables</span>
 </pre></div>
 </div>
-<div class="contents topic" id="table-of-contents">
-<p class="topic-title first">Table Of Contents</p>
-<ul class="simple">
-<li><a class="reference internal" href="#hints-for-sql-users" id="id16">Hints for SQL users</a><ul>
-<li><a class="reference internal" href="#creating-a-new-database" id="id17">Creating a new database</a><ul>
-<li><a class="reference internal" href="#a-note-on-concurrency-under-pytables" id="id18">A note on concurrency under PyTables</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#creating-a-table" id="id19">Creating a table</a><ul>
-<li><a class="reference internal" href="#table-descriptions" id="id20">Table descriptions</a></li>
-<li><a class="reference internal" href="#column-type-declarations" id="id21">Column type declarations</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#creating-an-index" id="id22">Creating an index</a></li>
-<li><a class="reference internal" href="#altering-a-table" id="id23">Altering a table</a></li>
-<li><a class="reference internal" href="#dropping-a-table" id="id24">Dropping a table</a></li>
-<li><a class="reference internal" href="#inserting-data" id="id25">Inserting data</a><ul>
-<li><a class="reference internal" href="#a-note-on-transactions" id="id26">A note on transactions</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#updating-data" id="id27">Updating data</a></li>
-<li><a class="reference internal" href="#deleting-data" id="id28">Deleting data</a></li>
-<li><a class="reference internal" href="#reading-data" id="id29">Reading data</a><ul>
-<li><a class="reference internal" href="#iterating-over-rows" id="id30">Iterating over rows</a></li>
-<li><a class="reference internal" href="#reading-rows-at-once" id="id31">Reading rows at once</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#selecting-data" id="id32">Selecting data</a><ul>
-<li><a class="reference internal" href="#iterating-over-selected-rows" id="id33">Iterating over selected rows</a></li>
-<li><a class="reference internal" href="#reading-seleted-rows-at-once" id="id34">Reading seleted rows at once</a></li>
-<li><a class="reference internal" href="#getting-the-coordinates-of-selected-rows" id="id35">Getting the coordinates of selected rows</a></li>
-<li><a class="reference internal" href="#a-note-on-table-joins" id="id36">A note on table joins</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#summary-of-row-selection-methods" id="id37">Summary of row selection methods</a></li>
-<li><a class="reference internal" href="#sorting-the-results-of-a-selection" id="id38">Sorting the results of a selection</a></li>
-<li><a class="reference internal" href="#grouping-the-results-of-a-selection" id="id39">Grouping the results of a selection</a></li>
-</ul>
-</li>
-</ul>
-</div>
 <div class="section" id="creating-a-new-database">
-<h2><a class="toc-backref" href="#id17">Creating a new database</a><a class="headerlink" href="#creating-a-new-database" title="Permalink to this headline">¶</a></h2>
+<h2>Creating a new database<a class="headerlink" href="#creating-a-new-database" title="Permalink to this headline">¶</a></h2>
 <p>RDBMs happen to have several syntaxes for creating a database.
 A usual syntax is:</p>
 <div class="highlight-python"><pre>CREATE DATABASE database_name</pre>
 </div>
 <p>In PyTables, each database goes to a different <a class="reference external" href="http://www.hdfgroup.org/HDF5">HDF5</a> <a class="footnote-reference" href="#id6" id="id7">[3]</a> file (much like
 <a class="reference external" href="http://www.sqlite.org">SQLite</a> <a class="footnote-reference" href="#id9" id="id10">[4]</a> or MS Access).
-To create a new <a class="reference external" href="http://www.hdfgroup.org/HDF5">HDF5</a> <a class="footnote-reference" href="#id6" id="id8">[3]</a> file, you use the <a class="reference internal" href="../usersguide/libref.html#tables.openFile" title="tables.openFile"><tt class="xref py py-func docutils literal"><span class="pre">tables.openFile()</span></tt></a> function with
+To create a new <a class="reference external" href="http://www.hdfgroup.org/HDF5">HDF5</a> <a class="footnote-reference" href="#id6" id="id8">[3]</a> file, you use the <a class="reference internal" href="../usersguide/libref/top_level.html#tables.openFile" title="tables.openFile"><tt class="xref py py-func docutils literal"><span class="pre">tables.openFile()</span></tt></a> function with
 the <cite>&#8216;w&#8217;</cite> mode (which deletes the database if it already exists), like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">h5f</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">openFile</span><span class="p">(</span><span class="s">&#39;database_name.h5&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
 </pre></div>
@@ -154,7 +119,7 @@ whether you do or don&#8217;t need to modify the database, respectively.</p>
 <p>You may use several PyTables databases simultaneously in a program, so you
 must be explicit on which database you want to act upon (by using its handle).</p>
 <div class="section" id="a-note-on-concurrency-under-pytables">
-<h3><a class="toc-backref" href="#id18">A note on concurrency under PyTables</a><a class="headerlink" href="#a-note-on-concurrency-under-pytables" title="Permalink to this headline">¶</a></h3>
+<h3>A note on concurrency under PyTables<a class="headerlink" href="#a-note-on-concurrency-under-pytables" title="Permalink to this headline">¶</a></h3>
 <p>Unlike most RDBMs, PyTables is not intended to serve concurrent accesses to a
 database.
 It has no protections whatsoever against corruption for different (or even the
@@ -163,7 +128,7 @@ Opening several handles to the same database in read-only mode is safe, though.<
 </div>
 </div>
 <div class="section" id="creating-a-table">
-<h2><a class="toc-backref" href="#id19">Creating a table</a><a class="headerlink" href="#creating-a-table" title="Permalink to this headline">¶</a></h2>
+<h2>Creating a table<a class="headerlink" href="#creating-a-table" title="Permalink to this headline">¶</a></h2>
 <p>PyTables supports some other <em>datasets</em> besides tables, and they&#8217;re not
 arranged in a flat namespace, but rather into a <em>hierarchicalé one (see an
 introduction to the _ref:`object tree &lt;ObjectTreeSection&gt;`);
@@ -178,7 +143,7 @@ The basic syntax for table creation under SQL is:</p>
 )</pre>
 </div>
 <div class="section" id="table-descriptions">
-<h3><a class="toc-backref" href="#id20">Table descriptions</a><a class="headerlink" href="#table-descriptions" title="Permalink to this headline">¶</a></h3>
+<h3>Table descriptions<a class="headerlink" href="#table-descriptions" title="Permalink to this headline">¶</a></h3>
 <p>In PyTables, one first <em>describes</em> the structure of a table.
 PyTables allows you to <em>reuse a description</em> for creating several tables with
 the same structure, just by using the description object (<cite>description_name</cite>
@@ -193,7 +158,7 @@ This is specially useful for creating temporary tables holding query results.</p
     'column_nameN': colum_typeN
 }</pre>
 </div>
-<p>or a subclass of <a class="reference internal" href="../usersguide/libref.html#tables.IsDescription" title="tables.IsDescription"><tt class="xref py py-class docutils literal"><span class="pre">tables.IsDescription</span></tt></a>:</p>
+<p>or a subclass of <a class="reference internal" href="../usersguide/libref/declarative_classes.html#tables.IsDescription" title="tables.IsDescription"><tt class="xref py py-class docutils literal"><span class="pre">tables.IsDescription</span></tt></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">description_name</span><span class="p">(</span><span class="n">tables</span><span class="o">.</span><span class="n">IsDescription</span><span class="p">):</span>
     <span class="n">column_name1</span> <span class="o">=</span> <span class="n">colum_type1</span>
     <span class="n">column_name2</span> <span class="o">=</span> <span class="n">colum_type2</span>
@@ -212,10 +177,10 @@ It is important to note that PyTables doesn&#8217;t have a concept of primary or
 foreign keys, so relationships between tables are left to the user.</p>
 </div>
 <div class="section" id="column-type-declarations">
-<h3><a class="toc-backref" href="#id21">Column type declarations</a><a class="headerlink" href="#column-type-declarations" title="Permalink to this headline">¶</a></h3>
+<h3>Column type declarations<a class="headerlink" href="#column-type-declarations" title="Permalink to this headline">¶</a></h3>
 <p>PyTables supports lots of types (including nested and multidimensional
 columns).
-Non-nested columns are declared through instances of <a class="reference internal" href="../usersguide/libref.html#tables.Col" title="tables.Col"><tt class="xref py py-class docutils literal"><span class="pre">tables.Col</span></tt></a>
+Non-nested columns are declared through instances of <a class="reference internal" href="../usersguide/libref/declarative_classes.html#tables.Col" title="tables.Col"><tt class="xref py py-class docutils literal"><span class="pre">tables.Col</span></tt></a>
 subclasses (which you can also reuse).
 These are some correspondences with SQL:</p>
 <table border="1" class="docutils">
@@ -273,12 +238,12 @@ handle <cite>h5f</cite>, creating a table with that description is as easy as:</
 </pre></div>
 </div>
 <p>PyTables is very object-oriented, and database is usually done through
-methods of <a class="reference internal" href="../usersguide/libref.html#tables.File" title="tables.File"><tt class="xref py py-class docutils literal"><span class="pre">tables.File</span></tt></a>.
+methods of <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File" title="tables.File"><tt class="xref py py-class docutils literal"><span class="pre">tables.File</span></tt></a>.
 The first argument indicates the <em>path</em> where the table will be created,
 i.e. the root path (HDF5 uses Unix-like paths).
-The <a class="reference internal" href="../usersguide/libref.html#tables.File.createTable" title="tables.File.createTable"><tt class="xref py py-meth docutils literal"><span class="pre">tables.File.createTable()</span></tt></a> method has many options e.g. for setting
+The <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.createTable" title="tables.File.createTable"><tt class="xref py py-meth docutils literal"><span class="pre">tables.File.createTable()</span></tt></a> method has many options e.g. for setting
 a table title or compression properties. What you get back is an instance of
-<a class="reference internal" href="../usersguide/libref.html#tables.Table" title="tables.Table"><tt class="xref py py-class docutils literal"><span class="pre">tables.Table</span></tt></a>, a handle for accessing the data in that table.</p>
+<a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table" title="tables.Table"><tt class="xref py py-class docutils literal"><span class="pre">tables.Table</span></tt></a>, a handle for accessing the data in that table.</p>
 <p>As with files, table handles can also be closed with <cite>tbl.close()</cite>.
 If you want to acces an already created table, you can use:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">tbl</span> <span class="o">=</span> <span class="n">h5f</span><span class="o">.</span><span class="n">getNode</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;table_name&#39;</span><span class="p">)</span>
@@ -294,7 +259,7 @@ accessing the <cite>description</cite> attribute of its handle.</p>
 </div>
 </div>
 <div class="section" id="creating-an-index">
-<h2><a class="toc-backref" href="#id22">Creating an index</a><a class="headerlink" href="#creating-an-index" title="Permalink to this headline">¶</a></h2>
+<h2>Creating an index<a class="headerlink" href="#creating-an-index" title="Permalink to this headline">¶</a></h2>
 <p>RDBMs use to allow named indexes on any set of columns (or all of them) in a
 table, using a syntax like:</p>
 <div class="highlight-python"><pre>CREATE INDEX index_name
@@ -306,7 +271,7 @@ ON table_name (column_name1, column_name2, column_name3...)</pre>
 <p>Indexing is supported in the commercial version of PyTables (PyTablesPro).
 However, indexes don&#8217;t have names and they are bound to single columns.
 Following the object-oriented philosophy of PyTables, index creation is a
-method (<a class="reference internal" href="../usersguide/libref.html#tables.Column.createIndex" title="tables.Column.createIndex"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Column.createIndex()</span></tt></a>) of a <a class="reference internal" href="../usersguide/libref.html#tables.Column" title="tables.Column"><tt class="xref py py-class docutils literal"><span class="pre">tables.Column</span></tt></a> object
+method (<a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Column.createIndex" title="tables.Column.createIndex"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Column.createIndex()</span></tt></a>) of a <a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Column" title="tables.Column"><tt class="xref py py-class docutils literal"><span class="pre">tables.Column</span></tt></a> object
 of a table, which you can access trough its <cite>cols</cite> accessor.</p>
 <dl class="docutils">
 <dt>::</dt>
@@ -318,7 +283,7 @@ of a table, which you can access trough its <cite>cols</cite> accessor.</p>
 </div>
 </div>
 <div class="section" id="altering-a-table">
-<h2><a class="toc-backref" href="#id23">Altering a table</a><a class="headerlink" href="#altering-a-table" title="Permalink to this headline">¶</a></h2>
+<h2>Altering a table<a class="headerlink" href="#altering-a-table" title="Permalink to this headline">¶</a></h2>
 <p>The first case of table alteration is renaming:</p>
 <div class="highlight-python"><pre>ALTER TABLE old_name RENAME TO new_name</pre>
 </div>
@@ -335,12 +300,12 @@ The second alteration, namely column addition, is currently not supported in
 PyTables.</p>
 </div>
 <div class="section" id="dropping-a-table">
-<h2><a class="toc-backref" href="#id24">Dropping a table</a><a class="headerlink" href="#dropping-a-table" title="Permalink to this headline">¶</a></h2>
+<h2>Dropping a table<a class="headerlink" href="#dropping-a-table" title="Permalink to this headline">¶</a></h2>
 <p>In SQL you can remove a table using:</p>
 <div class="highlight-python"><pre>DROP TABLE table_name</pre>
 </div>
 <p>In PyTables, tables are removed as other nodes, using the
-<a class="reference internal" href="../usersguide/libref.html#tables.File.removeNode" title="tables.File.removeNode"><tt class="xref py py-meth docutils literal"><span class="pre">tables.File.removeNode()</span></tt></a> method:</p>
+<a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.removeNode" title="tables.File.removeNode"><tt class="xref py py-meth docutils literal"><span class="pre">tables.File.removeNode()</span></tt></a> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">h5f</span><span class="o">.</span><span class="n">removeNode</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;table_name&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -351,7 +316,7 @@ PyTables.</p>
 <p>When you remove a table, its associated indexes are automatically removed.</p>
 </div>
 <div class="section" id="inserting-data">
-<h2><a class="toc-backref" href="#id25">Inserting data</a><a class="headerlink" href="#inserting-data" title="Permalink to this headline">¶</a></h2>
+<h2>Inserting data<a class="headerlink" href="#inserting-data" title="Permalink to this headline">¶</a></h2>
 <p>In SQL you can insert data one row at a time (fetching from a selection will
 be covered later) using a syntax like:</p>
 <div class="highlight-python"><pre>INSERT INTO table_name (column_name1, column_name2...)
@@ -381,7 +346,7 @@ This code is usually enclosed in some kind of loop, like:</p>
     <span class="n">row</span><span class="o">.</span><span class="n">append</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>For appending a block of rows in a single shot, <a class="reference internal" href="../usersguide/libref.html#tables.Table.append" title="tables.Table.append"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.append()</span></tt></a>
+<p>For appending a block of rows in a single shot, <a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.append" title="tables.Table.append"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.append()</span></tt></a>
 is more adequate.
 You just pass a <a class="reference external" href="http://numpy.scipy.org">NumPy</a> <a class="footnote-reference" href="#id11" id="id12">[5]</a> record array or Python sequence with elements which
 match the expected columns.
@@ -401,7 +366,7 @@ structure described above:</p>
 </pre></div>
 </div>
 <div class="section" id="a-note-on-transactions">
-<h3><a class="toc-backref" href="#id26">A note on transactions</a><a class="headerlink" href="#a-note-on-transactions" title="Permalink to this headline">¶</a></h3>
+<h3>A note on transactions<a class="headerlink" href="#a-note-on-transactions" title="Permalink to this headline">¶</a></h3>
 <p>PyTables doesn&#8217;t support transactions nor checkpointing or rolling back (there
 is undo support for operations performed on the object tree, but this is
 unrelated).
@@ -419,7 +384,7 @@ you explicitly flush frequently (specially with tables).</p>
 </div>
 </div>
 <div class="section" id="updating-data">
-<h2><a class="toc-backref" href="#id27">Updating data</a><a class="headerlink" href="#updating-data" title="Permalink to this headline">¶</a></h2>
+<h2>Updating data<a class="headerlink" href="#updating-data" title="Permalink to this headline">¶</a></h2>
 <p>We&#8217;re now looking for alternatives to the SQL <cite>UPDATE</cite> statement:</p>
 <div class="highlight-python"><pre>UPDATE table_name
 SET column_name1 = expression1, column_name2 = expression2...
@@ -452,7 +417,7 @@ quite decoupled operations, so we will have a look at querying later and
 assume that you already know the set of rows you want to update.</p>
 <p>If the set happens to be a slice of the table, you may use the
 :<cite>meth:`tables.Table.modifyRows</cite> method or its equivalent
-<a class="reference internal" href="../usersguide/libref.html#tables.Table.__setitem__" title="tables.Table.__setitem__"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.__setitem__()</span></tt></a> notation:</p>
+<a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.__setitem__" title="tables.Table.__setitem__"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.__setitem__()</span></tt></a> notation:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">rows</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">150.0</span><span class="p">),</span>
     <span class="p">(</span><span class="s">&#39;bar&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">),</span>
@@ -463,7 +428,7 @@ assume that you already know the set of rows you want to update.</p>
 </pre></div>
 </div>
 <p>If you just want to update some columns in the slice, use the
-<a class="reference internal" href="../usersguide/libref.html#tables.Table.modifyColumns" title="tables.Table.modifyColumns"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.modifyColumns()</span></tt></a> or <a class="reference internal" href="../usersguide/libref.html#tables.Table.modifyColumn" title="tables.Table.modifyColumn"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.modifyColumn()</span></tt></a>
+<a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.modifyColumns" title="tables.Table.modifyColumns"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.modifyColumns()</span></tt></a> or <a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.modifyColumn" title="tables.Table.modifyColumn"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.modifyColumn()</span></tt></a>
 methods:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">cols</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">[</span><span class="mf">150.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">25.0</span><span class="p">]</span>
@@ -475,7 +440,7 @@ methods:</p>
 </pre></div>
 </div>
 <p>The last line shows an example of using the <cite>cols</cite> accessor to get to the
-desired <a class="reference internal" href="../usersguide/libref.html#tables.Column" title="tables.Column"><tt class="xref py py-class docutils literal"><span class="pre">tables.Column</span></tt></a> of the table using natural naming and apply
+desired <a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Column" title="tables.Column"><tt class="xref py py-class docutils literal"><span class="pre">tables.Column</span></tt></a> of the table using natural naming and apply
 <cite>setitem</cite> on it.</p>
 <p>If the set happens to be an array of sparse coordinates, you can also use
 PyTables&#8217; extended slice notation:</p>
@@ -497,12 +462,12 @@ PyTables&#8217; extended slice notation:</p>
 <cite>flush()</cite> the table when you&#8217;re done.</p>
 </div>
 <div class="section" id="deleting-data">
-<h2><a class="toc-backref" href="#id28">Deleting data</a><a class="headerlink" href="#deleting-data" title="Permalink to this headline">¶</a></h2>
+<h2>Deleting data<a class="headerlink" href="#deleting-data" title="Permalink to this headline">¶</a></h2>
 <p>Rows are deleted from a table with the following SQL syntax:</p>
 <div class="highlight-python"><pre>DELETE FROM table_name
 [WHERE condition]</pre>
 </div>
-<p><a class="reference internal" href="../usersguide/libref.html#tables.Table.removeRows" title="tables.Table.removeRows"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.removeRows()</span></tt></a> is the method used for deleting rows in
+<p><a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.removeRows" title="tables.Table.removeRows"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.removeRows()</span></tt></a> is the method used for deleting rows in
 PyTables.
 However, it is very simple (only contiguous blocks of rows can be deleted) and
 quite inefficient, and one should consider whether <em>dumping filtered data from
@@ -518,7 +483,7 @@ later.</p>
 </div>
 </div>
 <div class="section" id="reading-data">
-<h2><a class="toc-backref" href="#id29">Reading data</a><a class="headerlink" href="#reading-data" title="Permalink to this headline">¶</a></h2>
+<h2>Reading data<a class="headerlink" href="#reading-data" title="Permalink to this headline">¶</a></h2>
 <p>The most basic syntax in SQL for reading rows in a table without using a
 condition is:</p>
 <div class="highlight-python"><pre>SELECT (column_name1, column_name2... | *) FROM table_name</pre>
@@ -532,7 +497,7 @@ and since the concept of <em>row number</em> doesn&#8217;t exist in relational d
 we&#8217;ll be including here the cases where you want to read a <strong>known</strong> <em>slice</em>
 or <em>sequence</em> of rows, besides the case of reading <em>all</em> rows.</p>
 <div class="section" id="iterating-over-rows">
-<h3><a class="toc-backref" href="#id30">Iterating over rows</a><a class="headerlink" href="#iterating-over-rows" title="Permalink to this headline">¶</a></h3>
+<h3>Iterating over rows<a class="headerlink" href="#iterating-over-rows" title="Permalink to this headline">¶</a></h3>
 <p>This is similar to using the <cite>fetchone()</cite> method of a DB <cite>cursor</cite> in a
 <a class="reference external" href="http://www.python.org/dev/peps/pep-0249">Python DBAPI</a> <a class="footnote-reference" href="#id14" id="id15">[6]</a>-compliant package, i.e. you <em>iterate</em> over the list of wanted
 rows, getting one <em>row handle</em> at a time.
@@ -547,7 +512,7 @@ much memory).
 Iterators are also handy for using with the <cite>itertools</cite> Python module for
 grouping, sorting and other operations.</p>
 <p>For iterating over <em>all</em> rows, use plain iteration or the
-<a class="reference internal" href="../usersguide/libref.html#tables.Table.iterrows" title="tables.Table.iterrows"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.iterrows()</span></tt></a> method:</p>
+<a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.iterrows" title="tables.Table.iterrows"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.iterrows()</span></tt></a> method:</p>
 <div class="highlight-python"><pre>for row in tbl:  # or tbl.iterrows()
     do something with row['column_name1'], row['column_name2']...</pre>
 </div>
@@ -557,13 +522,13 @@ grouping, sorting and other operations.</p>
     do something with row['column_name1'], row['column_name2']...</pre>
 </div>
 <p>For iterating over a <em>sequence</em> of rows, use the
-<a class="reference internal" href="../usersguide/libref.html#tables.Table.itersequence" title="tables.Table.itersequence"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.itersequence()</span></tt></a> method:</p>
+<a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.itersequence" title="tables.Table.itersequence"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.itersequence()</span></tt></a> method:</p>
 <div class="highlight-python"><pre>for row in tbl.itersequence([6, 7, 9, 11]):
     do something with row['column_name1'], row['column_name2']...</pre>
 </div>
 </div>
 <div class="section" id="reading-rows-at-once">
-<h3><a class="toc-backref" href="#id31">Reading rows at once</a><a class="headerlink" href="#reading-rows-at-once" title="Permalink to this headline">¶</a></h3>
+<h3>Reading rows at once<a class="headerlink" href="#reading-rows-at-once" title="Permalink to this headline">¶</a></h3>
 <p>In contrast with iteration, you can fetch all desired rows into a single
 <em>container</em> in memory (usually an efficient <a class="reference external" href="http://numpy.scipy.org">NumPy</a> <a class="footnote-reference" href="#id11" id="id13">[5]</a> record-array) in a single
 operation, like the <cite>fetchall()</cite> or <cite>fetchmany()</cite> methods of a DBAPI <cite>cursor</cite>.
@@ -572,11 +537,11 @@ component in your program, avoiding loops to construct your own containers.
 However, you should be careful about the amount of data you are fetching into
 memory, since it can be quite large (and even exceed its physical capacity).</p>
 <p>You can choose between the <cite>Table.read*()</cite> methods or the
-<a class="reference internal" href="../usersguide/libref.html#tables.Table.__getitem__" title="tables.Table.__getitem__"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.__getitem__()</span></tt></a> syntax for this kind of reads.
+<a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.__getitem__" title="tables.Table.__getitem__"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.__getitem__()</span></tt></a> syntax for this kind of reads.
 The <cite>read*()</cite> methods offer you the chance to choose a single column to read
 via their <cite>field</cite> argument (which isn&#8217;t still as powerful as the SQL <cite>SELECT</cite>
 column spec).</p>
-<p>For reading <em>all</em> rows, use <cite>[:]</cite> or the <a class="reference internal" href="../usersguide/libref.html#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.read()</span></tt></a> method:</p>
+<p>For reading <em>all</em> rows, use <cite>[:]</cite> or the <a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.read()</span></tt></a> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">rows</span> <span class="o">=</span> <span class="n">tbl</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 <span class="n">rows</span> <span class="o">=</span> <span class="n">tbl</span><span class="p">[:]</span>  <span class="c"># equivalent</span>
 </pre></div>
@@ -587,7 +552,7 @@ column spec).</p>
 <span class="n">rows</span> <span class="o">=</span> <span class="n">tbl</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">13</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>  <span class="c"># equivalent</span>
 </pre></div>
 </div>
-<p>For reading a <em>sequence</em> of rows, use the <a class="reference internal" href="../usersguide/libref.html#tables.Table.readCoordinates" title="tables.Table.readCoordinates"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.readCoordinates()</span></tt></a>
+<p>For reading a <em>sequence</em> of rows, use the <a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.readCoordinates" title="tables.Table.readCoordinates"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.readCoordinates()</span></tt></a>
 method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">rows</span> <span class="o">=</span> <span class="n">tbl</span><span class="o">.</span><span class="n">readCoordinates</span><span class="p">([</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">11</span><span class="p">])</span>
 </pre></div>
@@ -597,7 +562,7 @@ methods in order to get only the given column instead of them all.</p>
 </div>
 </div>
 <div class="section" id="selecting-data">
-<h2><a class="toc-backref" href="#id32">Selecting data</a><a class="headerlink" href="#selecting-data" title="Permalink to this headline">¶</a></h2>
+<h2>Selecting data<a class="headerlink" href="#selecting-data" title="Permalink to this headline">¶</a></h2>
 <p>When you want to read a subset of rows which match a given condition from a
 table you use a syntax like this in SQL:</p>
 <div class="highlight-python"><pre>SELECT column_specification FROM table_name
@@ -630,10 +595,10 @@ The operators and functions you may use in a condition string are described
 in the <a class="reference internal" href="../usersguide/condition_syntax.html#condition-syntax"><em>appendix on condition syntax</em></a> in the
 <a class="reference external" href="http://www.pytables.org/docs/manual">User&#8217;s Guide</a> <a class="footnote-reference" href="#id3" id="id5">[2]</a>.</p>
 <div class="section" id="iterating-over-selected-rows">
-<h3><a class="toc-backref" href="#id33">Iterating over selected rows</a><a class="headerlink" href="#iterating-over-selected-rows" title="Permalink to this headline">¶</a></h3>
+<h3>Iterating over selected rows<a class="headerlink" href="#iterating-over-selected-rows" title="Permalink to this headline">¶</a></h3>
 <p>You can iterate over the rows in a table which fulfill a condition (a la DBAPI
-<cite>fetchone()</cite>) by using the <a class="reference internal" href="../usersguide/libref.html#tables.Table.where" title="tables.Table.where"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.where()</span></tt></a> method, which is very
-similar to the <a class="reference internal" href="../usersguide/libref.html#tables.Table.iterrows" title="tables.Table.iterrows"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.iterrows()</span></tt></a> one discussed above, and which
+<cite>fetchone()</cite>) by using the <a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.where" title="tables.Table.where"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.where()</span></tt></a> method, which is very
+similar to the <a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.iterrows" title="tables.Table.iterrows"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.iterrows()</span></tt></a> one discussed above, and which
 can be used in the same circumstances (i.e. performing operations on individual
 rows or having results exceeding available memory).</p>
 <p>Here is an example of using <cite>where()</cite> with the previous example condition:</p>
@@ -642,9 +607,9 @@ rows or having results exceeding available memory).</p>
 </div>
 </div>
 <div class="section" id="reading-seleted-rows-at-once">
-<h3><a class="toc-backref" href="#id34">Reading seleted rows at once</a><a class="headerlink" href="#reading-seleted-rows-at-once" title="Permalink to this headline">¶</a></h3>
-<p>Like the aforementioned <a class="reference internal" href="../usersguide/libref.html#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.read()</span></tt></a>,
-<a class="reference internal" href="../usersguide/libref.html#tables.Table.readWhere" title="tables.Table.readWhere"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.readWhere()</span></tt></a> gets all the rows fulfilling the given condition
+<h3>Reading seleted rows at once<a class="headerlink" href="#reading-seleted-rows-at-once" title="Permalink to this headline">¶</a></h3>
+<p>Like the aforementioned <a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.read()</span></tt></a>,
+<a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.readWhere" title="tables.Table.readWhere"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.readWhere()</span></tt></a> gets all the rows fulfilling the given condition
 and packs them in a single container (a la DBAPI <cite>fetchmany()</cite>).
 The same warning applies: be careful on how many rows you expect to retrieve,
 or you may run out of memory!</p>
@@ -652,13 +617,13 @@ or you may run out of memory!</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">rows</span> <span class="o">=</span> <span class="n">tbl</span><span class="o">.</span><span class="n">readWhere</span><span class="p">(</span><span class="s">&#39;(sqrt(x**2 + y**2) &lt;= 1) &amp; (temperature &lt; 100)&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Please note that both <a class="reference internal" href="../usersguide/libref.html#tables.Table.where" title="tables.Table.where"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.where()</span></tt></a> and
-<a class="reference internal" href="../usersguide/libref.html#tables.Table.readWhere" title="tables.Table.readWhere"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.readWhere()</span></tt></a> can also take slicing arguments.</p>
+<p>Please note that both <a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.where" title="tables.Table.where"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.where()</span></tt></a> and
+<a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.readWhere" title="tables.Table.readWhere"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.readWhere()</span></tt></a> can also take slicing arguments.</p>
 </div>
 <div class="section" id="getting-the-coordinates-of-selected-rows">
-<h3><a class="toc-backref" href="#id35">Getting the coordinates of selected rows</a><a class="headerlink" href="#getting-the-coordinates-of-selected-rows" title="Permalink to this headline">¶</a></h3>
+<h3>Getting the coordinates of selected rows<a class="headerlink" href="#getting-the-coordinates-of-selected-rows" title="Permalink to this headline">¶</a></h3>
 <p>There is yet another method for querying tables:
-<a class="reference internal" href="../usersguide/libref.html#tables.Table.getWhereList" title="tables.Table.getWhereList"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.getWhereList()</span></tt></a>.
+<a class="reference internal" href="../usersguide/libref/structured_storage.html#tables.Table.getWhereList" title="tables.Table.getWhereList"><tt class="xref py py-meth docutils literal"><span class="pre">tables.Table.getWhereList()</span></tt></a>.
 It returns just a sequence of the numbers of the rows which fulfill the given
 condition.
 You may pass that sequence to :meth:tables.Table.readCoordinates`, e.g. to
@@ -666,7 +631,7 @@ retrieve data from a different table where rows with the same number as the
 queried one refer to the same first-class object or entity.</p>
 </div>
 <div class="section" id="a-note-on-table-joins">
-<h3><a class="toc-backref" href="#id36">A note on table joins</a><a class="headerlink" href="#a-note-on-table-joins" title="Permalink to this headline">¶</a></h3>
+<h3>A note on table joins<a class="headerlink" href="#a-note-on-table-joins" title="Permalink to this headline">¶</a></h3>
 <p>You may have noticed that queries in PyTables only cover one table.
 In fact, there is no way of directly performing a join between two tables in
 PyTables (remember that it&#8217;s not a relational database).
@@ -712,7 +677,7 @@ Also, you could avoid parsing the inner condition each time by using
 </div>
 </div>
 <div class="section" id="summary-of-row-selection-methods">
-<h2><a class="toc-backref" href="#id37">Summary of row selection methods</a><a class="headerlink" href="#summary-of-row-selection-methods" title="Permalink to this headline">¶</a></h2>
+<h2>Summary of row selection methods<a class="headerlink" href="#summary-of-row-selection-methods" title="Permalink to this headline">¶</a></h2>
 <table border="1" class="docutils">
 <colgroup>
 <col width="20%" />
@@ -747,11 +712,11 @@ Also, you could avoid parsing the inner condition each time by using
 </table>
 </div>
 <div class="section" id="sorting-the-results-of-a-selection">
-<h2><a class="toc-backref" href="#id38">Sorting the results of a selection</a><a class="headerlink" href="#sorting-the-results-of-a-selection" title="Permalink to this headline">¶</a></h2>
+<h2>Sorting the results of a selection<a class="headerlink" href="#sorting-the-results-of-a-selection" title="Permalink to this headline">¶</a></h2>
 <p><em>Do you feel like writing this section? Your contribution is welcome!</em></p>
 </div>
 <div class="section" id="grouping-the-results-of-a-selection">
-<h2><a class="toc-backref" href="#id39">Grouping the results of a selection</a><a class="headerlink" href="#grouping-the-results-of-a-selection" title="Permalink to this headline">¶</a></h2>
+<h2>Grouping the results of a selection<a class="headerlink" href="#grouping-the-results-of-a-selection" title="Permalink to this headline">¶</a></h2>
 <p>By making use of the <tt class="xref py py-func docutils literal"><span class="pre">itertools.groupby()</span></tt> utility, you can group results
 by field:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">group</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># dictionary to put results grouped by &#39;pressure&#39;</span>
@@ -895,12 +860,18 @@ should be changed to:</p>
           <a href="../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
           <a href="py2exe_howto.html" title="How to integrate PyTables in your application by using py2exe"
              >next</a> &nbsp; &nbsp;</li>
         <li class="right" >
           <a href="index.html" title="PyTables Cookbook"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 2.4.0 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
 
           <li><a href="index.html" >PyTables Cookbook</a> &raquo;</li> 
       </ul>
