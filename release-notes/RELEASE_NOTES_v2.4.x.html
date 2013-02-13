@@ -84,6 +84,59 @@
 </table>
 <div class="section" id="changes-from-2-4-to-x-y-z-in-development">
 <h2>Changes from 2.4 to X.Y.Z (in development)<a class="headerlink" href="#changes-from-2-4-to-x-y-z-in-development" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="new-features">
+<h3>New features<a class="headerlink" href="#new-features" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Basic support for HDF5 drivers.  Now it is possible to open/create an
+HDF5 file using one of the SEC2, DIRECT, LOG, WINDOWS, STDIO or CORE
+drivers and also set the main parameters (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/166">gh-166</a>).
+Thanks to Michal Slonina.</li>
+<li>Basic support for in-memory image files.  An HDF5 file can be set from or
+copied into a memory buffer (thanks to Michal Slonina).  This feature is
+only available if PyTables is built against HDF5 1.8.9 or newer.
+Closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/165">gh-165</a> and <a class="reference external" href="https://github.com/PyTables/PyTables/issues/173">gh-173</a>.</li>
+<li>New <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.get_filesize" title="tables.File.get_filesize"><tt class="xref py py-meth docutils literal"><span class="pre">File.get_filesize()</span></tt></a> method for retrieving the HDF5 file size.</li>
+<li>Implemented methods to get/set the user block size in a HDF5 file
+(closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/123">gh-123</a>)</li>
+<li>Improved support for <a class="reference external" href="http://www.pyinstaller.org">PyInstaller</a>.  Now it is easier to pack frozen
+applications that use the PyTables package (closes: <a class="reference external" href="https://github.com/PyTables/PyTables/issues/177">gh-177</a>).
+Thanks to Stuart Mentzer and Christoph Gohlke.</li>
+<li>All read methods now have an optional <em>out</em> argument that allows to pass a
+pre-allocated array to store data (<a class="reference external" href="https://github.com/PyTables/PyTables/issues/192">gh-192</a>)</li>
+</ul>
+</div>
+<div class="section" id="improvements">
+<h3>Improvements<a class="headerlink" href="#improvements" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Packaging: since this release the standard tar-ball package no more includes
+the PDF version of the &#8220;PyTables User Guide&#8221;, so it is a little bit smaller
+now.  The complete and pre-build version of the documentation both in HTML
+and PDF format is available on the file <a class="reference external" href="http://sourceforge.net/projects/pytables/files/pytables">download area</a> on SourceForge.net.
+Closes: <a class="reference external" href="https://github.com/PyTables/PyTables/issues/172">gh-172</a>.</li>
+<li>Improved runtime checks on dynamic loading of libraries: meaningful error
+messages are generated in case of failure.
+Also, now PyTables no more alters the system PATH.
+Closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/178">gh-178</a> and <a class="reference external" href="https://github.com/PyTables/PyTables/issues/179">gh-179</a> (thanks to Christoph Gohlke).</li>
+<li>The internal <a class="reference external" href="https://github.com/FrancescAlted/blosc">Blosc</a> library has been upgraded to version 1.1.5.</li>
+<li>Pre-load the bzip2 library on windows (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/205">gh-205</a>)</li>
+</ul>
+</div>
+<div class="section" id="other-changes">
+<h3>Other changes<a class="headerlink" href="#other-changes" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>PyTables now requires Python 2.6 or newer.</li>
+</ul>
+</div>
+<div class="section" id="deprecations">
+<h3>Deprecations<a class="headerlink" href="#deprecations" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>The use of upper-case keyword arguments in the <a class="reference internal" href="../usersguide/libref/top_level.html#tables.openFile" title="tables.openFile"><tt class="xref py py-func docutils literal"><span class="pre">openFile()</span></tt></a> function
+and the <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File" title="tables.File"><tt class="xref py py-class docutils literal"><span class="pre">File</span></tt></a> class initializer is now deprecated.  All parameters
+defined in the <tt class="file docutils literal"><span class="pre">tables/parameters.py</span></tt> module can still be passed as
+keyword argument to the <a class="reference internal" href="../usersguide/libref/top_level.html#tables.openFile" title="tables.openFile"><tt class="xref py py-func docutils literal"><span class="pre">openFile()</span></tt></a> function just using a lower-case
+version of the parameter name.</li>
+</ul>
+</div>
 <div class="section" id="api-changes">
 <h3>API changes<a class="headerlink" href="#api-changes" title="Permalink to this headline">¶</a></h3>
 <p>Many deprecated features and support for obsolete modules has been dropped:</p>
@@ -101,19 +154,42 @@ in favour of <a class="reference internal" href="../usersguide/parameter_files.h
 modules (it was no ore used after the switch to Git).
 Of course the package level constant (<a class="reference internal" href="../usersguide/libref/top_level.html#tables.__version__" title="tables.__version__"><tt class="xref py py-data docutils literal"><span class="pre">tables.__version__</span></tt></a>) still
 remains.  Closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/112">gh-112</a>.</li>
+<li>The <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.createExternalLink" title="tables.File.createExternalLink"><tt class="xref py py-meth docutils literal"><span class="pre">File.createExternalLink()</span></tt></a> method no more has a keyword parameter
+named <em>warn16incompat</em>.  It was deprecated since PyTables 2.4.</li>
+<li>The deprecated <tt class="xref py py-exc docutils literal"><span class="pre">exceptions.Incompat16Warning</span></tt> exception has been
+removed</li>
+<li>The <tt class="xref py py-func docutils literal"><span class="pre">lrange()</span></tt> has been dropped in favour of xrange (<a class="reference external" href="https://github.com/PyTables/PyTables/issues/181">gh-181</a>)</li>
+</ul>
+</div>
+<div class="section" id="other-possibly-incompatible-changes">
+<h3>Other possibly incompatible changes<a class="headerlink" href="#other-possibly-incompatible-changes" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">Unicode attributes are no more stored in the HDF5 file as pickled string.
+They are now saved on the HDF5 file as UTF-8 encoded strings.</p>
+<p>Although this do not introduces no API breakage, files produced are different
+(for what concerns unicode attributes) from the ones produced by earlier
+versions of PyTables.</p>
+</li>
+<li><p class="first">System attributes are now stored in the HDF5 file using the character set
+that reflects the native string behaviour: ASCII for Python 2 and UTF8 for
+Python 3.  I any case system attributes are represented as Python string.</p>
+</li>
 </ul>
 </div>
 <div class="section" id="bugs-fixed">
 <h3>Bugs fixed<a class="headerlink" href="#bugs-fixed" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>Better check access on closed files (closes: _issue:<cite>62</cite>)</li>
+<li>Better check access on closed files (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/62">gh-62</a>)</li>
+<li>Fix for <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.renameNode" title="tables.File.renameNode"><tt class="xref py py-meth docutils literal"><span class="pre">File.renameNode()</span></tt></a> where in certain cases
+<tt class="xref py py-meth docutils literal"><span class="pre">File._g_updateLocation()</span></tt> was wrongly called (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/208">gh-208</a>).
+Thanks to Michka Popoff.</li>
 </ul>
 </div>
 </div>
 <div class="section" id="changes-from-2-3-1-to-2-4">
 <h2>Changes from 2.3.1 to 2.4<a class="headerlink" href="#changes-from-2-3-1-to-2-4" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="new-features">
-<h3>New features<a class="headerlink" href="#new-features" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id1">
+<h3>New features<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Improved HDF5 error logging management:<ul>
 <li>added a new function, <a class="reference internal" href="../usersguide/libref/top_level.html#tables.silenceHDF5Messages" title="tables.silenceHDF5Messages"><tt class="xref py py-func docutils literal"><span class="pre">silenceHDF5Messages()</span></tt></a>, for suppressing
@@ -179,8 +255,8 @@ A big thank you to Josh Ayers.  Closes <a class="reference external" href="https
 <li>new sphinx theme based on the cloud template</li>
 </ul>
 </div>
-<div class="section" id="id1">
-<h3>Bugs fixed<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id2">
+<h3>Bugs fixed<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Fixed a segfault on platforms that do not support unaligned memory access
 (closes: <a class="reference external" href="https://github.com/PyTables/PyTables/issues/134">gh-134</a>).  Thanks to Julian Taylor.</li>
@@ -202,8 +278,8 @@ Closes <a class="reference external" href="https://github.com/PyTables/PyTables/
 <li>Fixed flavor deregistration (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/163">gh-163</a>)</li>
 </ul>
 </div>
-<div class="section" id="deprecations">
-<h3>Deprecations<a class="headerlink" href="#deprecations" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id3">
+<h3>Deprecations<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>The <tt class="xref py py-data docutils literal"><span class="pre">parameters.MAX_THREADS</span></tt> configuration parameter is now
 deprecated.  Please use <a class="reference internal" href="../usersguide/parameter_files.html#tables.parameters.MAX_BLOSC_THREADS" title="tables.parameters.MAX_BLOSC_THREADS"><tt class="xref py py-data docutils literal"><span class="pre">parameters.MAX_BLOSC_THREADS</span></tt></a> and
@@ -234,16 +310,21 @@ argument of the <a class="reference internal" href="../usersguide/libref/file_cl
   <ul>
 <li><a class="reference internal" href="#">Release notes for PyTables 2.4 series</a><ul>
 <li><a class="reference internal" href="#changes-from-2-4-to-x-y-z-in-development">Changes from 2.4 to X.Y.Z (in development)</a><ul>
+<li><a class="reference internal" href="#new-features">New features</a></li>
+<li><a class="reference internal" href="#improvements">Improvements</a></li>
+<li><a class="reference internal" href="#other-changes">Other changes</a></li>
+<li><a class="reference internal" href="#deprecations">Deprecations</a></li>
 <li><a class="reference internal" href="#api-changes">API changes</a></li>
+<li><a class="reference internal" href="#other-possibly-incompatible-changes">Other possibly incompatible changes</a></li>
 <li><a class="reference internal" href="#bugs-fixed">Bugs fixed</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#changes-from-2-3-1-to-2-4">Changes from 2.3.1 to 2.4</a><ul>
-<li><a class="reference internal" href="#new-features">New features</a></li>
+<li><a class="reference internal" href="#id1">New features</a></li>
 <li><a class="reference internal" href="#other-improvements">Other improvements</a></li>
 <li><a class="reference internal" href="#documentation-improvements">Documentation improvements</a></li>
-<li><a class="reference internal" href="#id1">Bugs fixed</a></li>
-<li><a class="reference internal" href="#deprecations">Deprecations</a></li>
+<li><a class="reference internal" href="#id2">Bugs fixed</a></li>
+<li><a class="reference internal" href="#id3">Deprecations</a></li>
 </ul>
 </li>
 </ul>

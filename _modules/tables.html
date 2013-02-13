@@ -85,21 +85,61 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
-<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&#39;nt&#39;</span><span class="p">:</span>
-    <span class="n">module_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">))</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;PATH&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;PATH&#39;</span><span class="p">],</span> <span class="n">module_path</span><span class="p">))</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module_path</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">os</span>
 
-<span class="c"># In order to improve diagnosis of a common Windows dependency</span>
-<span class="c"># issue, we explicitly test that we can load the HDF5 dll before</span>
-<span class="c"># loading tables.utilsExtensions.</span>
+<span class="c"># On Windows, pre-load the HDF5 DLLs into the process via Ctypes</span>
+<span class="c"># to improve diagnostics and avoid issues when loading DLLs during runtime.</span>
 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&#39;nt&#39;</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">ctypes.util</span>
+    <span class="kn">import</span> <span class="nn">ctypes</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">find_library</span><span class="p">(</span><span class="s">&#39;hdf5dll.dll&#39;</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s">&#39;Could not load &quot;hdf5dll.dll&quot;, please ensure&#39;</span> <span class="o">+</span>
-                <span class="s">&#39; that it can be found in the system path&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_load_library</span><span class="p">(</span><span class="n">dllname</span><span class="p">,</span> <span class="n">loadfunction</span><span class="p">,</span> <span class="n">dllpaths</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Load a DLL via ctypes load function. Return None on failure.</span>
+
+<span class="sd">        By default, try to load the DLL from the current package directory</span>
+<span class="sd">        first, then from the Windows DLL search path.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">dllpaths</span> <span class="o">=</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span> <span class="p">)</span> <span class="o">+</span> <span class="n">dllpaths</span>
+        <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+            <span class="k">pass</span>  <span class="c"># PyPy and frozen distributions have no __file__ attribute</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">dllpaths</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+                <span class="c"># Temporarily add the path to the PATH environment variable</span>
+                <span class="c"># so Windows can find additional DLL dependencies.</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">oldenv</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;PATH&#39;</span><span class="p">]</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;PATH&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span> <span class="o">+</span> <span class="s">&#39;;&#39;</span> <span class="o">+</span> <span class="n">oldenv</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">oldenv</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">loadfunction</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dllname</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">WindowsError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">path</span> <span class="ow">and</span> <span class="n">oldenv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;PATH&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">oldenv</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+    <span class="c"># In order to improve diagnosis of a common Windows dependency</span>
+    <span class="c"># issue, we explicitly test that we can load the HDF5 dll before</span>
+    <span class="c"># loading tables.utilsExtensions.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_load_library</span><span class="p">(</span><span class="s">&#39;hdf5dll.dll&#39;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s">&#39;Could not load &quot;hdf5dll.dll&quot;, please ensure&#39;</span>
+            <span class="s">&#39; that it can be found in the system path&#39;</span><span class="p">)</span>
+
+    <span class="c"># Some PyTables binary distributions place the dependency DLLs in the</span>
+    <span class="c"># tables package directory.</span>
+    <span class="c"># The lzo2 and libbz2 DLLs are loaded dynamically at runtime but can&#39;t be </span>
+    <span class="c"># found because the package directory is not in the Windows DLL search </span>
+    <span class="c"># path.</span>
+    <span class="c"># This pre-loads lzo2 and libbz2 DLLs from the tables package directory.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_load_library</span><span class="p">(</span><span class="s">&#39;lzo2.dll&#39;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_load_library</span><span class="p">(</span><span class="s">&#39;libbz2.dll&#39;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">):</span>
+        <span class="k">pass</span>
 
 
 <span class="c"># Necessary imports to get versions stored on the cython extension</span>
@@ -112,8 +152,8 @@
 <span class="sd">&quot;&quot;&quot;The underlying HDF5 library version number.&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">tables.utilsExtension</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">isHDF5File</span><span class="p">,</span> <span class="n">isPyTablesFile</span><span class="p">,</span> <span class="n">whichLibVersion</span><span class="p">,</span> <span class="n">lrange</span><span class="p">,</span>
-    <span class="n">setBloscMaxThreads</span><span class="p">,</span> <span class="n">silenceHDF5Messages</span><span class="p">)</span>
+    <span class="n">isHDF5File</span><span class="p">,</span> <span class="n">isPyTablesFile</span><span class="p">,</span> <span class="n">whichLibVersion</span><span class="p">,</span> <span class="n">setBloscMaxThreads</span><span class="p">,</span>
+    <span class="n">silenceHDF5Messages</span><span class="p">)</span>
 
 <span class="kn">from</span> <span class="nn">tables.misc.enum</span> <span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">from</span> <span class="nn">tables.atom</span> <span class="kn">import</span> <span class="o">*</span>
@@ -150,7 +190,7 @@
     <span class="c"># Functions:</span>
     <span class="s">&#39;isHDF5File&#39;</span><span class="p">,</span> <span class="s">&#39;isPyTablesFile&#39;</span><span class="p">,</span> <span class="s">&#39;whichLibVersion&#39;</span><span class="p">,</span>
     <span class="s">&#39;copyFile&#39;</span><span class="p">,</span> <span class="s">&#39;openFile&#39;</span><span class="p">,</span> <span class="s">&#39;print_versions&#39;</span><span class="p">,</span> <span class="s">&#39;test&#39;</span><span class="p">,</span>
-    <span class="s">&#39;split_type&#39;</span><span class="p">,</span> <span class="s">&#39;restrict_flavors&#39;</span><span class="p">,</span> <span class="s">&#39;lrange&#39;</span><span class="p">,</span> <span class="s">&#39;setBloscMaxThreads&#39;</span><span class="p">,</span>
+    <span class="s">&#39;split_type&#39;</span><span class="p">,</span> <span class="s">&#39;restrict_flavors&#39;</span><span class="p">,</span> <span class="s">&#39;setBloscMaxThreads&#39;</span><span class="p">,</span>
     <span class="s">&#39;silenceHDF5Messages&#39;</span><span class="p">,</span>
     <span class="c"># Helper classes:</span>
     <span class="s">&#39;IsDescription&#39;</span><span class="p">,</span> <span class="s">&#39;Description&#39;</span><span class="p">,</span> <span class="s">&#39;Filters&#39;</span><span class="p">,</span> <span class="s">&#39;Cols&#39;</span><span class="p">,</span> <span class="s">&#39;Column&#39;</span><span class="p">,</span>
