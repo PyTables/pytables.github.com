@@ -188,7 +188,7 @@ have the same meaning as in <a class="reference internal" href="#tables.Array.re
 
 <dl class="method">
 <dt id="tables.Array.read">
-<tt class="descclassname">Array.</tt><tt class="descname">read</tt><big>(</big><em>start=None</em>, <em>stop=None</em>, <em>step=None</em>, <em>out=None</em><big>)</big><a class="headerlink" href="#tables.Array.read" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">Array.</tt><tt class="descname">read</tt><big>(</big><em>start=None</em>, <em>stop=None</em>, <em>step=None</em><big>)</big><a class="headerlink" href="#tables.Array.read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get data in the array as an object of the current flavor.</p>
 <p>The start, stop and step parameters can be used to select only a <em>range
 of rows</em> in the array.  Their meanings are the same as in the built-in
@@ -196,17 +196,6 @@ range() Python function, except that negative values of step are not
 allowed yet. Moreover, if only start is specified, then stop will be
 set to start+1. If you do not specify neither start nor stop, then <em>all
 the rows</em> in the array are selected.</p>
-<p>The out parameter may be used to specify a NumPy array to receive the
-output data.  Note that the array must have the same size as the data
-selected with the other parameters.  Note that the array&#8217;s datatype is
-not checked and no type casting is performed, so if it does not match
-the datatype on disk, the output will not be correct.  Also, this
-parameter is only valid when the array&#8217;s flavor is set to &#8216;numpy&#8217;.
-Otherwise, a TypeError will be raised.</p>
-<p>When data is read from disk in NumPy format, the output will be in the
-current system&#8217;s byteorder, regardless of how it is stored on disk.
-The exception is when an output buffer is supplied, in which case the
-output will be in the byteorder of that output buffer.</p>
 </dd></dl>
 
 </div>
@@ -677,7 +666,7 @@ into memory.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">When data is stored in a VLArray using the ObjectAtom type,
-it is first serialized using pickle, and then converted to
+it is first serialized using cPickle, and then converted to
 a NumPy array suitable for storage in an HDF5 file.
 This attribute will return the size of that NumPy
 representation.  If you wish to know the size of the Python
@@ -818,7 +807,7 @@ that key list would contain exactly as many rows as the table has.</p>
 pseudo-atom, there is a problem: you can only update values
 with <em>exactly</em> the same size in bytes than the original row.
 This is very difficult to meet with object pseudo-atoms,
-because <tt class="xref py py-mod docutils literal"><span class="pre">pickle</span></tt> applied on a Python object does not
+because <tt class="xref py py-mod docutils literal"><span class="pre">cPickle</span></tt> applied on a Python object does not
 guarantee to return the same number of bytes than over another
 object, even if they are of the same class.
 This effectively limits the kinds of objects than can be

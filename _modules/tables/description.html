@@ -80,9 +80,8 @@
 
 <span class="c"># Imports</span>
 <span class="c"># =======</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">copy</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span>
 
@@ -528,18 +527,6 @@
             <span class="n">newdict</span><span class="p">[</span><span class="s">&#39;_v_colObjects&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">object</span>
             <span class="n">newdict</span><span class="p">[</span><span class="s">&#39;_v_names&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
             <span class="nb">object</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;_v_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
-
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                <span class="c"># numpy only accepts &quot;str&quot; for field names</span>
-                <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
-                    <span class="c"># Python 2.x: unicode --&gt; str</span>
-                    <span class="n">kk</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>  <span class="c"># use the default encoding</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c"># Python 3.x: bytes --&gt; str (unicode)</span>
-                    <span class="n">kk</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">kk</span> <span class="o">=</span> <span class="n">k</span>
-
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">Col</span><span class="p">):</span>
                 <span class="n">dtype</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="n">dtype</span>
                 <span class="n">newdict</span><span class="p">[</span><span class="s">&#39;_v_dtypes&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">dtype</span>
@@ -547,10 +534,10 @@
                 <span class="n">newdict</span><span class="p">[</span><span class="s">&#39;_v_dflts&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="n">dflt</span>
                 <span class="n">nestedFormats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">object</span><span class="o">.</span><span class="n">recarrtype</span><span class="p">)</span>
                 <span class="n">baserecarrtype</span> <span class="o">=</span> <span class="n">dtype</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-                <span class="n">nestedDType</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">kk</span><span class="p">,</span> <span class="n">baserecarrtype</span><span class="p">,</span> <span class="n">dtype</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+                <span class="n">nestedDType</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">baserecarrtype</span><span class="p">,</span> <span class="n">dtype</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>  <span class="c"># A description</span>
                 <span class="n">nestedFormats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">object</span><span class="o">.</span><span class="n">_v_nestedFormats</span><span class="p">)</span>
-                <span class="n">nestedDType</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">kk</span><span class="p">,</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">))</span>
+                <span class="n">nestedDType</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">))</span>
 
         <span class="c"># Assign the format list to _v_nestedFormats</span>
         <span class="n">newdict</span><span class="p">[</span><span class="s">&#39;_v_nestedFormats&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nestedFormats</span>

@@ -79,7 +79,6 @@
 <span class="sd">&quot;&quot;&quot;Here is defined the AttributeSet class.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">cPickle</span>
 <span class="kn">import</span> <span class="nn">numpy</span>
@@ -118,9 +117,9 @@
 <span class="c"># Regular expression for column default values.</span>
 <span class="n">_field_fill_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;^FIELD_[0-9]+_FILL$&#39;</span><span class="p">)</span>
 <span class="c"># Regular expression for fixing old pickled filters.</span>
-<span class="n">_old_filters_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">br</span><span class="s">&#39;\(([ic])tables\.Leaf</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+<span class="n">_old_filters_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;\(([ic])tables\.Leaf\n&#39;</span><span class="p">)</span>
 <span class="c"># Fixed version of the previous string.</span>
-<span class="n">_new_filters_sub</span> <span class="o">=</span> <span class="n">br</span><span class="s">&#39;(</span><span class="se">\1</span><span class="s">tables.filters</span><span class="se">\n</span><span class="s">&#39;</span>
+<span class="n">_new_filters_sub</span> <span class="o">=</span> <span class="s">r&#39;(\1tables.filters\n&#39;</span>
 
 <span class="k">def</span> <span class="nf">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
     <span class="s">&quot;Check if a name is a system attribute or not&quot;</span>
@@ -166,7 +165,7 @@
 <span class="sd">    scalar H5T_NATIVE_LLONG will be read and returned as a numpy.int64</span>
 <span class="sd">    scalar).</span>
 
-<span class="sd">    However, other kinds of values are serialized using pickle, so you</span>
+<span class="sd">    However, other kinds of values are serialized using cPickle, so you</span>
 <span class="sd">    only will be able to correctly retrieve them using a Python-aware</span>
 <span class="sd">    HDF5 library.  Thus, if you want to save Python scalar values and</span>
 <span class="sd">    make sure you are able to read them with generic HDF5 tools, you</span>
@@ -176,8 +175,8 @@
 
 <span class="sd">    One more advice: because of the various potential difficulties in</span>
 <span class="sd">    restoring a Python object stored in an attribute, you may end up</span>
-<span class="sd">    getting a pickle string where a Python object is expected. If this</span>
-<span class="sd">    is the case, you may wish to run pickle.loads() on that string to</span>
+<span class="sd">    getting a cPickle string where a Python object is expected. If this</span>
+<span class="sd">    is the case, you may wish to run cPickle.loads() on that string to</span>
 <span class="sd">    get an idea of where things went wrong, as shown in this example::</span>
 
 <span class="sd">        &gt;&gt;&gt; import os, tempfile</span>
@@ -198,8 +197,8 @@
 <span class="sd">        &gt;&gt;&gt; h5f = tables.openFile(h5fname, &#39;r&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; print repr(h5f.root._v_attrs.obj)</span>
 <span class="sd">        &#39;ccopy_reg\\n_reconstructor...</span>
-<span class="sd">        &gt;&gt;&gt; import pickle  # let&#39;s unpickle that to see what went wrong</span>
-<span class="sd">        &gt;&gt;&gt; pickle.loads(h5f.root._v_attrs.obj)</span>
+<span class="sd">        &gt;&gt;&gt; import cPickle  # let&#39;s unpickle that to see what went wrong</span>
+<span class="sd">        &gt;&gt;&gt; cPickle.loads(h5f.root._v_attrs.obj)</span>
 <span class="sd">        Traceback (most recent call last):</span>
 <span class="sd">        ...</span>
 <span class="sd">        AttributeError: &#39;module&#39; object has no attribute &#39;MyClass&#39;</span>
@@ -362,10 +361,10 @@
         <span class="c"># Pickled values always seems to end with a &quot;.&quot;</span>
         <span class="n">maybe_pickled</span> <span class="o">=</span> <span class="p">(</span>
             <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">generic</span><span class="p">)</span> <span class="ow">and</span>  <span class="c"># NumPy scalar?</span>
-            <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">bytes_</span> <span class="ow">and</span>  <span class="c"># string type?</span>
-            <span class="n">value</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;.&#39;</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">string_</span> <span class="ow">and</span> <span class="c"># string type?</span>
+            <span class="n">value</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">value</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;.&#39;</span> <span class="p">)</span>
 
-        <span class="k">if</span> <span class="p">(</span> <span class="n">maybe_pickled</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">[</span><span class="n">b</span><span class="s">&quot;0&quot;</span><span class="p">,</span> <span class="n">b</span><span class="s">&quot;0.&quot;</span><span class="p">]</span> <span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">maybe_pickled</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;0&quot;</span><span class="p">,</span> <span class="s">&quot;0.&quot;</span><span class="p">]</span> <span class="p">):</span>
             <span class="c"># Workaround for a bug in many versions of Python (starting</span>
             <span class="c"># somewhere after Python 2.6.1).  See ticket #253.</span>
             <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
@@ -387,7 +386,7 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">retval</span> <span class="o">=</span> <span class="n">cPickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="c">#except cPickle.UnpicklingError:</span>
-            <span class="c"># It seems that pickle may raise other errors than UnpicklingError</span>
+            <span class="c"># It seems that cPickle may raise other errors than UnpicklingError</span>
             <span class="c"># Perhaps it would be better just an &quot;except:&quot; clause?</span>
             <span class="c">#except (cPickle.UnpicklingError, ImportError):</span>
             <span class="c"># Definitely (see SF bug #1254636)</span>
@@ -406,14 +405,6 @@
                 <span class="n">retval</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">retval</span><span class="p">)[()]</span>
         <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;FILTERS&#39;</span> <span class="ow">and</span> <span class="n">format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
             <span class="n">retval</span> <span class="o">=</span> <span class="n">Filters</span><span class="o">.</span><span class="n">_unpack</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">))</span> <span class="ow">and</span> \
-                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_field_fill_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
-            <span class="c"># system attributes should always be str</span>
-            <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c"># python 3, bytes and not &quot;FIELD_[0-9]+_FILL&quot;</span>
-                <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
 
@@ -449,7 +440,7 @@
         <span class="c"># (only in case it has not been converted yet)</span>
         <span class="c"># Fixes ticket #59</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">stvalue</span> <span class="ow">is</span> <span class="n">value</span> <span class="ow">and</span>
-            <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
+            <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)):</span>
             <span class="c"># Additional check for allowing a workaround for #307</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="o">==</span> <span class="s">u&#39;&#39;</span><span class="p">:</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)[()]</span>

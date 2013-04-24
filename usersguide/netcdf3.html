@@ -1,0 +1,968 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>netcdf3 - a PyTables NetCDF3 emulation API (deprecated) &mdash; PyTables 2.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 2.4.0 documentation" href="../index.html" />
+    <link rel="up" title="PyTables User’s Guide" href="index.html" />
+    <link rel="next" title="Supported data types in PyTables" href="datatypes.html" />
+    <link rel="prev" title="filenode - simulating a filesystem with PyTables" href="filenode.html" /> 
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="datatypes.html" title="Supported data types in PyTables"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="filenode.html" title="filenode - simulating a filesystem with PyTables"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">PyTables 2.4.0 documentation</a> &raquo;</li>
+
+          <li><a href="index.html" accesskey="U">PyTables User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="netcdf3-a-pytables-netcdf3-emulation-api-deprecated">
+<h1>netcdf3 - a PyTables NetCDF3 emulation API (deprecated)<a class="headerlink" href="#netcdf3-a-pytables-netcdf3-emulation-api-deprecated" title="Permalink to this headline">¶</a></h1>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>The tables.netcdf3 module is not actively maintained anymore.</p>
+<p class="last">It is deprecated and will be removed in the future versions.</p>
+</div>
+<div class="section" id="what-is-netcdf3">
+<h2>What is netcdf3?<a class="headerlink" href="#what-is-netcdf3" title="Permalink to this headline">¶</a></h2>
+<p>The netCDF format is a popular format for binary files. It is
+portable between machines and self-describing, i.e. it contains the
+information necessary to interpret its contents. A free library
+provides convenient access to these files (see ). A very nice python interface to that library
+is available in the Scientific Python NetCDF module
+(see ). Although it is
+somewhat less efficient and flexible than HDF5, netCDF is geared for
+storing gridded data and is quite easy to use. It has become a de
+facto standard for gridded data, especially in meteorology and
+oceanography. The next version of netCDF (netCDF 4) will actually be a
+software layer on top of HDF5 (see ). The tables.netcdf3
+package does not create HDF5 files that are compatible with netCDF 4
+(although this is a long-term goal).</p>
+</div>
+<div class="section" id="using-the-tables-netcdf3-package">
+<h2>Using the tables.netcdf3 package<a class="headerlink" href="#using-the-tables-netcdf3-package" title="Permalink to this headline">¶</a></h2>
+<p>The package tables.netcdf3 emulates the
+Scientific.IO.NetCDF API using PyTables. It
+presents the data in the form of objects that behave very much like
+arrays. A tables.netcdf3 file contains any number
+of dimensions and variables, both of which have unique names. Each
+variable has a shape defined by a set of dimensions, and optionally
+attributes whose values can be numbers, number sequences, or strings.
+One dimension of a file can be defined as
+<em>unlimited</em>, meaning that the file can grow along
+that direction. In the sections that follow, a step-by-step tutorial
+shows how to create and modify a tables.netcdf3
+file. All of the code snippets presented here are included in
+examples/netCDF_example.py. The
+tables.netcdf3 package is designed to be used as a
+drop-in replacement for Scientific.IO.NetCDF, with
+only minor modifications to existing code. The differences between
+tables.netcdf3 and
+Scientific.IO.NetCDF are summarized in the last
+section of this chapter.</p>
+<div class="section" id="creating-opening-closing-a-tables-netcdf3-file">
+<h3>Creating/Opening/Closing a tables.netcdf3 file<a class="headerlink" href="#creating-opening-closing-a-tables-netcdf3-file" title="Permalink to this headline">¶</a></h3>
+<p>To create a tables.netcdf3 file from
+python, you simply call the NetCDFFile
+constructor. This is also the method used to open an existing
+tables.netcdf3 file. The object returned is an
+instance of the NetCDFFile class and all future
+access must be done through this object. If the file is open for
+write access (&#8216;w&#8217; or &#8216;a&#8217;), you
+may write any type of new data including new dimensions, variables
+and attributes. The optional history keyword
+argument can be used to set the history
+NetCDFFile global file attribute. Closing the
+tables.netcdf3 file is accomplished via the
+close method of NetCDFFile
+object.</p>
+<p>Here&#8217;s an example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tables.netcdf3</span> <span class="kn">as</span> <span class="nn">NetCDF</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">time</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">history</span> <span class="o">=</span> <span class="s">&#39;Created &#39;</span> <span class="o">+</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span> <span class="o">=</span> <span class="n">NetCDF</span><span class="o">.</span><span class="n">NetCDFFile</span><span class="p">(</span><span class="s">&#39;test.h5&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">history</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="dimensions-in-a-tables-netcdf3-file">
+<h3>Dimensions in a tables.netcdf3 file<a class="headerlink" href="#dimensions-in-a-tables-netcdf3-file" title="Permalink to this headline">¶</a></h3>
+<p>NetCDF defines the sizes of all variables in terms of
+dimensions, so before any variables can be created the dimensions
+they use must be created first. A dimension is created using the
+createDimension method of the
+NetCDFFile object. A Python string is used to set
+the name of the dimension, and an integer value is used to set the
+size. To create an <em>unlimited</em> dimension (a
+dimension that can be appended to), the size value is set to
+None:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tables.netcdf3</span> <span class="kn">as</span> <span class="nn">NetCDF</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span> <span class="o">=</span> <span class="n">NetCDF</span><span class="o">.</span><span class="n">NetCDFFile</span><span class="p">(</span><span class="s">&#39;test.h5&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span><span class="o">.</span><span class="n">NetCDFFile</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s">&#39;level&#39;</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span><span class="o">.</span><span class="n">NetCDFFile</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span><span class="o">.</span><span class="n">NetCDFFile</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s">&#39;lat&#39;</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>All of the dimension names and their associated sizes are
+stored in a Python dictionary:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="nb">file</span><span class="o">.</span><span class="n">dimensions</span>
+<span class="go">{&#39;lat&#39;: 90, &#39;time&#39;: None, &#39;level&#39;: 12}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="variables-in-a-tables-netcdf3-file">
+<h3>Variables in a tables.netcdf3 file<a class="headerlink" href="#variables-in-a-tables-netcdf3-file" title="Permalink to this headline">¶</a></h3>
+<p>Most of the data in a tables.netcdf3 file
+is stored in a netCDF variable (except for global attributes). To
+create a netCDF variable, use the createVariable
+method of the NetCDFFile object. The
+createVariable method has three mandatory
+arguments, the variable name (a Python string), the variable
+datatype described by a single character Numeric typecode string
+which can be one of f (Float32),
+d (Float64), i (Int32),
+l (Int32), s (Int16),
+c (CharType - length 1), F
+(Complex32), D (Complex64) or
+1 (Int8), and a tuple containing the variable&#8217;s
+dimension names (defined previously with
+createDimension). The dimensions themselves are
+usually defined as variables, called coordinate variables. The
+createVariable method returns an instance of the
+NetCDFVariable class whose methods can be used
+later to access and set variable data and attributes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">,</span><span class="s">&#39;d&#39;</span><span class="p">,(</span><span class="s">&#39;time&#39;</span><span class="p">,))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">levels</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span><span class="s">&#39;level&#39;</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">,(</span><span class="s">&#39;level&#39;</span><span class="p">,))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">latitudes</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span><span class="s">&#39;latitude&#39;</span><span class="p">,</span><span class="s">&#39;f&#39;</span><span class="p">,(</span><span class="s">&#39;lat&#39;</span><span class="p">,))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">temp</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span><span class="s">&#39;temp&#39;</span><span class="p">,</span><span class="s">&#39;f&#39;</span><span class="p">,(</span><span class="s">&#39;time&#39;</span><span class="p">,</span><span class="s">&#39;level&#39;</span><span class="p">,</span><span class="s">&#39;lat&#39;</span><span class="p">,))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pressure</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span><span class="s">&#39;pressure&#39;</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">,(</span><span class="s">&#39;level&#39;</span><span class="p">,</span><span class="s">&#39;lat&#39;</span><span class="p">,))</span>
+</pre></div>
+</div>
+<p>All of the variables in the file are stored in a Python
+dictionary, in the same way as the dimensions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="nb">file</span><span class="o">.</span><span class="n">variables</span>
+<span class="go">{&#39;latitude&#39;: &lt;tables.netcdf3.NetCDFVariable instance at 0x244f350&gt;,</span>
+<span class="go"> &#39;pressure&#39;: &lt;tables.netcdf3.NetCDFVariable instance at 0x244f508&gt;,</span>
+<span class="go"> &#39;level&#39;: &lt;tables.netcdf3.NetCDFVariable instance at 0x244f0d0&gt;,</span>
+<span class="go"> &#39;temp&#39;: &lt;tables.netcdf3.NetCDFVariable instance at 0x244f3a0&gt;,</span>
+<span class="go"> &#39;time&#39;: &lt;tables.netcdf3.NetCDFVariable instance at 0x2564c88&gt;}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="attributes-in-a-tables-netcdf3-file">
+<h3>Attributes in a tables.netcdf3 file<a class="headerlink" href="#attributes-in-a-tables-netcdf3-file" title="Permalink to this headline">¶</a></h3>
+<p>There are two types of attributes in a
+tables.netcdf3 file, global (or file) and
+variable. Global attributes provide information about the dataset,
+or file, as a whole. Variable attributes provide information about
+one of the variables in the file. Global attributes are set by
+assigning values to NetCDFFile instance
+variables. Variable attributes are set by assigning values to
+NetCDFVariable instance variables.</p>
+<p>Attributes can be strings, numbers or sequences. Returning to
+our example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="s">&#39;bogus example to illustrate the use of tables.netcdf3&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="s">&#39;PyTables Users Guide&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">latitudes</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="s">&#39;degrees north&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pressure</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="s">&#39;hPa&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">temp</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="s">&#39;K&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">times</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="s">&#39;days since January 1, 2005&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">times</span><span class="o">.</span><span class="n">scale_factor</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>The ncattrs method of the
+NetCDFFile object can be used to retrieve the
+names of all the global attributes. This method is provided as a
+convenience, since using the built-in dir Python
+function will return a bunch of private methods and attributes that
+cannot (or should not) be modified by the user. Similarly, the
+ncattrs method of a
+NetCDFVariable object returns all of the netCDF
+variable attribute names. These functions can be used to easily
+print all of the attributes currently defined, like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">file</span><span class="o">.</span><span class="n">ncattrs</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="s">&#39;Global attr&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;=&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">file</span><span class="p">,</span><span class="n">name</span><span class="p">)</span>
+<span class="go">Global attr description = bogus example to illustrate the use of tables.netcdf3</span>
+<span class="go">Global attr history = Created Mon Nov  7 10:30:56 2005</span>
+<span class="go">Global attr source = PyTables Users Guide</span>
+</pre></div>
+</div>
+<p>Note that the ncattrs function is not part
+of the Scientific.IO.NetCDF interface.</p>
+</div>
+<div class="section" id="writing-data-to-and-retrieving-data-from-a-tables-netcdf3-variable">
+<h3>Writing data to and retrieving data from a tables.netcdf3 variable<a class="headerlink" href="#writing-data-to-and-retrieving-data-from-a-tables-netcdf3-variable" title="Permalink to this headline">¶</a></h3>
+<p>Now that you have a netCDF variable object, how do you put
+data into it? If the variable has no <em>unlimited</em>
+dimension, you just treat it like a Numeric array object and assign
+data to a slice:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">levels</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">latitudes</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">89</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">lev</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">[:]:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">pressure</span><span class="p">[:,:]</span> <span class="o">=</span> <span class="mf">1000.</span><span class="o">-</span><span class="mf">100.</span><span class="o">*</span><span class="n">lev</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="s">&#39;levels = &#39;</span><span class="p">,</span><span class="n">levels</span><span class="p">[:]</span>
+<span class="go">levels =  [ 1  2  3  4  5  6  7  8  9 10 11 12]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="s">&#39;latitudes =</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span><span class="n">latitudes</span><span class="p">[:]</span>
+<span class="go">latitudes =</span>
+<span class="go">[-89. -87. -85. -83. -81. -79. -77. -75. -73. -71. -69. -67. -65. -63.</span>
+<span class="go">-61. -59. -57. -55. -53. -51. -49. -47. -45. -43. -41. -39. -37. -35.</span>
+<span class="go">-33. -31. -29. -27. -25. -23. -21. -19. -17. -15. -13. -11.  -9.  -7.</span>
+<span class="go">-5.  -3.  -1.   1.   3.   5.   7.   9.  11.  13.  15.  17.  19.  21.</span>
+<span class="go">23.  25.  27.  29.  31.  33.  35.  37.  39.  41.  43.  45.  47.  49.</span>
+<span class="go">51.  53.  55.  57.  59.  61.  63.  65.  67.  69.  71.  73.  75.  77.</span>
+<span class="go">79.  81.  83.  85.  87.  89.]</span>
+</pre></div>
+</div>
+<p>Note that retrieving data from the netCDF variable object
+works just like a Numeric array too. If the netCDF variable has an
+<em>unlimited</em> dimension, and there is not yet an
+entry for the data along that dimension, the
+append method must be used:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="s">&#39;times = &#39;</span><span class="p">,</span><span class="n">times</span><span class="p">[:]</span>
+<span class="go">times =  [ 0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]</span>
+</pre></div>
+</div>
+<p>The data you append must have either the same number of
+dimensions as the NetCDFVariable, or one less.
+The shape of the data you append must be the same as the
+NetCDFVariable for all of the dimensions except
+the <em>unlimited</em> dimension. The length of the data
+long the <em>unlimited</em> dimension controls how may
+entries along the <em>unlimited</em> dimension are
+appended. If the data you append has one fewer number of dimensions
+than the NetCDFVariable, it is assumed that you
+are appending one entry along the <em>unlimited</em>
+dimension. For example, if the NetCDFVariable has
+shape (10,50,100) (where the dimension length of
+length 10 is the <em>unlimited</em>
+dimension), and you append an array of shape
+(50,100), the NetCDFVariable
+will subsequently have a shape of (11,50,100). If
+you append an array with shape (5,50,100), the
+NetCDFVariable will have a new shape of
+(15,50,100). Appending an array whose last two
+dimensions do not have a shape (50,100) will
+raise an exception. This append method does not
+exist in the Scientific.IO.NetCDF interface,
+instead entries are appended along the
+<em>unlimited</em> dimension one at a time by assigning
+to a slice. This is the biggest difference between the
+tables.netcdf3 and
+Scientific.IO.NetCDF interfaces.</p>
+<p>Once data has been appended to any variable with an
+<em>unlimited</em> dimension, the
+sync method can be used to synchronize the sizes
+of all the other variables with an <em>unlimited</em>
+dimension. This is done by filling in missing values (given by the
+default netCDF _FillValue, which is intended to
+indicate that the data was never defined). The
+sync method is automatically invoked with a
+NetCDFFile object is closed. Once the
+sync method has been invoked, the filled-in
+values can be assigned real data with slices:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="s">&#39;temp.shape before sync = &#39;</span><span class="p">,</span><span class="n">temp</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">temp.shape before sync =  (0, 12, 90)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="s">&#39;temp.shape after sync = &#39;</span><span class="p">,</span><span class="n">temp</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">temp.shape after sync =  (10, 12, 90)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">numarray</span> <span class="kn">import</span> <span class="n">random_array</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">temp</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">*</span><span class="n">random_array</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">pressure</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="s">&#39;time, min/max temp, temp[n,0,0] = &#39;</span><span class="p">,</span>\\
+<span class="go">times[n],min(temp[n].flat),max(temp[n].flat),temp[n,0,0]</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 0.0 0.0122650898993 9.99259281158 6.13053750992</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 1.0 0.00115821603686 9.9915933609 6.68516159058</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 2.0 0.0152112031356 9.98737239838 3.60537290573</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 3.0 0.0112022599205 9.99535560608 6.24249696732</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 4.0 0.00519315246493 9.99831295013 0.225010097027</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 5.0 0.00978941563517 9.9843454361 4.56814193726</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 6.0 0.0159023851156 9.99160385132 6.36837291718</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 7.0 0.0019518379122 9.99939727783 1.42762875557</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 8.0 0.00390585977584 9.9909954071 2.79601073265</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 9.0 0.0106026884168 9.99195957184 8.18835449219</span>
+</pre></div>
+</div>
+<p>Note that appending data along an
+<em>unlimited</em> dimension always increases the length
+of the variable along that dimension. Assigning data to a variable
+with an <em>unlimited</em> dimension with a slice
+operation does not change its shape. Finally, before closing the
+file we can get a summary of its contents simply by printing the
+NetCDFFile object. This produces output very
+similar to running &#8216;ncdump -h&#8217; on a netCDF file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="nb">file</span>
+<span class="go">test.h5 {</span>
+<span class="go">dimensions:</span>
+<span class="go">lat = 90 ;</span>
+<span class="go">time = UNLIMITED ; // (10 currently)</span>
+<span class="go">level = 12 ;</span>
+<span class="go">variables:</span>
+<span class="go">float latitude(&#39;lat&#39;,) ;</span>
+<span class="go">latitude:units = &#39;degrees north&#39; ;</span>
+<span class="go">int pressure(&#39;level&#39;, &#39;lat&#39;) ;</span>
+<span class="go">pressure:units = &#39;hPa&#39; ;</span>
+<span class="go">int level(&#39;level&#39;,) ;</span>
+<span class="go">float temp(&#39;time&#39;, &#39;level&#39;, &#39;lat&#39;) ;</span>
+<span class="go">temp:units = &#39;K&#39; ;</span>
+<span class="go">double time(&#39;time&#39;,) ;</span>
+<span class="go">time:scale_factor = 1 ;</span>
+<span class="go">time:units = &#39;days since January 1, 2005&#39; ;</span>
+<span class="go">// global attributes:</span>
+<span class="go">:description = &#39;bogus example to illustrate the use of tables.netcdf3&#39; ;</span>
+<span class="go">:history = &#39;Created Wed Nov  9 12:29:13 2005&#39; ;</span>
+<span class="go">:source = &#39;PyTables Users Guide&#39; ;</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="efficient-compression-of-tables-netcdf3-variables">
+<h3>Efficient compression of tables.netcdf3 variables<a class="headerlink" href="#efficient-compression-of-tables-netcdf3-variables" title="Permalink to this headline">¶</a></h3>
+<p>Data stored in NetCDFVariable objects is
+compressed on disk by default. The parameters for the default
+compression are determined from a Filters class
+instance (see section <a class="reference internal" href="libref.html#filtersclassdescr"><em>The Filters class</em></a>) with complevel=6,
+complib=&#8217;zlib&#8217; and shuffle=True. To change the default
+compression, simply pass a Filters instance to
+createVariable with the
+filters keyword. If your data only has a certain
+number of digits of precision (say for example, it is temperature
+data that was measured with a precision of 0.1
+degrees), you can dramatically improve compression by quantizing (or
+truncating) the data using the
+least_significant_digit keyword argument to
+createVariable. The <em>least significant
+digit</em> is the power of ten of the smallest decimal place
+in the data that is a reliable value. For example if the data has a
+precision of 0.1, then setting
+least_significant_digit=1 will cause data the
+data to be quantized using
+numpy.around(scale*data)/scale, where
+scale = 2**bits, and bits is determined so that a
+precision of 0.1 is retained (in this case
+bits=4).</p>
+<p>In our example, try replacing the line:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">temp</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span><span class="s">&#39;temp&#39;</span><span class="p">,</span><span class="s">&#39;f&#39;</span><span class="p">,(</span><span class="s">&#39;time&#39;</span><span class="p">,</span><span class="s">&#39;level&#39;</span><span class="p">,</span><span class="s">&#39;lat&#39;</span><span class="p">,))</span>
+</pre></div>
+</div>
+<p>with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">temp</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span><span class="s">&#39;temp&#39;</span><span class="p">,</span><span class="s">&#39;f&#39;</span><span class="p">,(</span><span class="s">&#39;time&#39;</span><span class="p">,</span><span class="s">&#39;level&#39;</span><span class="p">,</span><span class="s">&#39;lat&#39;</span><span class="p">,),</span> <span class="n">least_significant_digit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and see how much smaller the resulting file is.</p>
+<p>The least_significant_digit keyword
+argument is not allowed in Scientific.IO.NetCDF,
+since netCDF version 3 does not support compression. The flexible,
+fast and efficient compression available in HDF5 is the main reason
+I wrote the tables.netcdf3 package - my netCDF
+files were just getting too big.</p>
+<p>The createVariable method has one other
+keyword argument not found in
+Scientific.IO.NetCDF -
+expectedsize. The expectedsize
+keyword can be used to set the expected number of entries along the
+<em>unlimited</em> dimension (default 10000). If you
+expect that your data with have an order of magnitude more or less
+than 10000 entries along the <em>unlimited</em>
+dimension, you may consider setting this keyword to improve
+efficiency (see <a class="reference internal" href="optimization.html#expectedrowsoptim"><em>Informing PyTables about expected number of rows in tables or arrays</em></a> for details).</p>
+</div>
+</div>
+<div class="section" id="tables-netcdf3-package-reference">
+<h2>tables.netcdf3 package reference<a class="headerlink" href="#tables-netcdf3-package-reference" title="Permalink to this headline">¶</a></h2>
+<p class="deprecated">
+<span class="versionmodified">Deprecated since version 2.3.</span></p>
+<div class="section" id="global-constants">
+<h3>Global constants<a class="headerlink" href="#global-constants" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.netcdf3._fillvalue_dict">
+<tt class="descclassname">tables.netcdf3.</tt><tt class="descname">_fillvalue_dict</tt><a class="headerlink" href="#tables.netcdf3._fillvalue_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary whose keys are
+NetCDFVariable single character typecodes
+and whose values are the netCDF _FillValue for that
+typecode.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.netcdf3.ScientificIONetCDF_imported">
+<tt class="descclassname">tables.netcdf3.</tt><tt class="descname">ScientificIONetCDF_imported</tt><a class="headerlink" href="#tables.netcdf3.ScientificIONetCDF_imported" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if Scientific.IO.NetCDF is installed and can be imported.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="the-netcdffile-class">
+<h3>The NetCDFFile class<a class="headerlink" href="#the-netcdffile-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="tables.netcdf3.NetCDFFile">
+<em class="property">class </em><tt class="descclassname">tables.netcdf3.</tt><tt class="descname">NetCDFFile</tt><big>(</big><em>filename</em>, <em>mode='r'</em>, <em>history=None</em><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens an existing tables.netcdf3 file (mode
+= &#8216;r&#8217; or &#8216;a&#8217;) or creates a new
+one (mode = &#8216;w&#8217;). The history
+keyword can be used to set the NetCDFFile.history
+global attribute (if mode = &#8216;a&#8217; or &#8216;w&#8217;).</p>
+<p>A NetCDFFile object has two standard
+attributes: dimensions and
+variables. The values of both are dictionaries,
+mapping dimension names to their associated lengths and variable
+names to variables. All other attributes correspond to global
+attributes defined in a netCDF file. Global file attributes are
+created by assigning to an attribute of the NetCDFFile object.</p>
+</dd></dl>
+
+<div class="section" id="netcdffile-methods">
+<h4>NetCDFFile methods<a class="headerlink" href="#netcdffile-methods" title="Permalink to this headline">¶</a></h4>
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFFile.close">
+<tt class="descclassname">NetCDFFile.</tt><tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFFile.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFFile.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the file (after invoking the sync method).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFFile.sync">
+<tt class="descclassname">NetCDFFile.</tt><tt class="descname">sync</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFFile.sync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFFile.sync" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronizes the size of variables along the
+<em>unlimited</em> dimension, by filling in data
+with default netCDF _FillValue. Returns the length of the
+<em>unlimited</em> dimension. Invoked automatically
+when the NetCDFFile object is closed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFFile.ncattrs">
+<tt class="descclassname">NetCDFFile.</tt><tt class="descname">ncattrs</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFFile.ncattrs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFFile.ncattrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list with the names of all currently defined
+netCDF global file attributes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFFile.createDimension">
+<tt class="descclassname">NetCDFFile.</tt><tt class="descname">createDimension</tt><big>(</big><em>name</em>, <em>length</em><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFFile.createDimension"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFFile.createDimension" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a netCDF dimension with a name given by the Python
+string name and a size given by the integer
+size. If size = None, the
+dimension is <em>unlimited</em> (i.e. it can grow
+dynamically). There can be only one
+<em>unlimited</em> dimension in a file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFFile.createVariable">
+<tt class="descclassname">NetCDFFile.</tt><tt class="descname">createVariable</tt><big>(</big><em>name</em>, <em>type</em>, <em>dimensions</em>, <em>least_significant_digit= None</em>, <em>expectedsize=10000</em>, <em>filters=None</em><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFFile.createVariable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFFile.createVariable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new variable with the given name, type,
+and dimensions. The type is a one-letter Numeric
+typecode string which can be one of f
+(Float32), d (Float64), i
+(Int32), l (Int32), s
+(Int16), c (CharType - length 1),
+F (Complex32), D
+(Complex64) or 1 (Int8); the predefined type
+constants from Numeric can also be used. The
+F and D types are not
+supported in netCDF or Scientific.IO.NetCDF, if they are used in
+a tables.netcdf3 file, that file cannot be
+converted to a true netCDF file nor can it be shared over the
+Internet with OPeNDAP. Dimensions must be a tuple containing
+dimension names (strings) that have been defined previously by
+createDimensions. The
+least_significant_digit is the power of ten
+of the smallest decimal place in the variable&#8217;s data that is a
+reliable value. If this keyword is specified, the variable&#8217;s
+data truncated to this precision to improve compression. The
+expectedsize keyword can be used to set the
+expected number of entries along the
+<em>unlimited</em> dimension (default 10000). If you
+expect that your data with have an order of magnitude more or
+less than 10000 entries along the <em>unlimited</em>
+dimension, you may consider setting this keyword to improve
+efficiency (see <a class="reference internal" href="optimization.html#expectedrowsoptim"><em>Informing PyTables about expected number of rows in tables or arrays</em></a> for details). The
+filters keyword is a PyTables
+Filters instance that describes how to store
+the data on disk. The default corresponds to
+complevel=6,
+complib=&#8217;zlib&#8217;,
+shuffle=True and fletcher32=False.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFFile.nctoh5">
+<tt class="descclassname">NetCDFFile.</tt><tt class="descname">nctoh5</tt><big>(</big><em>filename</em>, <em>unpackshort=True</em>, <em>filters=None</em><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFFile.nctoh5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFFile.nctoh5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports the data in a netCDF version 3 file
+(filename) into a
+NetCDFFile object using
+Scientific.IO.NetCDF
+(ScientificIONetCDF_imported must be True). If
+unpackshort=True, data packed as short
+integers (type s) in the netCDF file will be
+unpacked to type f using the scale_factor and
+add_offset netCDF variable attributes. The
+filters keyword can be set to a PyTables
+Filters instance to change the default
+parameters used to compress the data in the
+tables.netcdf3 file. The default corresponds
+to complevel=6,
+complib=&#8217;zlib&#8217;,
+shuffle=True and
+fletcher32=False.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFFile.h5tonc">
+<tt class="descclassname">NetCDFFile.</tt><tt class="descname">h5tonc</tt><big>(</big><em>filename</em>, <em>packshort=False</em>, <em>scale_factor=None</em>, <em>add_offset=None</em><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFFile.h5tonc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFFile.h5tonc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports the data in a tables.netcdf3
+file defined by the NetCDFFile instance into
+a netCDF version 3 file using
+Scientific.IO.NetCDF (ScientificIONetCDF_imported must be True). If
+packshort=True&gt; the dictionaries
+scale_factor and
+add_offset are used to pack data of type
+f as  short integers (of types) in the netCDF file. Since netCDF version 3
+does not provide automatic compression, packing as short
+integers is a commonly used way of saving disk space (see this
+<a class="reference external" href="http://www.esrl.noaa.gov/psd/data/gridded/conventions/cdc_netcdf_standard.shtml">page</a>
+for more details). The keys of these dictionaries are the
+variable names to pack, the values are the scale_factors and
+offsets to use in the packing. The data are packed so that the
+original Float32 values can be reconstructed by multiplying the
+scale_factor and adding
+add_offset. The resulting netCDF file will
+have the scale_factor and
+add_offset variable attributes set
+appropriately.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="the-netcdfvariable-class">
+<h3>The NetCDFVariable class<a class="headerlink" href="#the-netcdfvariable-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="tables.netcdf3.NetCDFVariable">
+<em class="property">class </em><tt class="descclassname">tables.netcdf3.</tt><tt class="descname">NetCDFVariable</tt><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFVariable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFVariable" title="Permalink to this definition">¶</a></dt>
+<dd><p>The NetCDFVariable constructor is not
+called explicitly, rather an NetCDFVariable
+instance is returned by an invocation of
+NetCDFFile.createVariable.
+NetCDFVariable objects behave like arrays, and
+have the standard attributes of arrays (such as
+shape). Data can be assigned or extracted from
+NetCDFVariable objects via slices.</p>
+</dd></dl>
+
+<div class="section" id="netcdfvariable-methods">
+<h4>NetCDFVariable methods<a class="headerlink" href="#netcdfvariable-methods" title="Permalink to this headline">¶</a></h4>
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFVariable.typecode">
+<tt class="descclassname">NetCDFVariable.</tt><tt class="descname">typecode</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFVariable.typecode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFVariable.typecode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a single character typecode describing the type of
+the variable, one of f (Float32),
+d (Float64), i (Int32),
+l (Int32), s (Int16),
+c (CharType - length 1), F
+(Complex32), D (Complex64) or
+1 (Int8).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFVariable.append">
+<tt class="descclassname">NetCDFVariable.</tt><tt class="descname">append</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFVariable.append"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFVariable.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append data to a variable along its
+<em>unlimited</em> dimension. The data you append
+must have either the same number of dimensions as the
+NetCDFVariable, or one less. The shape of the
+data you append must be the same as the
+NetCDFVariable for all of the dimensions
+except the <em>unlimited</em> dimension. The length
+of the data long the <em>unlimited</em> dimension
+controls how may entries along the
+<em>unlimited</em> dimension are appended. If the
+data you append has one fewer number of dimensions than the
+NetCDFVariable, it is assumed that you are
+appending one entry along the <em>unlimited</em>
+dimension. For variables without an
+<em>unlimited</em> dimension, data can simply be
+assigned to a slice without using the append
+method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFVariable.ncattrs">
+<tt class="descclassname">NetCDFVariable.</tt><tt class="descname">ncattrs</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFVariable.ncattrs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFVariable.ncattrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list with all the names of the currently defined
+netCDF variable attributes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFVariable.assignValue">
+<tt class="descclassname">NetCDFVariable.</tt><tt class="descname">assignValue</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFVariable.assignValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFVariable.assignValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provided for compatibility with
+Scientific.IO.NetCDF. Assigns data to the
+variable. If the variable has an <em>unlimited</em>
+dimension, it is equivalent to append(data).
+If the variable has no <em>unlimited</em> dimension,
+it is equivalent to assigning data to the variable with the
+slice [:].</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.netcdf3.NetCDFVariable.getValue">
+<tt class="descclassname">NetCDFVariable.</tt><tt class="descname">getValue</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/tables/netcdf3.html#NetCDFVariable.getValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.netcdf3.NetCDFVariable.getValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provided for compatibility with
+Scientific.IO.NetCDF. Returns all the data in
+the variable. Equivalent to extracting the slice [:] from the variable.</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+<div class="section" id="converting-between-true-netcdf-files-and-tables-netcdf3-files">
+<h2>Converting between true netCDF files and tables.netcdf3 files<a class="headerlink" href="#converting-between-true-netcdf-files-and-tables-netcdf3-files" title="Permalink to this headline">¶</a></h2>
+<p>If Scientific.IO.NetCDF is installed,
+tables.netcdf3 provides facilities for converting
+between true netCDF version 3 files and
+tables.netcdf3 hdf5 files via the
+NetCDFFile.h5tonc() and
+NetCDFFile.nctoh5() class methods. Also, the
+nctoh5 command-line utility (see <a class="reference internal" href="utilities.html#nctoh5descr"><em>nctoh5</em></a>) uses the
+NetCDFFile.nctoh5() class method.</p>
+<p>As an example, look how to convert a
+tables.netcdf3 hdf5 file to a true netCDF version 3
+file (named test.nc):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">scale_factor</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;temp&#39;</span><span class="p">:</span> <span class="mf">1.75e-4</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add_offset</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;temp&#39;</span><span class="p">:</span> <span class="mf">5.</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span><span class="o">.</span><span class="n">h5tonc</span><span class="p">(</span><span class="s">&#39;test.nc&#39;</span><span class="p">,</span><span class="n">packshort</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> \\
+<span class="go">scale_factor=scale_factor,add_offset=add_offset)</span>
+<span class="go">packing temp as short integers ...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The dictionaries scale_factor and
+add_offset are used to optionally pack the data as
+short integers in the netCDF file. Since netCDF version 3 does not
+provide automatic compression, packing as short integers is a commonly
+used way of saving disk space (see this <a class="reference external" href="http://www.esrl.noaa.gov/psd/data/gridded/conventions/cdc_netcdf_standard.shtml">page</a>
+for more details). The keys of these dictionaries are the variable
+names to pack, the values are the scale_factors and offsets to use in
+the packing. The resulting netCDF file will have the
+scale_factor and add_offset
+variable attributes set appropriately.</p>
+<p>To convert the netCDF file back to a
+tables.netcdf3 hdf5 file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">history</span> <span class="o">=</span> <span class="s">&#39;Convert from netCDF &#39;</span> <span class="o">+</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span> <span class="o">=</span> <span class="n">NetCDF</span><span class="o">.</span><span class="n">NetCDFFile</span><span class="p">(</span><span class="s">&#39;test2.h5&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">history</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nobjects</span><span class="p">,</span> <span class="n">nbytes</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">nctoh5</span><span class="p">(</span><span class="s">&#39;test.nc&#39;</span><span class="p">,</span><span class="n">unpackshort</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">nobjects</span><span class="p">,</span><span class="s">&#39; objects converted from netCDF, totaling&#39;</span><span class="p">,</span><span class="n">nbytes</span><span class="p">,</span><span class="s">&#39;bytes&#39;</span>
+<span class="go">5  objects converted from netCDF, totaling 48008 bytes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">temp</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s">&#39;temp&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="s">&#39;temp.shape after h5 --&gt; netCDF --&gt; h5 conversion = &#39;</span><span class="p">,</span><span class="n">temp</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">temp.shape after h5 --&gt; netCDF --&gt; h5 conversion =  (10, 12, 90)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="s">&#39;time, min/max temp, temp[n,0,0] = &#39;</span><span class="p">,</span>\\
+<span class="go">times[n],min(temp[n].flat),max(temp[n].flat),temp[n,0,0]</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 0.0 0.0123250000179 9.99257469177 6.13049983978</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 1.0 0.00130000000354 9.99152469635 6.68507480621</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 2.0 0.0153000000864 9.98732471466 3.60542488098</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 3.0 0.0112749999389 9.99520015717 6.2423248291</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 4.0 0.00532499980181 9.99817466736 0.225124999881</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 5.0 0.00987500045449 9.98417472839 4.56827497482</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 6.0 0.01600000076 9.99152469635 6.36832523346</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 7.0 0.00200000009499 9.99922466278 1.42772495747</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 8.0 0.00392499985173 9.9908246994 2.79605007172</span>
+<span class="go">time, min/max temp, temp[n,0,0] = 9.0 0.0107500003651 9.99187469482 8.18832492828</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Setting unpackshort=True tells
+nctoh5 to unpack all of the variables which have
+the scale_factor and add_offset
+attributes back to floating point arrays. Note that
+tables.netcdf3 files have some features not
+supported in netCDF (such as Complex data types and the ability to
+make any dimension <em>unlimited</em>).
+tables.netcdf3 files which utilize these features
+cannot be converted to netCDF using
+NetCDFFile.h5tonc.</p>
+</div>
+<div class="section" id="tables-netcdf3-file-structure">
+<h2>tables.netcdf3 file structure<a class="headerlink" href="#tables-netcdf3-file-structure" title="Permalink to this headline">¶</a></h2>
+<p>A tables.netcdf3 file consists of array
+objects (either EArrays or
+CArrays) located in the root group of a pytables
+hdf5 file. Each of the array objects must have a
+dimensions attribute, consisting of a tuple of
+dimension names (the length of this tuple should be the same as the
+rank of the array object). Any array objects with one of the supported
+datatypes in a pytables file that conforms to this simple structure
+can be read with the tables.netcdf3 package.</p>
+</div>
+<div class="section" id="sharing-data-in-tables-netcdf3-files-over-the-internet-with-opendap">
+<h2>Sharing data in tables.netcdf3 files over the Internet with OPeNDAP<a class="headerlink" href="#sharing-data-in-tables-netcdf3-files-over-the-internet-with-opendap" title="Permalink to this headline">¶</a></h2>
+<p>tables.netcdf3 datasets can be shared over
+the Internet with the OPeNDAP protocol (<a class="reference external" href="http://opendap.org">http://opendap.org</a>), via the python
+OPeNDAP module.
+A plugin for the python opendap server is included with the pytables
+distribution (contrib/h5_dap_plugin.py). Simply
+copy that file into the plugins directory of the
+opendap python module source distribution, run python
+setup.py install, point the opendap server to the directory
+containing your tables.netcdf3 files, and away you
+go. Any OPeNDAP aware client (such as Matlab or IDL) will now be able
+to access your data over http as if it were a local disk file. The
+only restriction is that your tables.netcdf3 files
+must have the extension .h5 or
+.hdf5. Unfortunately,
+tables.netcdf3 itself cannot act as an OPeNDAP
+client, although there is a client included in the opendap python
+module, and Scientific.IO.NetCDF can act as an
+OPeNDAP client if it is linked with the OPeNDAP netCDF client library.
+Either of these python modules can be used to remotely access
+tables.netcdf3 datasets with OPeNDAP.</p>
+</div>
+<div class="section" id="differences-between-the-scientific-io-netcdf-api-and-the-tables-netcdf3-api">
+<h2>Differences between the Scientific.IO.NetCDF API and the tables.netcdf3 API<a class="headerlink" href="#differences-between-the-scientific-io-netcdf-api-and-the-tables-netcdf3-api" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">tables.netcdf3 data is stored in an HDF5
+file instead of a netCDF file.</p>
+</li>
+<li><p class="first">Although each variable can have only one
+<em>unlimited</em> dimension in a
+tables.netcdf3 file, it need not be the first
+as in a true NetCDF file. Complex data types F
+(Complex32) and D (Complex64) are supported in
+tables.netcdf3, but are not supported in netCDF
+(or Scientific.IO.NetCDF). Files with variables
+that have these datatypes, or an <em>unlimited</em>
+dimension other than the first, cannot be converted to netCDF
+using h5tonc.</p>
+</li>
+<li><p class="first">Variables in a tables.netcdf3 file are
+compressed on disk by default using HDF5 zlib compression with the
+<em>shuffle</em> filter. If the
+<em>least_significant_digit</em> keyword is used when
+a variable is created with the createVariable
+method, data will be truncated (quantized) before being
+written to the file. This can significantly improve compression.
+For example, if least_significant_digit=1, data
+will be quantized using
+numpy.around(scale*data)/scale, where
+scale = 2**bits, and bits is determined so that
+a precision of 0.1 is retained (in this case
+bits=4). From <a class="reference external" href="http://www.esrl.noaa.gov/psd/data/gridded/conventions/cdc_netcdf_standard.shtml">http://www.esrl.noaa.gov/psd/data/gridded/conventions/cdc_netcdf_standard.shtml</a>:</p>
+<div class="highlight-python"><pre>"least_significant_digit -- power of ten of the smallest
+ decimal place in unpacked data that is a reliable value."</pre>
+</div>
+<p>Automatic data compression is not available in netCDF version 3,
+and hence is not available in the
+Scientific.IO.NetCDF module.</p>
+</li>
+<li><p class="first">In tables.netcdf3, data must be appended
+to a variable with an <em>unlimited</em> dimension
+using the append method of the
+netCDF variable object. In
+Scientific.IO.NetCDF, data can be added along
+an <em>unlimited</em> dimension by assigning it to a
+slice (there is no append method). The sync
+method of a tables.netcdf3 NetCDFVariable
+object synchronizes the size of all variables with an
+<em>unlimited</em> dimension by filling in data using
+the default netCDF _FillValue. The
+sync method is automatically invoked with a
+NetCDFFile object is closed. In
+Scientific.IO.NetCDF, the
+sync() method flushes the data to disk.</p>
+</li>
+<li><p class="first">The tables.netcdf3 createVariable()
+method has three extra optional keyword arguments not found in the
+Scientific.IO.NetCDF interface,
+<em>least_significant_digit</em> (see item (2) above),
+<em>expectedsize</em> and
+<em>filters</em>. The
+<em>expectedsize</em> keyword applies only to
+variables with an <em>unlimited</em> dimension, and is
+an estimate of the number of entries that will be added along that
+dimension (default 1000). This estimate is used to optimize HDF5
+file access and memory usage. The <em>filters</em>
+keyword is a PyTables filters instance that describes how to store
+the data on disk. The default corresponds to
+complevel=6, complib=&#8217;zlib&#8217;,
+shuffle=True and
+fletcher32=False.</p>
+</li>
+<li><p class="first">tables.netcdf3 data can be saved to a
+true netCDF file using the NetCDFFile class
+method h5tonc (if
+Scientific.IO.NetCDF is installed). The
+<em>unlimited</em> dimension must be the first (for
+all variables in the file) in order to use the
+h5tonc method. Data can also be imported from a
+true netCDF file and saved in an HDF5
+tables.netcdf3 file using the
+nctoh5 class method.</p>
+</li>
+<li><p class="first">In tables.netcdf3 a list of attributes
+corresponding to global netCDF attributes defined in the file can
+be obtained with the NetCDFFile ncattrs method.
+Similarly, netCDF variable attributes can be obtained with the
+NetCDFVariable ncattrs
+method. These functions are not available in the
+Scientific.IO.NetCDF API.</p>
+</li>
+<li><p class="first">You should not define tables.netcdf3
+global or variable attributes that start with
+_NetCDF_. Those names are reserved for internal use.</p>
+</li>
+<li><p class="first">Output similar to &#8216;ncdump -h&#8217; can be obtained by simply
+printing a tables.netcdf3
+NetCDFFile instance.</p>
+</li>
+</ol>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../index.html">
+          <img class="logo" src="../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">netcdf3 - a PyTables NetCDF3 emulation API (deprecated)</a><ul>
+<li><a class="reference internal" href="#what-is-netcdf3">What is netcdf3?</a></li>
+<li><a class="reference internal" href="#using-the-tables-netcdf3-package">Using the tables.netcdf3 package</a><ul>
+<li><a class="reference internal" href="#creating-opening-closing-a-tables-netcdf3-file">Creating/Opening/Closing a tables.netcdf3 file</a></li>
+<li><a class="reference internal" href="#dimensions-in-a-tables-netcdf3-file">Dimensions in a tables.netcdf3 file</a></li>
+<li><a class="reference internal" href="#variables-in-a-tables-netcdf3-file">Variables in a tables.netcdf3 file</a></li>
+<li><a class="reference internal" href="#attributes-in-a-tables-netcdf3-file">Attributes in a tables.netcdf3 file</a></li>
+<li><a class="reference internal" href="#writing-data-to-and-retrieving-data-from-a-tables-netcdf3-variable">Writing data to and retrieving data from a tables.netcdf3 variable</a></li>
+<li><a class="reference internal" href="#efficient-compression-of-tables-netcdf3-variables">Efficient compression of tables.netcdf3 variables</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tables-netcdf3-package-reference">tables.netcdf3 package reference</a><ul>
+<li><a class="reference internal" href="#global-constants">Global constants</a></li>
+<li><a class="reference internal" href="#the-netcdffile-class">The NetCDFFile class</a><ul>
+<li><a class="reference internal" href="#netcdffile-methods">NetCDFFile methods</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-netcdfvariable-class">The NetCDFVariable class</a><ul>
+<li><a class="reference internal" href="#netcdfvariable-methods">NetCDFVariable methods</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#converting-between-true-netcdf-files-and-tables-netcdf3-files">Converting between true netCDF files and tables.netcdf3 files</a></li>
+<li><a class="reference internal" href="#tables-netcdf3-file-structure">tables.netcdf3 file structure</a></li>
+<li><a class="reference internal" href="#sharing-data-in-tables-netcdf3-files-over-the-internet-with-opendap">Sharing data in tables.netcdf3 files over the Internet with OPeNDAP</a></li>
+<li><a class="reference internal" href="#differences-between-the-scientific-io-netcdf-api-and-the-tables-netcdf3-api">Differences between the Scientific.IO.NetCDF API and the tables.netcdf3 API</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="filenode.html"
+                        title="previous chapter">filenode - simulating a filesystem with PyTables</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="datatypes.html"
+                        title="next chapter">Supported data types in PyTables</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/usersguide/netcdf3.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="datatypes.html" title="Supported data types in PyTables"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="filenode.html" title="filenode - simulating a filesystem with PyTables"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">PyTables 2.4.0 documentation</a> &raquo;</li>
+
+          <li><a href="index.html" >PyTables User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2011-2012, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

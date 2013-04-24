@@ -1,0 +1,879 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.netcdf3 &mdash; PyTables 2.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 2.4.0 documentation" href="../../index.html" />
+    <link rel="up" title="tables" href="../tables.html" /> 
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">PyTables 2.4.0 documentation</a> &raquo;</li>
+
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../tables.html" accesskey="U">tables</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tables.netcdf3</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">PyTables NetCDF version 3 emulation API.</span>
+
+<span class="sd">This package provides an API is nearly identical to Scientific.IO.NetCDF</span>
+<span class="sd">(http://starship.python.net/~hinsen/ScientificPython/ScientificPythonManual/Scientific.html).</span>
+<span class="sd">Some key differences between the Scientific.IO.NetCDF API and the pytables</span>
+<span class="sd">NetCDF emulation API to keep in mind are:</span>
+
+<span class="sd">1) data is stored in an HDF5 file instead of a netCDF file.</span>
+<span class="sd">2) Although each variable can have only one unlimited</span>
+<span class="sd">   dimension, it need not be the first as in a true NetCDF file.</span>
+<span class="sd">   Complex data types &#39;F&#39; (complex64) and &#39;D&#39; (complex128) are supported</span>
+<span class="sd">   in tables.netcdf3, but are not supported in netCDF</span>
+<span class="sd">   (or Scientific.IO.NetCDF). Files with variables that have</span>
+<span class="sd">   these datatypes, or an unlimited dimension other than the first,</span>
+<span class="sd">   cannot be converted to netCDF using h5tonc.</span>
+<span class="sd">3) variables are compressed on disk by default using</span>
+<span class="sd">   HDF5 zlib compression with the &#39;shuffle&#39; filter.</span>
+<span class="sd">   If the &#39;least_significant_digit&#39; keyword is used when a</span>
+<span class="sd">   variable is created with the createVariable method, data will be</span>
+<span class="sd">   truncated (quantized) before being written to the file.</span>
+<span class="sd">   This can significantly improve compression.  For example, if</span>
+<span class="sd">   least_significant_digit=1, data will be quantized using</span>
+<span class="sd">   numpy.around(scale*data)/scale, where scale = 2**bits, and</span>
+<span class="sd">   bits is determined so that a precision of 0.1 is retained (in</span>
+<span class="sd">   this case bits=4).</span>
+<span class="sd">   From http://www.cdc.noaa.gov/cdc/conventions/cdc_netcdf_standard.shtml:</span>
+<span class="sd">   &quot;least_significant_digit -- power of ten of the smallest decimal</span>
+<span class="sd">   place in unpacked data that is a reliable value.&quot;</span>
+<span class="sd">4) data must be appended to a variable with an unlimited</span>
+<span class="sd">   dimension using the &#39;append&#39; method of the netCDF</span>
+<span class="sd">   variable object. In Scientific.IO.NetCDF, data can be added</span>
+<span class="sd">   along an unlimited dimension by assigning it to a slice (there</span>
+<span class="sd">   is no append method).</span>
+<span class="sd">   The &#39;sync&#39; method synchronizes the size</span>
+<span class="sd">   of all variables with an unlimited dimension by filling in</span>
+<span class="sd">   data using the default netCDF _FillValue, and</span>
+<span class="sd">   is invoked automatically when the NetCDFFile object is closed.</span>
+<span class="sd">   In the Scientific.IO.NetCDF, the &#39;sync&#39; method flushes the data to disk.</span>
+<span class="sd">5) the createVariable method has three extra optional keyword</span>
+<span class="sd">   arguments not found in the Scientific.IO.NetCDF interface,</span>
+<span class="sd">   &#39;least_significant_digit&#39; (see item (2) above), &#39;expectedsize&#39;</span>
+<span class="sd">   and &#39;filters&#39;.</span>
+<span class="sd">   The &#39;expectedsize&#39; keyword applies only to variables with an</span>
+<span class="sd">   unlimited dimension, and is an estimate of the number</span>
+<span class="sd">   of entries that will be added along that dimension</span>
+<span class="sd">   (default 1000). This estimate is used to optimize</span>
+<span class="sd">   HDF5 file access and memory usage.</span>
+<span class="sd">   The &#39;filters&#39; keyword is a PyTables filters instance</span>
+<span class="sd">   that describes how to store the data on disk.</span>
+<span class="sd">   The default corresponds to complevel=6, complib=&#39;zlib&#39;,</span>
+<span class="sd">   shuffle=1 and fletcher32=0.</span>
+<span class="sd">6) data can be saved to a real netCDF file using the NetCDFFile class</span>
+<span class="sd">   method &#39;h5tonc&#39; (if Scientific.IO.NetCDF is installed). The</span>
+<span class="sd">   unlimited dimension must be the first (for all variables in the file)</span>
+<span class="sd">   in order to use the &#39;h5tonc&#39; method.</span>
+<span class="sd">   Data can also be imported from a true netCDF file and saved</span>
+<span class="sd">   in an HDF5 file using the &#39;nctoh5&#39; class method.</span>
+<span class="sd">7) A list of attributes corresponding to global netCDF attributes</span>
+<span class="sd">   defined in the file can be obtained with the NetCDFFile ncattrs method.</span>
+<span class="sd">   Similarly, netCDF variable attributes can be obtained with</span>
+<span class="sd">   the NetCDFVariable ncattrs method.</span>
+<span class="sd">8) you should not define global or variable attributes that start</span>
+<span class="sd">   with &#39;_NetCDF_&#39;, those names are reserved for internal use.</span>
+<span class="sd">9) output similar to &#39;ncdump -h&#39; can be obtained by simply</span>
+<span class="sd">   printing the NetCDFFile instance.</span>
+
+<span class="sd">A tables.netcdf3 file consists of array objects (either EArrays or</span>
+<span class="sd">CArrays) located in the root group of a pytables hdf5 file.  Each of</span>
+<span class="sd">the array objects must have a dimensions attribute, consisting of a</span>
+<span class="sd">tuple of dimension names (the length of this tuple should be the same</span>
+<span class="sd">as the rank of the array object). Any such objects with one</span>
+<span class="sd">of the supported data types in a pytables file that conforms to</span>
+<span class="sd">this simple structure can be read with the tables.netcdf3 package.</span>
+
+<span class="sd">Note: This package does not yet create HDF5 files that are compatible</span>
+<span class="sd">with netCDF version 4.</span>
+
+<span class="sd">Datasets created with the PyTables netCDF emulation API can be shared</span>
+<span class="sd">over the internet with the OPeNDAP protocol (http://opendap.org), via</span>
+<span class="sd">the python opendap module (http://opendap.oceanografia.org).  A plugin</span>
+<span class="sd">for the python opendap server is included with the pytables</span>
+<span class="sd">distribution (contrib/h5_dap_plugin.py).  Simply copy that file into</span>
+<span class="sd">the &#39;plugins&#39; directory of the opendap python module source</span>
+<span class="sd">distribution, run &#39;setup.py install&#39;, point the opendap server to the</span>
+<span class="sd">directory containing your hdf5 files, and away you go. Any OPeNDAP</span>
+<span class="sd">aware client (such as Matlab or IDL) can now access your data over</span>
+<span class="sd">http as if it were a local disk file.</span>
+
+<span class="sd">Jeffrey Whitaker &lt;jeffrey.s.whitaker@noaa.gov&gt;</span>
+
+<span class="sd">Version: 20051110</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&#39;20051110&#39;</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;The tables.netcdf3 is not actively maintained anymore. &#39;</span>
+              <span class="s">&#39;This module is deprecated and will be removed in the future &#39;</span>
+              <span class="s">&#39;versions.&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="c"># need Numeric for h5 &lt;--&gt; netCDF conversion.</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">Numeric</span>
+    <span class="n">Numeric_imported</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">Numeric_imported</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="c"># need Scientific to convert to/from real netCDF files.</span>
+<span class="k">if</span> <span class="n">Numeric_imported</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">Scientific.IO.NetCDF</span> <span class="kn">as</span> <span class="nn">RealNetCDF</span>
+        <span class="n">ScientificIONetCDF_imported</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">ScientificIONetCDF_imported</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">ScientificIONetCDF_imported</span> <span class="o">=</span> <span class="bp">False</span>
+
+
+<span class="kn">import</span> <span class="nn">tables</span>
+
+<span class="c"># dictionary that maps pytables types to single-character Numeric typecodes.</span>
+<span class="n">_typecode_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;float64&#39;</span><span class="p">:</span> <span class="s">&#39;d&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;float32&#39;</span><span class="p">:</span> <span class="s">&#39;f&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;int32&#39;</span><span class="p">:</span> <span class="s">&#39;i&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;int16&#39;</span><span class="p">:</span> <span class="s">&#39;s&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;int8&#39;</span><span class="p">:</span> <span class="s">&#39;1&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;string&#39;</span><span class="p">:</span> <span class="s">&#39;c&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;complex64&#39;</span><span class="p">:</span> <span class="s">&#39;F&#39;</span><span class="p">,</span>
+                  <span class="s">&#39;complex128&#39;</span><span class="p">:</span> <span class="s">&#39;D&#39;</span><span class="p">,</span>
+                  <span class="p">}</span>
+
+<span class="c"># The reverse typecode dict</span>
+<span class="n">_rev_typecode_dict</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_typecode_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="n">_rev_typecode_dict</span><span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+
+<span class="c"># dictionary that maps single character Numeric typecodes to netCDF</span>
+<span class="c"># data types (False if no corresponding netCDF datatype exists).</span>
+<span class="n">_netcdftype_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;s&#39;</span><span class="p">:</span><span class="s">&#39;short&#39;</span><span class="p">,</span><span class="s">&#39;1&#39;</span><span class="p">:</span><span class="s">&#39;byte&#39;</span><span class="p">,</span><span class="s">&#39;l&#39;</span><span class="p">:</span><span class="s">&#39;int&#39;</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">:</span><span class="s">&#39;int&#39;</span><span class="p">,</span>
+          <span class="s">&#39;f&#39;</span><span class="p">:</span><span class="s">&#39;float&#39;</span><span class="p">,</span><span class="s">&#39;d&#39;</span><span class="p">:</span><span class="s">&#39;double&#39;</span><span class="p">,</span><span class="s">&#39;c&#39;</span><span class="p">:</span><span class="s">&#39;character&#39;</span><span class="p">,</span><span class="s">&#39;F&#39;</span><span class="p">:</span><span class="bp">False</span><span class="p">,</span><span class="s">&#39;D&#39;</span><span class="p">:</span><span class="bp">False</span><span class="p">}</span>
+<span class="c"># values to print out in __repr__ method.</span>
+<span class="n">_reprtype_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;s&#39;</span><span class="p">:</span><span class="s">&#39;short&#39;</span><span class="p">,</span><span class="s">&#39;1&#39;</span><span class="p">:</span><span class="s">&#39;byte&#39;</span><span class="p">,</span><span class="s">&#39;l&#39;</span><span class="p">:</span><span class="s">&#39;int&#39;</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">:</span><span class="s">&#39;int&#39;</span><span class="p">,</span>
+          <span class="s">&#39;f&#39;</span><span class="p">:</span><span class="s">&#39;float&#39;</span><span class="p">,</span><span class="s">&#39;d&#39;</span><span class="p">:</span><span class="s">&#39;double&#39;</span><span class="p">,</span><span class="s">&#39;c&#39;</span><span class="p">:</span><span class="s">&#39;character&#39;</span><span class="p">,</span><span class="s">&#39;F&#39;</span><span class="p">:</span><span class="s">&#39;complex&#39;</span><span class="p">,</span><span class="s">&#39;D&#39;</span><span class="p">:</span><span class="s">&#39;double_complex&#39;</span><span class="p">}</span>
+
+<span class="c"># _NetCDF_FillValue defaults taken netCDF 3.6.1 header file.</span>
+<span class="n">_fillvalue_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;f&#39;</span><span class="p">:</span> <span class="mf">9.9692099683868690e+36</span><span class="p">,</span>
+                   <span class="s">&#39;d&#39;</span><span class="p">:</span> <span class="mf">9.9692099683868690e+36</span><span class="p">,</span> <span class="c"># near 15 * 2^119</span>
+                   <span class="s">&#39;F&#39;</span><span class="p">:</span> <span class="mf">9.9692099683868690e+36</span><span class="o">+</span><span class="mi">0</span><span class="n">j</span><span class="p">,</span> <span class="c"># next two I made up</span>
+                   <span class="s">&#39;D&#39;</span><span class="p">:</span> <span class="mf">9.9692099683868690e+36</span><span class="o">+</span><span class="mi">0</span><span class="n">j</span><span class="p">,</span> <span class="c"># (no complex in netCDF)</span>
+                   <span class="s">&#39;i&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2147483647</span><span class="p">,</span>
+                   <span class="s">&#39;l&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2147483647</span><span class="p">,</span>
+                   <span class="s">&#39;s&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">32767</span><span class="p">,</span>
+                   <span class="s">&#39;1&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">127</span><span class="p">,</span>   <span class="c"># (signed char)-127</span>
+                   <span class="s">&#39;c&#39;</span><span class="p">:</span> <span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)}</span> <span class="c"># (char)0</span>
+
+<span class="k">def</span> <span class="nf">quantize</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">least_significant_digit</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;quantize data to improve compression.</span>
+<span class="sd">    data is quantized using around(scale*data)/scale,</span>
+<span class="sd">    where scale is 2**bits, and bits is determined from</span>
+<span class="sd">    the least_significant_digit.</span>
+<span class="sd">    For example, if least_significant_digit=1, bits will be 4.&quot;&quot;&quot;</span>
+    <span class="n">precision</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">**-</span><span class="n">least_significant_digit</span>
+    <span class="n">exp</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">exp</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">exp</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">exp</span><span class="p">))</span>
+    <span class="n">bits</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10.</span><span class="o">**-</span><span class="n">exp</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">**</span><span class="n">bits</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">scale</span><span class="o">*</span><span class="n">data</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span>
+
+<div class="viewcode-block" id="NetCDFFile"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFFile">[docs]</a><span class="k">class</span> <span class="nc">NetCDFFile</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    netCDF file Constructor: NetCDFFile(filename, mode=&quot;r&quot;,history=None)</span>
+
+<span class="sd">    Arguments:</span>
+
+<span class="sd">    filename -- Name of hdf5 file to hold data.</span>
+
+<span class="sd">    mode -- access mode. &quot;r&quot; means read-only; no data can be modified.</span>
+<span class="sd">            &quot;w&quot; means write; a new file is created, an existing</span>
+<span class="sd">            file with the same name is deleted. &quot;a&quot; means append</span>
+<span class="sd">            (in analogy with serial files); an existing file is</span>
+<span class="sd">            opened for reading and writing.</span>
+
+<span class="sd">    history -- a string that is used to define the global NetCDF</span>
+<span class="sd">    attribute &#39;history&#39;.</span>
+
+<span class="sd">    A NetCDFFile object has two standard attributes: &#39;dimensions&#39; and</span>
+<span class="sd">    &#39;variables&#39;. The values of both are dictionaries, mapping</span>
+<span class="sd">    dimension names to their associated lengths and variable names to</span>
+<span class="sd">    variables, respectively. Application programs should never modify</span>
+<span class="sd">    these dictionaries.</span>
+
+<span class="sd">    A list of attributes corresponding to global netCDF attributes</span>
+<span class="sd">    defined in the file can be obtained with the ncattrs method.</span>
+<span class="sd">    Global file attributes are created by assigning to an attribute of</span>
+<span class="sd">    the NetCDFFile object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span><span class="n">history</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="c"># open an hdf5 file.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">openFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_mode</span> <span class="o">=</span> <span class="n">mode</span>
+        <span class="c"># file already exists, set up variable and dimension dicts.</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s">&#39;w&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_h5file</span><span class="o">.</span><span class="n">root</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">CArray</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">EArray</span><span class="p">):</span>
+                    <span class="k">print</span> <span class="s">&#39;object&#39;</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="s">&#39;is not a EArray or CArray, skipping ..&#39;</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_typecode_dict</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&#39;object&#39;</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39;is not a supported datatype (&#39;</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="s">&#39;), skipping ..&#39;</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="s">&#39;dimensions&#39;</span> <span class="ow">in</span> <span class="n">var</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+                    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">var</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;dimensions&#39;</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">extdim</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">n</span> <span class="o">==</span> <span class="n">var</span><span class="o">.</span><span class="n">extdim</span><span class="p">:</span>
+                            <span class="n">val</span><span class="o">=</span><span class="bp">None</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">val</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="c"># raise an exception of a dimension of that</span>
+                            <span class="c"># name has already been encountered with a</span>
+                            <span class="c"># different value.</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">!=</span> <span class="n">val</span><span class="p">:</span>
+                                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                                        <span class="s">&#39;dimension lengths not consistent&#39;</span><span class="p">)</span>
+                        <span class="n">n</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&#39;object&#39;</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39;does not have a dimensions attribute, skipping ..&#39;</span>
+                    <span class="k">continue</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">var</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">=</span><span class="n">_NetCDFVariable</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&#39;file does not contain any objects compatible &#39;</span>
+                              <span class="s">&#39;with tables.netcdf3&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+        <span class="c"># initialize dimension and variable dictionaries for a new file.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c"># set history attribute.</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s">&#39;r&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">history</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">history</span>
+
+<div class="viewcode-block" id="NetCDFFile.createDimension"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFFile.createDimension">[docs]</a>    <span class="k">def</span> <span class="nf">createDimension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimname</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a new dimension with the given &quot;dimname&quot; and</span>
+<span class="sd">        &quot;size&quot;. &quot;size&quot; must be a positive integer or &#39;None&#39;,</span>
+<span class="sd">        which stands for the unlimited dimension. There can</span>
+<span class="sd">        be only one unlimited dimension per dataset.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">dimname</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="c"># make sure there is only one unlimited dimension.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">values</span><span class="p">()</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;only one unlimited dimension allowed!&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="NetCDFFile.createVariable"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFFile.createVariable">[docs]</a>    <span class="k">def</span> <span class="nf">createVariable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">varname</span><span class="p">,</span><span class="n">datatype</span><span class="p">,</span><span class="n">dimensions</span><span class="p">,</span><span class="n">least_significant_digit</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">expectedsize</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a new variable with the given &quot;varname&quot;, &quot;datatype&quot;, and</span>
+<span class="sd">        &quot;dimensions&quot;. The &quot;datatype&quot; is a one-letter string with the same</span>
+<span class="sd">        meaning as the typecodes for arrays in module Numeric; in</span>
+<span class="sd">        practice the predefined type constants from Numeric should</span>
+<span class="sd">        be used. &quot;dimensions&quot; must be a tuple containing dimension</span>
+<span class="sd">        names (strings) that have been defined previously.</span>
+<span class="sd">        The unlimited dimension must be the first (leftmost)</span>
+<span class="sd">        dimension of the variable.</span>
+
+<span class="sd">        If the optional keyword parameter &#39;least_significant_digit&#39; is</span>
+<span class="sd">        specified, multidimensional variables will be truncated</span>
+<span class="sd">        (quantized).  This can significantly improve compression.  For</span>
+<span class="sd">        example, if least_significant_digit=1, data will be quantized</span>
+<span class="sd">        using Numeric.around(scale*data)/scale, where scale = 2**bits,</span>
+<span class="sd">        and bits is determined so that a precision of 0.1 is retained</span>
+<span class="sd">        (in this case bits=4).</span>
+<span class="sd">        From http://www.cdc.noaa.gov/cdc/conventions/cdc_netcdf_standard.shtml:</span>
+<span class="sd">        &quot;least_significant_digit -- power of ten of the smallest decimal</span>
+<span class="sd">        place in unpacked data that is a reliable value.&quot;</span>
+
+<span class="sd">        The &#39;expectedsize&#39; keyword applies only to variables with an</span>
+<span class="sd">        unlimited dimension - it is the expected number of entries</span>
+<span class="sd">        that will be added along the unlimited dimension (default</span>
+<span class="sd">        1000).  If think the actual number of entries will be an order</span>
+<span class="sd">        of magnitude different than the default, consider providing a</span>
+<span class="sd">        guess; this will optimize the HDF5 B-Tree creation, management</span>
+<span class="sd">        process time, and memory usage.</span>
+
+<span class="sd">        The &#39;filters&#39; keyword also applies only to variables with</span>
+<span class="sd">        an unlimited dimension, and is a PyTables filters instance</span>
+<span class="sd">        that describes how to store an enlargeable array on disk.</span>
+<span class="sd">        The default is tables.Filters(complevel=6, complib=&#39;zlib&#39;,</span>
+<span class="sd">        shuffle=1, fletcher32=0).</span>
+
+<span class="sd">        The return value is the NetCDFVariable object describing the</span>
+<span class="sd">        new variable.&quot;&quot;&quot;</span>
+        <span class="c"># create NetCDFVariable instance.</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">NetCDFVariable</span><span class="p">(</span><span class="n">varname</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">datatype</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">,</span> <span class="n">least_significant_digit</span><span class="o">=</span><span class="n">least_significant_digit</span><span class="p">,</span> <span class="n">expectedsize</span><span class="o">=</span><span class="n">expectedsize</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
+        <span class="c"># update shelf variable dictionary, global variable</span>
+        <span class="c"># info dict.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span>
+        <span class="k">return</span> <span class="n">var</span>
+</div>
+<div class="viewcode-block" id="NetCDFFile.close"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFFile.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Closes the file (after calling the sync method)&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="NetCDFFile.sync"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFFile.sync">[docs]</a>    <span class="k">def</span> <span class="nf">sync</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd"> synchronize variables along unlimited dimension, filling in data</span>
+<span class="sd"> with default netCDF _FillValue. Returns the length of the</span>
+<span class="sd"> unlimited dimension. Invoked automatically when the NetCDFFile</span>
+<span class="sd"> object is closed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># find max length of unlimited dimension.</span>
+        <span class="n">len_unlim_dims</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">hasunlimdim</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">for</span> <span class="n">varname</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">extdim</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">hasunlimdim</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="n">len_unlim_dims</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">var</span><span class="o">.</span><span class="n">extdim</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hasunlimdim</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">len_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">len_unlim_dims</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_mode</span> <span class="o">==</span> <span class="s">&#39;r&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">len_max</span> <span class="c"># just returns max length of unlim dim if read-only</span>
+        <span class="c"># fill in variables that have an unlimited</span>
+        <span class="c"># dimension with _FillValue if they have fewer</span>
+        <span class="c"># entries along unlimited dimension than the max.</span>
+        <span class="k">for</span> <span class="n">varname</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">len_var</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">var</span><span class="o">.</span><span class="n">extdim</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">extdim</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">len_var</span> <span class="o">&lt;</span> <span class="n">len_max</span><span class="p">:</span>
+                <span class="n">shp</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">shp</span><span class="p">[</span><span class="n">var</span><span class="o">.</span><span class="n">extdim</span><span class="p">]</span><span class="o">=</span><span class="n">len_max</span><span class="o">-</span><span class="n">len_var</span>
+                <span class="n">dtype</span> <span class="o">=</span> <span class="n">_rev_typecode_dict</span><span class="p">[</span><span class="n">var</span><span class="o">.</span><span class="n">typecode</span><span class="p">()]</span>
+                <span class="n">var</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">var</span><span class="o">.</span><span class="n">_NetCDF_FillValue</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">len_max</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;produces output similar to &#39;ncdump -h&#39;.&quot;&quot;&quot;</span>
+        <span class="n">info</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_h5file</span><span class="o">.</span><span class="n">filename</span><span class="o">+</span><span class="s">&#39; {</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">]</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;dimensions:</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">len_unlim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sync</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">len_unlim</span>
+                <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s">&#39; = UNLIMITED ; // (&#39;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="n">size</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; currently)</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s">&#39; = &#39;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; ;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;variables:</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">varname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">dimensions</span>
+            <span class="nb">type</span> <span class="o">=</span> <span class="n">_reprtype_dict</span><span class="p">[</span><span class="n">var</span><span class="o">.</span><span class="n">typecode</span><span class="p">()]</span>
+            <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">+</span><span class="nb">type</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="n">varname</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; ;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">var</span><span class="o">.</span><span class="n">ncattrs</span><span class="p">():</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+                <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;        &#39;</span><span class="o">+</span><span class="n">varname</span><span class="o">+</span><span class="s">&#39;:&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s">&#39; = &#39;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; ;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;// global attributes:</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ncattrs</span><span class="p">():</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;        :&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s">&#39; = &#39;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; ;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;}&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c"># if name = &#39;dimensions&#39;, &#39;variables&#39;, or begins with</span>
+        <span class="c"># &#39;_NetCDF_&#39;, it is a temporary at the python level</span>
+        <span class="c"># (not stored in the hdf5 file).</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;dimensions&#39;</span><span class="p">,</span> <span class="s">&#39;variables&#39;</span><span class="p">]:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;__&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">=</span><span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;__&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_NetCDF_&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;dimensions&#39;</span><span class="p">,</span> <span class="s">&#39;variables&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+<div class="viewcode-block" id="NetCDFFile.ncattrs"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFFile.ncattrs">[docs]</a>    <span class="k">def</span> <span class="nf">ncattrs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return attributes corresponding to netCDF file attributes&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">attr</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="NetCDFFile.h5tonc"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFFile.h5tonc">[docs]</a>    <span class="k">def</span> <span class="nf">h5tonc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">packshort</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">scale_factor</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">add_offset</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;convert to a true netcdf file (filename).  Requires</span>
+<span class="sd">        Scientific.IO.NetCDF module. If packshort=True, variables are</span>
+<span class="sd">        packed as short integers using the dictionaries scale_factor</span>
+<span class="sd">        and add_offset. The dictionary keys are the the variable names</span>
+<span class="sd">        in the hdf5 file to be packed as short integers. Each</span>
+<span class="sd">        variable&#39;s unlimited dimension must be the slowest varying</span>
+<span class="sd">        (the first dimension for C/Python, the last for Fortran).&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ScientificIONetCDF_imported</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">Numeric_imported</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;Scientific.IO.NetCDF and Numeric must be installed to convert to NetCDF&#39;</span>
+            <span class="k">return</span>
+        <span class="n">ncfile</span> <span class="o">=</span> <span class="n">RealNetCDF</span><span class="o">.</span><span class="n">NetCDFFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="c"># create dimensions.</span>
+        <span class="k">for</span> <span class="n">dimname</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">ncfile</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="n">dimname</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="c"># create global attributes.</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ncattrs</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">ncfile</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+        <span class="c"># create variables.</span>
+        <span class="k">for</span> <span class="n">varname</span><span class="p">,</span> <span class="n">varin</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">packvar</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">dims</span> <span class="o">=</span> <span class="n">varin</span><span class="o">.</span><span class="n">dimensions</span>
+            <span class="n">dimsizes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">None</span> <span class="ow">in</span> <span class="n">dimsizes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dimsizes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;unlimited or enlargeable dimension must &#39;</span>
+                                     <span class="s">&#39;be most significant (slowest changing, &#39;</span>
+                                     <span class="s">&#39;or first) one in order to convert to a &#39;</span>
+                                     <span class="s">&#39;true netCDF file&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">packshort</span> <span class="ow">and</span> <span class="n">varname</span> <span class="ow">in</span> <span class="n">scale_factor</span> <span class="ow">and</span> <span class="n">varname</span> <span class="ow">in</span> <span class="n">add_offset</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;packing </span><span class="si">%s</span><span class="s"> as short integers ...&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
+                <span class="n">datatype</span> <span class="o">=</span> <span class="s">&#39;s&#39;</span>
+                <span class="n">packvar</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">datatype</span> <span class="o">=</span> <span class="n">varin</span><span class="o">.</span><span class="n">typecode</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_netcdftype_dict</span><span class="p">[</span><span class="n">datatype</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;datatype not supported in netCDF, cannot &#39;</span>
+                                 <span class="s">&#39;convert to a true netCDF file&#39;</span><span class="p">)</span>
+
+            <span class="n">varout</span> <span class="o">=</span> <span class="n">ncfile</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span><span class="n">varname</span><span class="p">,</span> <span class="n">datatype</span><span class="p">,</span> <span class="n">dims</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">varin</span><span class="o">.</span><span class="n">ncattrs</span><span class="p">():</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">varout</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">varin</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">packvar</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">varout</span><span class="p">,</span> <span class="s">&#39;scale_factor&#39;</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">[</span><span class="n">varname</span><span class="p">])</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">varout</span><span class="p">,</span> <span class="s">&#39;add_offset&#39;</span><span class="p">,</span> <span class="n">add_offset</span><span class="p">[</span><span class="n">varname</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">varin</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="k">if</span> <span class="n">packvar</span><span class="p">:</span>
+                    <span class="n">varout</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="mf">1.</span><span class="o">/</span><span class="n">scale_factor</span><span class="p">[</span><span class="n">varname</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">varin</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">-</span> <span class="n">add_offset</span><span class="p">[</span><span class="n">varname</span><span class="p">]))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s">&#39;s&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s">&#39;c&#39;</span><span class="p">:</span>
+                        <span class="n">tmp</span> <span class="o">=</span> <span class="n">Numeric</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">varin</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="s">&#39;c&#39;</span><span class="p">)</span>
+                        <span class="n">varout</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">Numeric</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">varin</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">varout</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">varin</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="c"># close file.</span>
+        <span class="n">ncfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="NetCDFFile.nctoh5"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFFile.nctoh5">[docs]</a>    <span class="k">def</span> <span class="nf">nctoh5</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">unpackshort</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;convert a true netcdf file (filename) to a hdf5 file</span>
+<span class="sd">        compatible with this package.  Requires Scientific.IO.NetCDF</span>
+<span class="sd">        module. If unpackshort=True, variables stored as short</span>
+<span class="sd">        integers with a scale and offset are unpacked to Float32</span>
+<span class="sd">        variables in the hdf5 file.  If the least_significant_digit</span>
+<span class="sd">        attribute is set, the data is quantized to improve</span>
+<span class="sd">        compression.  Use the filters keyword to change the default</span>
+<span class="sd">        tables.Filters instance used for compression (see the</span>
+<span class="sd">        createVariable docstring for details).&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ScientificIONetCDF_imported</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">Numeric_imported</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;Scientific.IO.NetCDF and Numeric must be installed to convert from NetCDF&#39;</span>
+            <span class="k">return</span>
+        <span class="n">ncfile</span> <span class="o">=</span> <span class="n">RealNetCDF</span><span class="o">.</span><span class="n">NetCDFFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="c"># create dimensions.</span>
+        <span class="n">hasunlimdim</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">for</span> <span class="n">dimname</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">ncfile</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="n">dimname</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">size</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">hasunlimdim</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c"># create variables.</span>
+        <span class="k">for</span> <span class="n">varname</span><span class="p">,</span> <span class="n">ncvar</span> <span class="ow">in</span> <span class="n">ncfile</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ncvar</span><span class="p">,</span> <span class="s">&#39;least_significant_digit&#39;</span><span class="p">):</span>
+                <span class="n">lsd</span> <span class="o">=</span> <span class="n">ncvar</span><span class="o">.</span><span class="n">least_significant_digit</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lsd</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">if</span> <span class="n">unpackshort</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ncvar</span><span class="p">,</span> <span class="s">&#39;scale_factor&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ncvar</span><span class="p">,</span> <span class="s">&#39;add_offset&#39;</span><span class="p">):</span>
+                <span class="n">dounpackshort</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="n">datatype</span> <span class="o">=</span> <span class="s">&#39;f&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dounpackshort</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="n">datatype</span> <span class="o">=</span> <span class="n">ncvar</span><span class="o">.</span><span class="n">typecode</span><span class="p">()</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span><span class="n">varname</span><span class="p">,</span> <span class="n">datatype</span><span class="p">,</span> <span class="n">ncvar</span><span class="o">.</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">least_significant_digit</span><span class="o">=</span><span class="n">lsd</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">ncvar</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">dounpackshort</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;add_offset&#39;</span><span class="p">,</span> <span class="s">&#39;scale_factor&#39;</span><span class="p">]:</span> <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">dounpackshort</span> <span class="ow">and</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;missing_value&#39;</span><span class="p">:</span> <span class="n">val</span><span class="o">=</span><span class="mf">1.e30</span>
+                <span class="c"># convert rank-0 Numeric array.to python float/int/string</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">Numeric</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">])))</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+        <span class="c"># fill variables with data.</span>
+        <span class="n">nobjects</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">nbytes</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># Initialize counters</span>
+        <span class="k">for</span> <span class="n">varname</span><span class="p">,</span> <span class="n">ncvar</span> <span class="ow">in</span> <span class="n">ncfile</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span>
+            <span class="n">extdim</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">extdim</span>
+            <span class="k">if</span> <span class="n">extdim</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">hasunlimdim</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hasunlimdim</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="n">unpackshort</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ncvar</span><span class="p">,</span> <span class="s">&#39;scale_factor&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ncvar</span><span class="p">,</span> <span class="s">&#39;add_offset&#39;</span><span class="p">):</span>
+                <span class="n">dounpackshort</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dounpackshort</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="n">hasunlimdim</span><span class="p">:</span>
+                <span class="c"># write data to enlargeable array one chunk of records at a</span>
+                <span class="c"># time (so the whole array doesn&#39;t have to be kept in memory).</span>
+                <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">nrowsinbuf</span>
+                <span class="c"># The slices parameter for var.__getitem__()</span>
+                <span class="n">slices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">ncvar</span><span class="o">.</span><span class="n">shape</span><span class="p">]</span>
+                <span class="c"># range to copy</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">stop</span> <span class="o">=</span> <span class="n">ncvar</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">extdim</span><span class="p">];</span> <span class="n">step</span> <span class="o">=</span> <span class="n">nrowsinbuf</span>
+                <span class="k">if</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span> <span class="n">step</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="c"># Start the copy itself</span>
+                <span class="k">for</span> <span class="n">start2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+                    <span class="c"># Save the records on disk</span>
+                    <span class="n">stop2</span> <span class="o">=</span> <span class="n">start2</span><span class="o">+</span><span class="n">step</span>
+                    <span class="k">if</span> <span class="n">stop2</span> <span class="o">&gt;</span> <span class="n">stop</span><span class="p">:</span>
+                        <span class="n">stop2</span> <span class="o">=</span> <span class="n">stop</span>
+                    <span class="c"># Set the proper slice in the extensible dimension</span>
+                    <span class="n">slices</span><span class="p">[</span><span class="n">extdim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start2</span><span class="p">,</span> <span class="n">stop2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">idata</span> <span class="o">=</span> <span class="n">ncvar</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">slices</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="n">dounpackshort</span><span class="p">:</span>
+                        <span class="n">tmpdata</span> <span class="o">=</span> <span class="p">(</span><span class="n">ncvar</span><span class="o">.</span><span class="n">scale_factor</span><span class="o">*</span><span class="n">idata</span><span class="o">+</span><span class="n">ncvar</span><span class="o">.</span><span class="n">add_offset</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s">&#39;f&#39;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">tmpdata</span> <span class="o">=</span> <span class="n">idata</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ncvar</span><span class="p">,</span> <span class="s">&#39;missing_value&#39;</span><span class="p">):</span>
+                        <span class="n">tmpdata</span> <span class="o">=</span> <span class="n">Numeric</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">idata</span> <span class="o">&gt;=</span> <span class="n">ncvar</span><span class="o">.</span><span class="n">missing_value</span><span class="p">,</span> <span class="mf">1.e30</span><span class="p">,</span> <span class="n">tmpdata</span><span class="p">)</span>
+                    <span class="n">var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmpdata</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">idata</span> <span class="o">=</span> <span class="n">ncvar</span><span class="p">[:]</span>
+                <span class="k">if</span> <span class="n">dounpackshort</span><span class="p">:</span>
+                    <span class="n">tmpdata</span> <span class="o">=</span> <span class="p">(</span><span class="n">ncvar</span><span class="o">.</span><span class="n">scale_factor</span><span class="o">*</span><span class="n">idata</span><span class="o">+</span><span class="n">ncvar</span><span class="o">.</span><span class="n">add_offset</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s">&#39;f&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tmpdata</span> <span class="o">=</span> <span class="n">idata</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ncvar</span><span class="p">,</span> <span class="s">&#39;missing_value&#39;</span><span class="p">):</span>
+                    <span class="n">tmpdata</span> <span class="o">=</span> <span class="n">Numeric</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">idata</span> <span class="o">&gt;=</span> <span class="n">ncvar</span><span class="o">.</span><span class="n">missing_value</span><span class="p">,</span> <span class="mf">1.e30</span><span class="p">,</span> <span class="n">tmpdata</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ncvar</span><span class="o">.</span><span class="n">typecode</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;c&#39;</span><span class="p">:</span>
+                    <span class="c"># numpy string arrays with itemsize=1 used for netCDF char arrays.</span>
+                    <span class="n">var</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tmpdata</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                                         <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;S1&quot;</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">var</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">tmpdata</span>
+            <span class="c"># Increment the counters</span>
+            <span class="n">nobjects</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">nbytes</span> <span class="o">+=</span> <span class="nb">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">var</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">itemsize</span>
+        <span class="c"># create global attributes.</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">ncfile</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="c"># convert Numeric rank-0 array to a python float/int/string</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">Numeric</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">])))</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c"># if attribute is a Numeric array, convert to python list.</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">Numeric</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">])))</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+        <span class="c"># close file.</span>
+        <span class="n">ncfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">nobjects</span><span class="p">,</span> <span class="n">nbytes</span>
+</div></div>
+<div class="viewcode-block" id="NetCDFVariable"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFVariable">[docs]</a><span class="k">class</span> <span class="nc">NetCDFVariable</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Variable in a netCDF file</span>
+
+<span class="sd">    NetCDFVariable objects are constructed by calling the method</span>
+<span class="sd">    &#39;createVariable&#39; on the NetCDFFile object.</span>
+
+<span class="sd">    NetCDFVariable objects behave much like array objects defined in</span>
+<span class="sd">    module Numeric, except that their data resides in a file.  Data is</span>
+<span class="sd">    read by indexing and written by assigning to an indexed subset;</span>
+<span class="sd">    the entire array can be accessed by the index &#39;[:]&#39;.</span>
+
+<span class="sd">    Variables with an unlimited dimension are can be compressed on</span>
+<span class="sd">    disk (by default, zlib compression (level=6) and the HDF5</span>
+<span class="sd">    &#39;shuffle&#39; filter are used). The default can be changed by passing</span>
+<span class="sd">    a tables.Filters instance to createVariable via the filters</span>
+<span class="sd">    keyword argument.  Truncating the data to a precision specified by</span>
+<span class="sd">    the least_significant_digit optional keyword argument to</span>
+<span class="sd">    createVariable will signficantly improve compression.</span>
+
+<span class="sd">    A list of attributes corresponding to variable attributes defined</span>
+<span class="sd">    in the netCDF file can be obtained with the ncattrs method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">varname</span><span class="p">,</span> <span class="n">NetCDFFile</span><span class="p">,</span> <span class="n">datatype</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">,</span> <span class="n">least_significant_digit</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">expectedsize</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">datatype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_netcdftype_dict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;datatype must be one of </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                                                <span class="n">_netcdftype_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_parent</span> <span class="o">=</span> <span class="n">NetCDFFile</span>
+        <span class="n">_NetCDF_FillValue</span> <span class="o">=</span> <span class="n">_fillvalue_dict</span><span class="p">[</span><span class="n">datatype</span><span class="p">]</span>
+        <span class="n">vardimsizes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dimensions</span><span class="p">:</span>
+            <span class="n">vardimsizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">NetCDFFile</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
+        <span class="n">extdim</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="n">ndim</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">vardim</span> <span class="ow">in</span> <span class="n">vardimsizes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">vardim</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">extdim</span> <span class="o">=</span> <span class="n">ndim</span>
+                <span class="k">break</span>
+            <span class="n">ndim</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">extdim</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># set shape to 0 for extdim.</span>
+            <span class="n">vardimsizes</span><span class="p">[</span><span class="n">extdim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s">&#39;c&#39;</span><span class="p">:</span>
+        <span class="c"># Special case for Numeric character objects</span>
+        <span class="c"># (on which base Scientific.IO.NetCDF works)</span>
+            <span class="n">atom</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">StringAtom</span><span class="p">(</span><span class="n">itemsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">type_</span> <span class="o">=</span> <span class="n">_rev_typecode_dict</span><span class="p">[</span><span class="n">datatype</span><span class="p">]</span>
+            <span class="n">atom</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">Atom</span><span class="o">.</span><span class="n">from_type</span><span class="p">(</span><span class="n">type_</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">filters</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># default filters instance.</span>
+            <span class="n">filters</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">Filters</span><span class="p">(</span><span class="n">complevel</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">complib</span><span class="o">=</span><span class="s">&#39;zlib&#39;</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">extdim</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># check that unlimited dimension is first (extdim=0).</span>
+            <span class="c">#if extdim != 0:</span>
+            <span class="c">#    raise ValueError,&#39;unlimited or enlargeable dimension must be most significant (slowest changing, or first) one in order to convert to a true netCDF file&#39;</span>
+            <span class="c"># enlargeable dimension, use EArray</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span> <span class="o">=</span> <span class="n">NetCDFFile</span><span class="o">.</span><span class="n">_NetCDF_h5file</span><span class="o">.</span><span class="n">createEArray</span><span class="p">(</span>
+                           <span class="n">where</span><span class="o">=</span><span class="n">NetCDFFile</span><span class="o">.</span><span class="n">_NetCDF_h5file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
+                           <span class="n">name</span><span class="o">=</span><span class="n">varname</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">atom</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">vardimsizes</span><span class="p">),</span>
+                           <span class="n">title</span><span class="o">=</span><span class="n">varname</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+                           <span class="n">expectedrows</span><span class="o">=</span><span class="n">expectedsize</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># no enlargeable dimension, use CArray</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span> <span class="o">=</span> <span class="n">NetCDFFile</span><span class="o">.</span><span class="n">_NetCDF_h5file</span><span class="o">.</span><span class="n">createCArray</span><span class="p">(</span>
+                           <span class="n">where</span><span class="o">=</span><span class="n">NetCDFFile</span><span class="o">.</span><span class="n">_NetCDF_h5file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
+                           <span class="n">name</span><span class="o">=</span><span class="n">varname</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">atom</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">vardimsizes</span><span class="p">),</span>
+                           <span class="n">title</span><span class="o">=</span><span class="n">varname</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
+            <span class="c"># fill with _FillValue</span>
+            <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s">&#39;c&#39;</span><span class="p">:</span>
+                <span class="c"># numpy string arrays with itemsize=1 used for char arrays.</span>
+                <span class="n">deflen</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">vardimsizes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;int64&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="nb">buffer</span><span class="o">=</span><span class="n">_NetCDF_FillValue</span><span class="o">*</span><span class="n">deflen</span><span class="p">,</span>
+                                        <span class="n">shape</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">vardimsizes</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;S1&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dtype</span> <span class="o">=</span> <span class="n">_rev_typecode_dict</span><span class="p">[</span><span class="n">datatype</span><span class="p">]</span>
+                <span class="bp">self</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">_NetCDF_FillValue</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">vardimsizes</span><span class="p">),</span>
+                                                       <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">least_significant_digit</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="s">&#39;least_significant_digit&#39;</span><span class="p">,</span>
+                    <span class="n">least_significant_digit</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="s">&#39;dimensions&#39;</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_FillValue</span> <span class="o">=</span> <span class="n">_NetCDF_FillValue</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;least_significant_digit&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">quantize</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">least_significant_digit</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c"># if name begins with &#39;_NetCDF_&#39;, it is a temporary at the python level</span>
+        <span class="c"># (not stored in the hdf5 file).</span>
+        <span class="c"># dimensions is a read only attribute</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;dimensions&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s">&#39;&quot;dimensions&quot; is a  read-only attribute - cannot &#39;</span>
+                           <span class="s">&#39;modify&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_NetCDF_&#39;</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;__&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">=</span><span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;__&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_NetCDF_&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+<div class="viewcode-block" id="NetCDFVariable.typecode"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFVariable.typecode">[docs]</a>    <span class="k">def</span> <span class="nf">typecode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd"> return a single character Numeric typecode.</span>
+<span class="sd"> Allowed values are</span>
+<span class="sd"> &#39;d&#39; == float64, &#39;f&#39; == float32, &#39;l&#39; == int32,</span>
+<span class="sd"> &#39;i&#39; == int32, &#39;s&#39; == int16, &#39;1&#39; == int8,</span>
+<span class="sd"> &#39;c&#39; == string (length 1), &#39;F&#39; == complex64 and &#39;D&#39; == complex128.</span>
+<span class="sd"> The corresponding NetCDF data types are</span>
+<span class="sd"> &#39;double&#39;, &#39;float&#39;, &#39;int&#39;, &#39;int&#39;, &#39;short&#39;, &#39;byte&#39; and &#39;character&#39;.</span>
+<span class="sd"> (&#39;D&#39; and &#39;F&#39; have no corresponding netCDF data types).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_typecode_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">type</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="NetCDFVariable.ncattrs"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFVariable.ncattrs">[docs]</a>    <span class="k">def</span> <span class="nf">ncattrs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return attributes corresponding to netCDF variable attributes&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">attr</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">_v_attrnamesuser</span> <span class="k">if</span> <span class="n">attr</span> <span class="o">!=</span> <span class="s">&#39;dimensions&#39;</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="NetCDFVariable.append"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFVariable.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd"> Append data along unlimited dimension of a NetCDFVariable.</span>
+
+<span class="sd"> The data must have either the same number of dimensions as the NetCDFVariable</span>
+<span class="sd"> instance that it is being append to, or one less. If it has one less</span>
+<span class="sd"> dimension, it assumed that the missing dimension is a singleton dimension</span>
+<span class="sd"> corresponding to the unlimited dimension of the NetCDFVariable.</span>
+
+<span class="sd"> If the NetCDFVariable has a least_significant_digit attribute,</span>
+<span class="sd"> the data is truncated (quantized) to improve compression.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_parent</span><span class="o">.</span><span class="n">_NetCDF_mode</span> <span class="o">==</span> <span class="s">&#39;r&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&#39;file is read only&#39;</span><span class="p">)</span>
+        <span class="c"># if data is not an array, try to make it so.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_rev_typecode_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">typecode</span><span class="p">()])</span>
+        <span class="c"># check to make sure there is an unlimited dimension.</span>
+        <span class="c"># (i.e. data is in an EArray).</span>
+        <span class="n">extdim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">extdim</span>
+        <span class="k">if</span> <span class="n">extdim</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&#39;variable has no unlimited dimension&#39;</span><span class="p">)</span>
+
+        <span class="c"># special case that data array is same</span>
+        <span class="c"># shape as EArray, minus the enlargeable dimension.</span>
+        <span class="c"># if so, add an extra singleton dimension.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+            <span class="n">shapem1</span> <span class="o">=</span> <span class="p">()</span>
+            <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="o">!=</span> <span class="n">extdim</span><span class="p">:</span>
+                    <span class="n">shapem1</span> <span class="o">=</span> <span class="n">shapem1</span><span class="o">+</span><span class="p">(</span><span class="n">dim</span><span class="p">,)</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">shapem1</span><span class="p">:</span>
+                <span class="n">shapenew</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">shapenew</span><span class="p">[</span><span class="n">extdim</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">shapenew</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&#39;data must either have same number of &#39;</span>
+                                 <span class="s">&#39;dimensions as variable, or one less &#39;</span>
+                                 <span class="s">&#39;(excluding unlimited dimension)&#39;</span><span class="p">)</span>
+        <span class="c"># append the data to the variable object.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;least_significant_digit&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">quantize</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">least_significant_digit</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="NetCDFVariable.assignValue"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFVariable.assignValue">[docs]</a>    <span class="k">def</span> <span class="nf">assignValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd"> Assigns value to the variable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span><span class="o">.</span><span class="n">extdim</span> <span class="o">&gt;=</span><span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+<div class="viewcode-block" id="NetCDFVariable.getValue"><a class="viewcode-back" href="../../usersguide/netcdf3.html#tables.netcdf3.NetCDFVariable.getValue">[docs]</a>    <span class="k">def</span> <span class="nf">getValue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd"> Returns the value of the variable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[:]</span>
+
+<span class="c"># only used internally to create netCDF variable objects</span>
+<span class="c"># from Array objects read in from an hdf5 file.</span></div></div>
+<span class="k">class</span> <span class="nc">_NetCDFVariable</span><span class="p">(</span><span class="n">NetCDFVariable</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">NetCDFFile</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_parent</span> <span class="o">=</span> <span class="n">NetCDFFile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_varobj</span> <span class="o">=</span> <span class="n">var</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_NetCDF_FillValue</span> <span class="o">=</span> <span class="n">_fillvalue_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">typecode</span><span class="p">()]</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">PyTables 2.4.0 documentation</a> &raquo;</li>
+
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../tables.html" >tables</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2011-2012, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>
