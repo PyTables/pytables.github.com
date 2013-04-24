@@ -1,0 +1,965 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.nodes.filenode &mdash; PyTables 2.4.0+1.dev documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.4.0+1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 2.4.0+1.dev documentation" href="../../../index.html" />
+    <link rel="up" title="tables" href="../../tables.html" /> 
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
+
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../tables.html" accesskey="U">tables</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tables.nodes.filenode</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: October 2, 2004</span>
+<span class="c"># Author:  Ivan Vilata i Balaguer - reverse:net.selidor@ivan</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;A file interface to nodes for PyTables databases.</span>
+
+<span class="sd">The FileNode module provides a file interface for using inside of</span>
+<span class="sd">PyTables database files.  Use the new_node() function to create a brand</span>
+<span class="sd">new file node which can be read and written as any ordinary Python</span>
+<span class="sd">file.  Use the open_node() function to open an existing (i.e. created</span>
+<span class="sd">with new_node()) node for read-only or read-write access.  Read acces</span>
+<span class="sd">is always available.  Write access (enabled on new files and files</span>
+<span class="sd">opened with mode &#39;a+&#39;) only allows appending data to a file node.</span>
+
+<span class="sd">See :ref:`filenode_usersguide` for instructions on use.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="kn">import</span> <span class="nn">tables</span>
+<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span>
+
+
+<span class="n">NodeType</span> <span class="o">=</span> <span class="s">&#39;file&#39;</span>
+<span class="sd">&quot;&quot;&quot;Value for NODE_TYPE node system attribute.&quot;&quot;&quot;</span>
+
+<span class="n">NodeTypeVersions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;Supported values for NODE_TYPE_VERSION node system attribute.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="new_node"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.new_node">[docs]</a><span class="k">def</span> <span class="nf">new_node</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a new file node object in the specified PyTables file object.</span>
+
+<span class="sd">    Additional named arguments where and name must be passed to specify where</span>
+<span class="sd">    the file node is to be created. Other named arguments such as title and</span>
+<span class="sd">    filters may also be passed.</span>
+
+<span class="sd">    The special named argument expectedsize, indicating an estimate of the file</span>
+<span class="sd">    size in bytes, may also be passed. It returns the file node object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">RAFileNode</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">h5file</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+<span class="n">newNode</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">new_node</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="open_node"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.open_node">[docs]</a><span class="k">def</span> <span class="nf">open_node</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Opens an existing file node.</span>
+
+<span class="sd">    Returns a file node object from the existing specified PyTables node.</span>
+<span class="sd">    If mode is not specified or it is &#39;r&#39;, the file can only be read,</span>
+<span class="sd">    and the pointer is positioned at the beginning of the file.</span>
+<span class="sd">    If mode is &#39;a+&#39;, the file can be read and appended, and the pointer</span>
+<span class="sd">    is positioned at the end of the file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;r&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ROFileNode</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;a+&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">RAFileNode</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;invalid mode: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">mode</span><span class="p">,))</span>
+</div>
+<span class="n">openNode</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">open_node</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ReadableMixin</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Mix-in class which provides reading methods for readable file nodes.</span>
+
+<span class="sd">    It also defines the &#39;line_separator&#39; property, which contains the string</span>
+<span class="sd">    used as a line separator, and defaults to os.linesep.</span>
+<span class="sd">    It can be set to any reasonably-sized string you want.</span>
+
+<span class="sd">    This class requires support for:</span>
+
+<span class="sd">    * &#39;offset&#39; and &#39;node&#39; attributes</span>
+<span class="sd">    * _check_not_closed() and seek() methods</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># The number of bytes readline() reads at a time.</span>
+    <span class="n">_line_chunksize</span> <span class="o">=</span> <span class="mi">128</span>
+
+    <span class="c"># The line separator string.</span>
+    <span class="n">_line_separator</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">)</span>
+
+    <span class="c"># The line separator string property methods.</span>
+    <span class="k">def</span> <span class="nf">get_line_separator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the line separator string.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_line_separator</span>
+
+    <span class="n">getLineSeparator</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">get_line_separator</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_line_separator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the line separator string.</span>
+
+<span class="sd">        Raises ValueError if the string is empty or too long.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;the line separator must be a string of bytes&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="n">b</span><span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;line separator string is empty&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_line_chunksize</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;sorry, line separator string is too long&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_line_separator</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="n">setLineSeparator</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">set_line_separator</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">del_line_separator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Deletes the &#39;line_separator&#39; property.&quot;</span>
+
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_line_separator</span>
+
+    <span class="n">delLineSeparator</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">del_line_separator</span><span class="p">)</span>
+
+    <span class="c"># The line separator string property.</span>
+    <span class="n">line_separator</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="n">get_line_separator</span><span class="p">,</span> <span class="n">set_line_separator</span><span class="p">,</span> <span class="n">del_line_separator</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;A property containing the line separator string.&quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">lineSeparator</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">line_separator</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the next line of text.</span>
+
+<span class="sd">        Raises StopIteration when finished.</span>
+<span class="sd">        See file.next.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># The use of this method is compatible with the use of readline().</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+        <span class="k">return</span> <span class="n">line</span>
+
+    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads at most &#39;size&#39; bytes.</span>
+
+<span class="sd">        See file.read.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+
+        <span class="c"># 2004-08-03: Reading from beyond the last row raises an IndexError.</span>
+        <span class="c">#   Moreover, the pointer should not be incremented.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">nrows</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;&#39;</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># Read the entire file.</span>
+            <span class="c"># 2004-08-03: A None value would only read one row.</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">nrows</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Read the specified number of rows, if available.</span>
+            <span class="c"># 2004-08-04: Reading beyond the last row is allowed.</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">+</span> <span class="n">size</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span><span class="o">.</span><span class="n">tostring</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="nf">readline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the next text line.</span>
+
+<span class="sd">        See file.readline.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+
+        <span class="c"># Set the remaining bytes to read to the specified size.</span>
+        <span class="n">remsize</span> <span class="o">=</span> <span class="n">size</span>
+
+        <span class="n">lseplen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_line_separator</span><span class="p">)</span>
+        <span class="n">partial</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">finished</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">finished</span><span class="p">:</span>
+            <span class="c"># Read a string limited by the remaining number of bytes.</span>
+            <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ibuff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_line_chunksize</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ibuff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">remsize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_line_chunksize</span><span class="p">))</span>
+            <span class="n">ibufflen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ibuff</span><span class="p">)</span>
+            <span class="n">remsize</span> <span class="o">-=</span> <span class="n">ibufflen</span>
+
+            <span class="k">if</span> <span class="n">ibufflen</span> <span class="o">&gt;=</span> <span class="n">lseplen</span><span class="p">:</span>
+                <span class="c"># Separator fits, look for EOL string.</span>
+                <span class="n">eolindex</span> <span class="o">=</span> <span class="n">ibuff</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_line_separator</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">ibufflen</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c"># EOF was immediately reached.</span>
+                <span class="n">finished</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c"># ibufflen &lt; lseplen</span>
+                <span class="c"># EOF was hit and separator does not fit. ;)</span>
+                <span class="n">partial</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ibuff</span><span class="p">)</span>
+                <span class="n">finished</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">eolindex</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c"># Found an EOL. If there are trailing characters,</span>
+                <span class="c"># cut the input buffer and seek back;</span>
+                <span class="c"># else add the whole input buffer.</span>
+                <span class="n">trailing</span> <span class="o">=</span> <span class="n">ibufflen</span> <span class="o">-</span> <span class="n">lseplen</span> <span class="o">-</span> <span class="n">eolindex</span>  <span class="c"># Bytes beyond EOL.</span>
+                <span class="k">if</span> <span class="n">trailing</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">obuff</span> <span class="o">=</span> <span class="n">ibuff</span><span class="p">[:</span><span class="o">-</span><span class="n">trailing</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="o">-</span><span class="n">trailing</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">remsize</span> <span class="o">+=</span> <span class="n">trailing</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">obuff</span> <span class="o">=</span> <span class="n">ibuff</span>
+                <span class="n">finished</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">elif</span> <span class="n">lseplen</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="n">size</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">remsize</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="c"># Seek back a little since the end of the read string</span>
+                <span class="c"># may have fallen in the middle of the line separator.</span>
+                <span class="n">obuff</span> <span class="o">=</span> <span class="n">ibuff</span><span class="p">[:</span><span class="o">-</span><span class="n">lseplen</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="o">-</span><span class="n">lseplen</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">remsize</span> <span class="o">+=</span> <span class="n">lseplen</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c"># eolindex&lt;0 and (lseplen&lt;=1 or (size&gt;0 and remsize&lt;=0))</span>
+                <span class="c"># Did not find an EOL, add the whole input buffer.</span>
+                <span class="n">obuff</span> <span class="o">=</span> <span class="n">ibuff</span>
+
+            <span class="c"># Append (maybe cut) buffer.</span>
+            <span class="n">partial</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obuff</span><span class="p">)</span>
+
+            <span class="c"># If a size has been specified and the remaining count</span>
+            <span class="c"># reaches zero, the reading is finished.</span>
+            <span class="k">if</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">remsize</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">finished</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">return</span> <span class="n">b</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">partial</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">readlines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sizehint</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the text lines into a list.</span>
+
+<span class="sd">        See file.readlines.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Set the remaining bytes to read to the size hint.</span>
+        <span class="n">remsize</span> <span class="o">=</span> <span class="n">sizehint</span>
+
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">finished</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">finished</span><span class="p">:</span>
+            <span class="c"># Read a line limited by the remaining number of bytes.</span>
+            <span class="k">if</span> <span class="n">sizehint</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readline</span><span class="p">(</span><span class="n">remsize</span><span class="p">)</span>
+            <span class="n">remsize</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+            <span class="c"># An empty line finishes the reading.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">finished</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">continue</span>
+
+            <span class="c"># If a size hint has been specified and the remaining count</span>
+            <span class="c"># reaches zero, the reading is finished.</span>
+            <span class="k">if</span> <span class="n">sizehint</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">remsize</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">finished</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">return</span> <span class="n">lines</span>
+
+    <span class="k">def</span> <span class="nf">xreadlines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For backward compatibility.</span>
+
+<span class="sd">        See file.xreadlines.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+<span class="k">class</span> <span class="nc">NotReadableMixin</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Mix-in class which provides reading methods for non-readable file nodes.</span>
+
+<span class="sd">    This class requires support for:</span>
+
+<span class="sd">    * _check_not_closed() method</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_not_readable_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;_not_readable_error() -&gt; None</span>
+
+<span class="sd">        Raises a common IOError exception for non-readable file nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;the file is not readable&quot;</span><span class="p">)</span>
+
+    <span class="n">_notReadableError</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_not_readable_error</span><span class="p">)</span>
+
+    <span class="c"># The definition of those methods may seem odd</span>
+    <span class="c"># but it is the way Python (2.3) files work.</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the next line of text.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            a string of bytes</span>
+
+<span class="sd">        Raises IOError.</span>
+<span class="sd">        See file.next.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_not_readable_error</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads at most &#39;size&#39; bytes.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            a string of bytes</span>
+
+<span class="sd">        Raises IOError.</span>
+<span class="sd">        See file.read.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_not_readable_error</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">readline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the next text line.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            a string of bytes</span>
+
+<span class="sd">        Raises IOError.</span>
+<span class="sd">        See file.readline.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_not_readable_error</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">readlines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sizehint</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the text lines.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            a list of strings of bytes</span>
+
+<span class="sd">        Raises IOError.</span>
+<span class="sd">        See file.readlines.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_not_readable_error</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">xreadlines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;xreadlines() -&gt; self.  For backward compatibility.</span>
+
+<span class="sd">        See file.xreadlines.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+<span class="k">class</span> <span class="nc">NotWritableMixin</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Mix-in class which provides writing methods for non-writable file nodes.</span>
+
+<span class="sd">    This class requires support for:</span>
+
+<span class="sd">        * _check_not_closed() method</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># The definition of those methods may seem odd</span>
+    <span class="c"># but it is the way Python (2.3) files work.</span>
+
+    <span class="k">def</span> <span class="nf">_notWritableError</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;_notWritableError() -&gt; None</span>
+
+<span class="sd">        Raises a common IOError exception for non-writable file nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;the file is not writable&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">truncate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Truncates the file node to at most &#39;size&#39; bytes.</span>
+
+<span class="sd">        This raises an IOError when called on read-only nodes.</span>
+
+<span class="sd">        See file.truncate.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notWritableError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes the string to the file.</span>
+
+<span class="sd">        This raises an IOError when called on read-only nodes.</span>
+
+<span class="sd">        See file.write.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notWritableError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">writelines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes the strings to the file.</span>
+
+<span class="sd">        This raises an IOError when called on read-only nodes.</span>
+
+<span class="sd">        See file.writelines.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notWritableError</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">AppendableMixin</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Mix-in class which provides writing methods for appendable file nodes.</span>
+
+<span class="sd">    This class requires support for:</span>
+
+<span class="sd">    * &#39;offset&#39;, &#39;node&#39;, &#39;_vType&#39; and &#39;_vShape&#39; attributes</span>
+<span class="sd">    * _check_not_closed() method</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_append_zeros</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;_append_zeros(size) -&gt; None.  Appends a string of zeros.</span>
+
+<span class="sd">        Appends a string of &#39;size&#39; zeros to the array,</span>
+<span class="sd">        without moving the file pointer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Appending an empty array would raise an error.</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c"># XXX This may be redone to avoid a potentially large in-memory array.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vType</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vShape</span><span class="p">(</span><span class="n">size</span><span class="p">)))</span>
+
+    <span class="n">_appendZeros</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_append_zeros</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">truncate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Truncates the file node to at most &#39;size&#39; bytes.</span>
+
+<span class="sd">        Currently, this method only makes sense to grow the file node,</span>
+<span class="sd">        since data can not be rewritten nor deleted.</span>
+<span class="sd">        See file.truncate.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">size</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">nrows</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;truncating is only allowed for growing a file&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_append_zeros</span><span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">nrows</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes the string to the file.</span>
+
+<span class="sd">        Writing an empty string does nothing, but requires the file to be open.</span>
+<span class="sd">        See file.write.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+
+        <span class="c"># This mimics the behaviour of normal Python (2.3) files,</span>
+        <span class="c"># where writing an empty string does absolutely nothing</span>
+        <span class="c"># (not even moving the pointer of append-only files).</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c"># Is the pointer beyond the real end of data?</span>
+        <span class="n">end2off</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">nrows</span>
+        <span class="k">if</span> <span class="n">end2off</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># Zero-fill the gap between the end of data and the pointer.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_append_zeros</span><span class="p">(</span><span class="n">end2off</span><span class="p">)</span>
+
+        <span class="c"># Move the pointer to the end of the (newly written) data.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">nrows</span>
+
+        <span class="c"># Append data.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="nb">buffer</span><span class="o">=</span><span class="n">string</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vType</span><span class="p">,</span>
+                                       <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vShape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">))))</span>
+
+        <span class="c"># Move the pointer to the end of the written data.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">nrows</span>
+
+    <span class="k">def</span> <span class="nf">writelines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes the sequence of strings to the file.</span>
+
+<span class="sd">        See file.writelines.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="FileNode"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.FileNode">[docs]</a><span class="k">class</span> <span class="nc">FileNode</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This is the ancestor of ROFileNode and RAFileNode (see below).</span>
+
+<span class="sd">    Instances of these classes are returned when new_node() or</span>
+<span class="sd">    open_node() are called. It represents a new file node associated</span>
+<span class="sd">    with a PyTables node, providing a standard Python file interface</span>
+<span class="sd">    to it.</span>
+
+<span class="sd">    This abstract class provides only an implementation of the reading methods</span>
+<span class="sd">    needed to implement a file-like object over a PyTables node. The attribute</span>
+<span class="sd">    set of the node becomes available via the attrs property. You can add</span>
+<span class="sd">    attributes there, but try to avoid attribute names in all caps or starting</span>
+<span class="sd">    with &#39;_&#39;, since they may clash with internal attributes.</span>
+
+<span class="sd">    The node used as storage is also made available via the read-only attribute</span>
+<span class="sd">    node. Please do not tamper with this object if it&#39;s avoidable, since you</span>
+<span class="sd">    may break the operation of the file node object.</span>
+
+<span class="sd">    The line_separator property contains the string used as a line separator,</span>
+<span class="sd">    and defaults to os.linesep. It can be set to any reasonably-sized string</span>
+<span class="sd">    you want.</span>
+
+<span class="sd">    The constructor sets the closed, softspace and _line_separator attributes to</span>
+<span class="sd">    their initial values, as well as the node attribute to None.  Sub-classes</span>
+<span class="sd">    should set the node, mode and offset attributes.</span>
+
+<span class="sd">    Version 1 implements the file storage as a UInt8 uni-dimensional EArray.</span>
+<span class="sd">    Version 2 uses an UInt8 N vector EArray.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># The atom representing a byte in the array, for each version.</span>
+    <span class="n">_byteShape</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="bp">None</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">(</span><span class="mi">0</span><span class="p">,)]</span>
+
+    <span class="c"># A lambda to turn a size into a shape, for each version.</span>
+    <span class="n">_sizeToShape</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="bp">None</span><span class="p">,</span>
+        <span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="p">)]</span>
+
+    <span class="c"># The attribute set property methods.</span>
+    <span class="k">def</span> <span class="nf">get_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the attribute set of the file node.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">attrs</span>
+
+    <span class="n">getAttrs</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">get_attrs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="s">&quot;set_attrs(string) -&gt; None.  Raises ValueError.&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;changing the whole attribute set is not allowed&quot;</span><span class="p">)</span>
+
+    <span class="n">setAttrs</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">set_attrs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">del_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;del_attrs() -&gt; None.  Raises ValueError.&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;deleting the whole attribute set is not allowed&quot;</span><span class="p">)</span>
+
+    <span class="n">delAttrs</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">del_attrs</span><span class="p">)</span>
+
+    <span class="c"># The attribute set property.</span>
+    <span class="n">attrs</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="n">get_attrs</span><span class="p">,</span> <span class="n">set_attrs</span><span class="p">,</span> <span class="n">del_attrs</span><span class="p">,</span>
+        <span class="s">&quot;A property pointing to the attribute set of the file node.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FileNode</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+        <span class="c"># The constructor of the subclass must set the value of</span>
+        <span class="c"># the instance attributes &#39;node&#39;, &#39;mode&#39;, &#39;offset&#39; and &#39;_version&#39;.</span>
+        <span class="c"># It also has to set or check the node attributes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">closed</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sofstpace</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_set_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;_set_attributes(node) -&gt; None.  Adds file node-specific attributes.</span>
+
+<span class="sd">        Sets the system attributes &#39;NODE_TYPE&#39; and &#39;NODE_TYPE_VERSION&#39;</span>
+<span class="sd">        in the specified PyTables node (leaf).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">attrs</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="c"># System attributes are now writable.  ivb(2004-12-30)</span>
+        <span class="c"># attrs._g_setattr(&#39;NODE_TYPE&#39;, NodeType)</span>
+        <span class="c"># attrs._g_setattr(&#39;NODE_TYPE_VERSION&#39;, NodeTypeVersions[-1])</span>
+        <span class="n">attrs</span><span class="o">.</span><span class="n">NODE_TYPE</span> <span class="o">=</span> <span class="n">NodeType</span>
+        <span class="n">attrs</span><span class="o">.</span><span class="n">NODE_TYPE_VERSION</span> <span class="o">=</span> <span class="n">NodeTypeVersions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">_setAttributes</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_set_attributes</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks file node-specific attributes.</span>
+
+<span class="sd">        Checks for the presence and validity</span>
+<span class="sd">        of the system attributes &#39;NODE_TYPE&#39; and &#39;NODE_TYPE_VERSION&#39;</span>
+<span class="sd">        in the specified PyTables node (leaf).</span>
+<span class="sd">        ValueError is raised if an attribute is missing or incorrect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">attrs</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="n">ltype</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="s">&#39;NODE_TYPE&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">ltypever</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="s">&#39;NODE_TYPE_VERSION&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ltype</span> <span class="o">!=</span> <span class="n">NodeType</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;invalid type of node object: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ltype</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="n">ltypever</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NodeTypeVersions</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;unsupported type version of node object: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ltypever</span><span class="p">,))</span>
+
+    <span class="n">_checkAttributes</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_check_attributes</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_not_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if file node is open.</span>
+
+<span class="sd">        Checks whether the file node is open or has been closed.</span>
+<span class="sd">        In the second case, a ValueError is raised.</span>
+<span class="sd">        If the host PyTables has been closed, ValueError is also raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;I/O operation on closed file&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">,</span> <span class="s">&#39;_v_file&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;host PyTables file is already closed!&quot;</span><span class="p">)</span>
+
+    <span class="n">_checkNotClosed</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_check_not_closed</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FileNode.close"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.FileNode.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flushes the file and closes it.</span>
+
+<span class="sd">        After calling this method the node attribute becomes None and</span>
+<span class="sd">        the attrs property is no longer available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Only flush the first time the file is closed,</span>
+        <span class="c"># taking care of not doing it if the host PyTables file</span>
+        <span class="c"># has already been closed.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">,</span> <span class="s">&#39;_v_file&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;host PyTables file is already closed!&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="c"># Set the flag every time the method is called.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">closed</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c"># Release node object to allow closing the file.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flushes the file node.</span>
+
+<span class="sd">        See file.flush.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="FileNode.seek"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.FileNode.seek">[docs]</a>    <span class="k">def</span> <span class="nf">seek</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">whence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Moves to a new file position.</span>
+
+<span class="sd">        See file.seek.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">whence</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># Absolute positioning.</span>
+            <span class="n">newoffset</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="k">elif</span> <span class="n">whence</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c"># Offset from pointer positioning.</span>
+            <span class="n">newoffset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">+</span> <span class="n">offset</span>
+        <span class="k">elif</span> <span class="n">whence</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c"># Offset from (real) end positioning.</span>
+            <span class="n">newoffset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">nrows</span> <span class="o">+</span> <span class="n">offset</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;invalid positioning mode&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">newoffset</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># Positioning before the beginning is not allowed.</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;can not seek before beginning of file&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Positioning beyond the end is allowed.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">newoffset</span>
+</div>
+<div class="viewcode-block" id="FileNode.tell"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.FileNode.tell">[docs]</a>    <span class="k">def</span> <span class="nf">tell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the current file position.</span>
+
+<span class="sd">        See file.tell.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+
+</div></div>
+<div class="viewcode-block" id="ROFileNode"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.ROFileNode">[docs]</a><span class="k">class</span> <span class="nc">ROFileNode</span><span class="p">(</span><span class="n">ReadableMixin</span><span class="p">,</span> <span class="n">NotWritableMixin</span><span class="p">,</span> <span class="n">FileNode</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a new read-only file node.</span>
+
+<span class="sd">    Creates a new read-only file node associated with the specified</span>
+<span class="sd">    PyTables node, providing a standard Python file interface to it.</span>
+<span class="sd">    The node has to have been created on a previous occasion</span>
+<span class="sd">    using the new_node() function.</span>
+
+<span class="sd">    This constructor is not intended to be used directly.</span>
+<span class="sd">    Use the open_node() function in read-only mode (&#39;r&#39;) instead.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Since FileNode provides all methods for read-only access,</span>
+    <span class="c"># only the constructor method and failing writing methods are needed.</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ROFileNode</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_attributes</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;r&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="il">0L</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">NODE_TYPE_VERSION</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ROFileNode</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__del__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ROFileNode.flush"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.ROFileNode.flush">[docs]</a>    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flushes the file node.</span>
+
+<span class="sd">        See file.flush.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+        <span class="c"># Do nothing.</span>
+
+</div></div>
+<div class="viewcode-block" id="RAFileNode"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.RAFileNode">[docs]</a><span class="k">class</span> <span class="nc">RAFileNode</span><span class="p">(</span><span class="n">ReadableMixin</span><span class="p">,</span> <span class="n">AppendableMixin</span><span class="p">,</span> <span class="n">FileNode</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a new read-write file node.</span>
+
+<span class="sd">    The first syntax opens the specified PyTables node, while the</span>
+<span class="sd">    second one creates a new node in the specified PyTables file.</span>
+<span class="sd">    In the second case, additional named arguments &#39;where&#39; and &#39;name&#39;</span>
+<span class="sd">    must be passed to specify where the file node is to be created.</span>
+<span class="sd">    Other named arguments such as &#39;title&#39; and &#39;filters&#39; may also be</span>
+<span class="sd">    passed.  The special named argument &#39;expectedsize&#39;, indicating an</span>
+<span class="sd">    estimate of the file size in bytes, may also be passed.</span>
+
+<span class="sd">    Write access means reading as well as appending data is allowed.</span>
+
+<span class="sd">    This constructor is not intended to be used directly.</span>
+<span class="sd">    Use the new_node() or open_node() functions instead.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__allowed_init_kwargs</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s">&#39;where&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;title&#39;</span><span class="p">,</span> <span class="s">&#39;filters&#39;</span><span class="p">,</span> <span class="s">&#39;expectedsize&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">h5file</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RAFileNode</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># Open an existing node and get its version.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_attributes</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">NODE_TYPE_VERSION</span>
+        <span class="k">elif</span> <span class="n">h5file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># Check for allowed keyword arguments,</span>
+            <span class="c"># to avoid unwanted arguments falling through to array constructor.</span>
+            <span class="k">for</span> <span class="n">kwarg</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">kwarg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__allowed_init_kwargs</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="s">&quot;</span><span class="si">%s</span><span class="s"> keyword argument is not allowed&quot;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="n">kwarg</span><span class="p">))</span>
+
+            <span class="c"># Turn &#39;expectedsize&#39; into &#39;expectedrows&#39;.</span>
+            <span class="k">if</span> <span class="s">&#39;expectedsize&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="c"># These match since one byte is stored per row.</span>
+                <span class="n">expectedrows</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;expectedsize&#39;</span><span class="p">]</span>
+                <span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;expectedsize&#39;</span><span class="p">]</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;expectedrows&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expectedrows</span>
+
+            <span class="c"># Create a new array in the specified PyTables file.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="n">NodeTypeVersions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_byteShape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_version</span><span class="p">]</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">create_earray</span><span class="p">(</span>
+                <span class="n">atom</span><span class="o">=</span><span class="n">tables</span><span class="o">.</span><span class="n">UInt8Atom</span><span class="p">(),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="c"># Set the node attributes, else remove the array itself.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_attributes</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+                <span class="n">h5file</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;where&#39;</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
+                <span class="k">raise</span>
+
+        <span class="c"># Set required attributes (besides of &#39;_version&#39;).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;a+&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="il">0L</span>
+
+        <span class="c"># Cache some dictionary lookups regarding file version.</span>
+        <span class="c"># self._version is a NumPy scalar and when Python &lt; 2.5</span>
+        <span class="c"># this cannot be used as an index.</span>
+        <span class="c"># Will force a conversion to an integer.</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_version</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vType</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">UInt8Atom</span><span class="p">()</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vShape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sizeToShape</span><span class="p">[</span><span class="n">version</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RAFileNode</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__del__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="RAFileNode.flush"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.RAFileNode.flush">[docs]</a>    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flushes the file node.</span>
+
+<span class="sd">        See file.flush.__doc__ for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_not_closed</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## End:</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../../index.html">
+          <img class="logo" src="../../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
+
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../tables.html" >tables</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2011-2013, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

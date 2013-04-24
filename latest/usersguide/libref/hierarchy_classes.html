@@ -1,0 +1,1126 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Hierarchy definition classes &mdash; PyTables 2.4.0+1.dev documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.4.0+1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 2.4.0+1.dev documentation" href="../../index.html" />
+    <link rel="up" title="Library Reference" href="../libref.html" />
+    <link rel="next" title="Structured storage classes" href="structured_storage.html" />
+    <link rel="prev" title="File manipulation class" href="file_class.html" /> 
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="structured_storage.html" title="Structured storage classes"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="file_class.html" title="File manipulation class"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
+
+          <li><a href="../index.html" >PyTables User&#8217;s Guide</a> &raquo;</li>
+          <li><a href="../libref.html" accesskey="U">Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="hierarchy-definition-classes">
+<h1>Hierarchy definition classes<a class="headerlink" href="#hierarchy-definition-classes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="the-node-class">
+<span id="nodeclassdescr"></span><h2>The Node class<a class="headerlink" href="#the-node-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tables.Node">
+<em class="property">class </em><tt class="descclassname">tables.</tt><tt class="descname">Node</tt><big>(</big><em>parentnode</em>, <em>name</em>, <em>_log=True</em><big>)</big><a class="headerlink" href="#tables.Node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract base class for all PyTables nodes.</p>
+<p>This is the base class for <em>all</em> nodes in a PyTables hierarchy. It is an
+abstract class, i.e. it may not be directly instantiated; however, every
+node in the hierarchy is an instance of this class.</p>
+<p>A PyTables node is always hosted in a PyTables <em>file</em>, under a <em>parent
+group</em>, at a certain <em>depth</em> in the node hierarchy. A node knows its own
+<em>name</em> in the parent group and its own <em>path name</em> in the file.</p>
+<p>All the previous information is location-dependent, i.e. it may change when
+moving or renaming a node in the hierarchy. A node also has
+location-independent information, such as its <em>HDF5 object identifier</em> and
+its <em>attribute set</em>.</p>
+<p>This class gathers the operations and attributes (both location-dependent
+and independent) which are common to all PyTables nodes, whatever their
+type is. Nonetheless, due to natural naming restrictions, the names of all
+of these members start with a reserved prefix (see the Group class
+in <a class="reference internal" href="#groupclassdescr"><em>The Group class</em></a>).</p>
+<p>Sub-classes with no children (e.g. <em>leaf nodes</em>) may define new methods,
+attributes and properties to avoid natural naming restrictions. For
+instance, _v_attrs may be shortened to attrs and _f_rename to
+rename. However, the original methods and attributes should still be
+available.</p>
+<p class="rubric">Node attributes</p>
+<dl class="attribute">
+<dt id="tables.Node._v_depth">
+<tt class="descname">_v_depth</tt><a class="headerlink" href="#tables.Node._v_depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>The depth of this node in the tree (an non-negative integer value).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Node._v_file">
+<tt class="descname">_v_file</tt><a class="headerlink" href="#tables.Node._v_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>The hosting File instance (see <a class="reference internal" href="file_class.html#fileclassdescr"><em>The File Class</em></a>).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Node._v_name">
+<tt class="descname">_v_name</tt><a class="headerlink" href="#tables.Node._v_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this node in its parent group (a string).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Node._v_pathname">
+<tt class="descname">_v_pathname</tt><a class="headerlink" href="#tables.Node._v_pathname" title="Permalink to this definition">¶</a></dt>
+<dd><p>The path of this node in the tree (a string).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Node._v_objectid">
+<tt class="descname">_v_objectid</tt><a class="headerlink" href="#tables.Node._v_objectid" title="Permalink to this definition">¶</a></dt>
+<dd><p>A node identifier (may change from run to run).</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 3.0.</span></p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="node-instance-variables-location-dependent">
+<h3>Node instance variables - location dependent<a class="headerlink" href="#node-instance-variables-location-dependent" title="Permalink to this headline">¶</a></h3>
+<dl class="attribute">
+<dt id="tables.Node._v_parent">
+<tt class="descclassname">Node.</tt><tt class="descname">_v_parent</tt><a class="headerlink" href="#tables.Node._v_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>The parent <a class="reference internal" href="#tables.Group" title="tables.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a> instance</p>
+</dd></dl>
+
+</div>
+<div class="section" id="node-instance-variables-location-independent">
+<h3>Node instance variables - location independent<a class="headerlink" href="#node-instance-variables-location-independent" title="Permalink to this headline">¶</a></h3>
+<dl class="attribute">
+<dt id="tables.Node._v_attrs">
+<tt class="descclassname">Node.</tt><tt class="descname">_v_attrs</tt><a class="headerlink" href="#tables.Node._v_attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>The associated <cite>AttributeSet</cite> instance.</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<dl class="last docutils">
+<dt><a class="reference internal" href="declarative_classes.html#tables.attributeset.AttributeSet" title="tables.attributeset.AttributeSet"><tt class="xref py py-obj docutils literal"><span class="pre">tables.attributeset.AttributeSet</span></tt></a></dt>
+<dd>container for the HDF5 attributes</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Node._v_isopen">
+<tt class="descclassname">Node.</tt><tt class="descname">_v_isopen</tt><em class="property"> = False</em><a class="headerlink" href="#tables.Node._v_isopen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether this node is open or not.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="node-instance-variables-attribute-shorthands">
+<h3>Node instance variables - attribute shorthands<a class="headerlink" href="#node-instance-variables-attribute-shorthands" title="Permalink to this headline">¶</a></h3>
+<dl class="attribute">
+<dt id="tables.Node._v_title">
+<tt class="descclassname">Node.</tt><tt class="descname">_v_title</tt><a class="headerlink" href="#tables.Node._v_title" title="Permalink to this definition">¶</a></dt>
+<dd><p>A description of this node. A shorthand for TITLE attribute.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="node-methods-hierarchy-manipulation">
+<h3>Node methods - hierarchy manipulation<a class="headerlink" href="#node-methods-hierarchy-manipulation" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="tables.Node._f_close">
+<tt class="descclassname">Node.</tt><tt class="descname">_f_close</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Node._f_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close this node in the tree.</p>
+<p>This releases all resources held by the node, so it should not
+be used again.  On nodes with data, it may be flushed to disk.</p>
+<p>You should not need to close nodes manually because they are
+automatically opened/closed when they are loaded/evicted from
+the integrated LRU cache.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Node._f_copy">
+<tt class="descclassname">Node.</tt><tt class="descname">_f_copy</tt><big>(</big><em>newparent=None</em>, <em>newname=None</em>, <em>overwrite=False</em>, <em>recursive=False</em>, <em>createparents=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#tables.Node._f_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy this node and return the new node.</p>
+<p>Creates and returns a copy of the node, maybe in a different place in
+the hierarchy. newparent can be a Group object (see
+<a class="reference internal" href="#groupclassdescr"><em>The Group class</em></a>) or a pathname in string form. If it is not
+specified or None, the current parent group is chosen as the new
+parent.  newname must be a string with a new name. If it is not
+specified or None, the current name is chosen as the new name. If
+recursive copy is stated, all descendants are copied as well. If
+createparents is true, the needed groups for the given new parent group
+path to exist will be created.</p>
+<p>Copying a node across databases is supported but can not be
+undone. Copying a node over itself is not allowed, nor it is
+recursively copying a node into itself. These result in a
+NodeError. Copying over another existing node is similarly not allowed,
+unless the optional overwrite argument is true, in which case that node
+is recursively removed before copying.</p>
+<p>Additional keyword arguments may be passed to customize the copying
+process. For instance, title and filters may be changed, user
+attributes may be or may not be copied, data may be sub-sampled, stats
+may be collected, etc. See the documentation for the particular node
+type.</p>
+<p>Using only the first argument is equivalent to copying the node to a
+new location without changing its name. Using only the second argument
+is equivalent to making a copy of the node in the same group.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Node._f_isvisible">
+<tt class="descclassname">Node.</tt><tt class="descname">_f_isvisible</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Node._f_isvisible" title="Permalink to this definition">¶</a></dt>
+<dd><p>Is this node visible?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Node._f_move">
+<tt class="descclassname">Node.</tt><tt class="descname">_f_move</tt><big>(</big><em>newparent=None</em>, <em>newname=None</em>, <em>overwrite=False</em>, <em>createparents=False</em><big>)</big><a class="headerlink" href="#tables.Node._f_move" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move or rename this node.</p>
+<p>Moves a node into a new parent group, or changes the name of the
+node. newparent can be a Group object (see <a class="reference internal" href="#groupclassdescr"><em>The Group class</em></a>) or a
+pathname in string form. If it is not specified or None, the current
+parent group is chosen as the new parent.  newname must be a string
+with a new name. If it is not specified or None, the current name is
+chosen as the new name. If createparents is true, the needed groups for
+the given new parent group path to exist will be created.</p>
+<p>Moving a node across databases is not allowed, nor it is moving a node
+<em>into</em> itself. These result in a NodeError. However, moving a node
+<em>over</em> itself is allowed and simply does nothing. Moving over another
+existing node is similarly not allowed, unless the optional overwrite
+argument is true, in which case that node is recursively removed before
+moving.</p>
+<p>Usually, only the first argument will be used, effectively moving the
+node to a new location without changing its name.  Using only the
+second argument is equivalent to renaming the node in place.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Node._f_remove">
+<tt class="descclassname">Node.</tt><tt class="descname">_f_remove</tt><big>(</big><em>recursive=False</em>, <em>force=False</em><big>)</big><a class="headerlink" href="#tables.Node._f_remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove this node from the hierarchy.</p>
+<p>If the node has children, recursive removal must be stated by giving
+recursive a true value; otherwise, a NodeError will be raised.</p>
+<p>If the node is a link to a Group object, and you are sure that you want
+to delete it, you can do this by setting the force flag to true.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Node._f_rename">
+<tt class="descclassname">Node.</tt><tt class="descname">_f_rename</tt><big>(</big><em>newname</em>, <em>overwrite=False</em><big>)</big><a class="headerlink" href="#tables.Node._f_rename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rename this node in place.</p>
+<p>Changes the name of a node to <em>newname</em> (a string).  If a node with the
+same newname already exists and overwrite is true, recursively remove
+it before renaming.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="node-methods-attribute-handling">
+<h3>Node methods - attribute handling<a class="headerlink" href="#node-methods-attribute-handling" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="tables.Node._f_delattr">
+<tt class="descclassname">Node.</tt><tt class="descname">_f_delattr</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#tables.Node._f_delattr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a PyTables attribute from this node.</p>
+<p>If the named attribute does not exist, an AttributeError is raised.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Node._f_getattr">
+<tt class="descclassname">Node.</tt><tt class="descname">_f_getattr</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#tables.Node._f_getattr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a PyTables attribute from this node.</p>
+<p>If the named attribute does not exist, an AttributeError is raised.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Node._f_setattr">
+<tt class="descclassname">Node.</tt><tt class="descname">_f_setattr</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#tables.Node._f_setattr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a PyTables attribute for this node.</p>
+<p>If the node already has a large number of attributes, a
+PerformanceWarning is issued.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="the-group-class">
+<span id="groupclassdescr"></span><h2>The Group class<a class="headerlink" href="#the-group-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tables.Group">
+<em class="property">class </em><tt class="descclassname">tables.</tt><tt class="descname">Group</tt><big>(</big><em>parentnode</em>, <em>name</em>, <em>title=''</em>, <em>new=False</em>, <em>filters=None</em>, <em>_log=True</em><big>)</big><a class="headerlink" href="#tables.Group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Basic PyTables grouping structure.</p>
+<p>Instances of this class are grouping structures containing <em>child</em>
+instances of zero or more groups or leaves, together with
+supporting metadata. Each group has exactly one <em>parent</em> group.</p>
+<p>Working with groups and leaves is similar in many ways to working
+with directories and files, respectively, in a Unix filesystem.
+As with Unix directories and files, objects in the object tree are
+often described by giving their full (or absolute) path names.
+This full path can be specified either as a string (like in
+&#8216;/group1/group2&#8217;) or as a complete object path written in <em>natural
+naming</em> schema (like in file.root.group1.group2).</p>
+<p>A collateral effect of the <em>natural naming</em> schema is that the
+names of members in the Group class and its instances must be
+carefully chosen to avoid colliding with existing children node
+names.  For this reason and to avoid polluting the children
+namespace all members in a Group start with some reserved prefix,
+like _f_ (for public methods), _g_ (for private ones), _v_ (for
+instance variables) or _c_ (for class variables). Any attempt to
+create a new child node whose name starts with one of these
+prefixes will raise a ValueError exception.</p>
+<p>Another effect of natural naming is that children named after
+Python keywords or having names not valid as Python identifiers
+(e.g.  class, $a or 44) can not be accessed using the node.child
+syntax. You will be forced to use node._f_get_child(child) to
+access them (which is recommended for programmatic accesses).</p>
+<p>You will also need to use _f_get_child() to access an existing
+child node if you set a Python attribute in the Group with the
+same name as that node (you will get a NaturalNameWarning when
+doing this).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>parentnode</strong> :</p>
+<blockquote>
+<div><p>The parent <a class="reference internal" href="#tables.Group" title="tables.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a> object.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0.</span></p>
+</div></blockquote>
+<p><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The name of this node in its parent group.</p>
+</div></blockquote>
+<p><strong>title</strong> :</p>
+<blockquote>
+<div><p>The title for this group</p>
+</div></blockquote>
+<p><strong>new</strong> :</p>
+<blockquote>
+<div><p>If this group is new or has to be read from disk</p>
+</div></blockquote>
+<p><strong>filters</strong> : Filters</p>
+<blockquote class="last">
+<div><p>A Filters instance</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The following documentation includes methods that are automatically
+called when a Group instance is accessed in a special way.</p>
+<p>For instance, this class defines the __setattr__, __getattr__, and
+__delattr__ methods, and they set, get and delete <em>ordinary Python
+attributes</em> as normally intended. In addition to that, __getattr__
+allows getting <em>child nodes</em> by their name for the sake of easy
+interaction on the command line, as long as there is no Python
+attribute with the same name. Groups also allow the interactive
+completion (when using readline) of the names of child nodes.
+For instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># get a Python attribute</span>
+<span class="n">nchild</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">_v_nchildren</span>
+
+<span class="c"># Add a Table child called &#39;table&#39; under &#39;group&#39;.</span>
+<span class="n">h5file</span><span class="o">.</span><span class="n">create_table</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s">&#39;table&#39;</span><span class="p">,</span> <span class="n">myDescription</span><span class="p">)</span>
+<span class="n">table</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">table</span>          <span class="c"># get the table child instance</span>
+<span class="n">group</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="s">&#39;foo&#39;</span>          <span class="c"># set a Python attribute</span>
+
+<span class="c"># (PyTables warns you here about using the name of a child node.)</span>
+<span class="n">foo</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">table</span>            <span class="c"># get a Python attribute</span>
+<span class="k">del</span> <span class="n">group</span><span class="o">.</span><span class="n">table</span>              <span class="c"># delete a Python attribute</span>
+<span class="n">table</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">table</span>          <span class="c"># get the table child instance again</span>
+</pre></div>
+</div>
+<p class="rubric">Group attributes</p>
+<p>The following instance variables are provided in addition to those
+in Node (see <a class="reference internal" href="#nodeclassdescr"><em>The Node class</em></a>):</p>
+<dl class="attribute">
+<dt id="tables.Group._v_children">
+<tt class="descname">_v_children</tt><a class="headerlink" href="#tables.Group._v_children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary with all nodes hanging from this group.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Group._v_groups">
+<tt class="descname">_v_groups</tt><a class="headerlink" href="#tables.Group._v_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary with all groups hanging from this group.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Group._v_hidden">
+<tt class="descname">_v_hidden</tt><a class="headerlink" href="#tables.Group._v_hidden" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary with all hidden nodes hanging from this group.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Group._v_leaves">
+<tt class="descname">_v_leaves</tt><a class="headerlink" href="#tables.Group._v_leaves" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary with all leaves hanging from this group.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Group._v_links">
+<tt class="descname">_v_links</tt><a class="headerlink" href="#tables.Group._v_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary with all links hanging from this group.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Group._v_unknown">
+<tt class="descname">_v_unknown</tt><a class="headerlink" href="#tables.Group._v_unknown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary with all unknown nodes hanging from this group.</p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="group-properties">
+<h3>Group properties<a class="headerlink" href="#group-properties" title="Permalink to this headline">¶</a></h3>
+<dl class="attribute">
+<dt id="tables.Group._v_nchildren">
+<tt class="descclassname">Group.</tt><tt class="descname">_v_nchildren</tt><a class="headerlink" href="#tables.Group._v_nchildren" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of children hanging from this group.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Group._v_filters">
+<tt class="descclassname">Group.</tt><tt class="descname">_v_filters</tt><a class="headerlink" href="#tables.Group._v_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default filter properties for child nodes.</p>
+<p>You can (and are encouraged to) use this property to get, set and
+delete the FILTERS HDF5 attribute of the group, which stores a Filters
+instance (see <a class="reference internal" href="helper_classes.html#filtersclassdescr"><em>The Filters class</em></a>). When the group has no such
+attribute, a default Filters instance is used.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="group-methods">
+<h3>Group methods<a class="headerlink" href="#group-methods" title="Permalink to this headline">¶</a></h3>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last"><em>Caveat:</em> The following methods are documented for completeness, and they
+can be used without any problem. However, you should use the high-level
+counterpart methods in the File class (see <a class="reference internal" href="file_class.html#fileclassdescr"><em>The File Class</em></a>, because
+they are most used in documentation and examples, and are a bit more
+powerful than those exposed here.</p>
+</div>
+<p>The following methods are provided in addition to those in
+Node (see <a class="reference internal" href="#nodeclassdescr"><em>The Node class</em></a>):</p>
+<dl class="method">
+<dt id="tables.Group._f_close">
+<tt class="descclassname">Group.</tt><tt class="descname">_f_close</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Group._f_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close this group and all its descendents.</p>
+<p>This method has the behavior described in <a class="reference internal" href="#tables.Node._f_close" title="tables.Node._f_close"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_close()</span></tt></a>.
+It should be noted that this operation closes all the nodes
+descending from this group.</p>
+<p>You should not need to close nodes manually because they are
+automatically opened/closed when they are loaded/evicted from
+the integrated LRU cache.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group._f_copy">
+<tt class="descclassname">Group.</tt><tt class="descname">_f_copy</tt><big>(</big><em>newparent=None</em>, <em>newname=None</em>, <em>overwrite=False</em>, <em>recursive=False</em>, <em>createparents=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#tables.Group._f_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy this node and return the new one.</p>
+<p>This method has the behavior described in <a class="reference internal" href="#tables.Node._f_copy" title="tables.Node._f_copy"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_copy()</span></tt></a>.
+In addition, it recognizes the following keyword arguments:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>title</strong> :</p>
+<blockquote>
+<div><p>The new title for the destination. If omitted or None, the
+original title is used. This only applies to the topmost
+node in recursive copies.</p>
+</div></blockquote>
+<p><strong>filters</strong> : Filters</p>
+<blockquote>
+<div><p>Specifying this parameter overrides the original filter
+properties in the source node. If specified, it must be an
+instance of the Filters class (see <a class="reference internal" href="helper_classes.html#filtersclassdescr"><em>The Filters class</em></a>).
+The default is to copy the filter properties from the source
+node.</p>
+</div></blockquote>
+<p><strong>copyuserattrs</strong> :</p>
+<blockquote>
+<div><p>You can prevent the user attributes from being copied by setting
+thisparameter to False. The default is to copy them.</p>
+</div></blockquote>
+<p><strong>stats</strong> :</p>
+<blockquote class="last">
+<div><p>This argument may be used to collect statistics on the copy
+process. When used, it should be a dictionary with keys &#8216;groups&#8217;,
+&#8216;leaves&#8217;, &#8216;links&#8217; and &#8216;bytes&#8217; having a numeric value. Their values
+willbe incremented to reflect the number of groups, leaves and
+bytes, respectively, that have been copied during the operation.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group._f_copy_children">
+<tt class="descclassname">Group.</tt><tt class="descname">_f_copy_children</tt><big>(</big><em>dstgroup</em>, <em>overwrite=False</em>, <em>recursive=False</em>, <em>createparents=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#tables.Group._f_copy_children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy the children of this group into another group.</p>
+<p>Children hanging directly from this group are copied into dstgroup,
+which can be a Group (see <a class="reference internal" href="#groupclassdescr"><em>The Group class</em></a>) object or its
+pathname in string form. If createparents is true, the needed groups
+for the given destination group path to exist will be created.</p>
+<p>The operation will fail with a NodeError if there is a child node
+in the destination group with the same name as one of the copied
+children from this one, unless overwrite is true; in this case,
+the former child node is recursively removed before copying the
+later.</p>
+<p>By default, nodes descending from children groups of this node
+are not copied. If the recursive argument is true, all descendant
+nodes of this node are recursively copied.</p>
+<p>Additional keyword arguments may be passed to customize the
+copying process. For instance, title and filters may be changed,
+user attributes may be or may not be copied, data may be sub-sampled,
+stats may be collected, etc. Arguments unknown to nodes are simply
+ignored. Check the documentation for copying operations of nodes to
+see which options they support.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group._f_get_child">
+<tt class="descclassname">Group.</tt><tt class="descname">_f_get_child</tt><big>(</big><em>childname</em><big>)</big><a class="headerlink" href="#tables.Group._f_get_child" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the child called childname of this group.</p>
+<p>If the child exists (be it visible or not), it is returned.  Else, a
+NoSuchNodeError is raised.</p>
+<p>Using this method is recommended over getattr() when doing programmatic
+accesses to children if childname is unknown beforehand or when its
+name is not a valid Python identifier.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group._f_iter_nodes">
+<tt class="descclassname">Group.</tt><tt class="descname">_f_iter_nodes</tt><big>(</big><em>classname=None</em><big>)</big><a class="headerlink" href="#tables.Group._f_iter_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over children nodes.</p>
+<p>Child nodes are yielded alphanumerically sorted by node name.  If the
+name of a class derived from Node (see <a class="reference internal" href="#nodeclassdescr"><em>The Node class</em></a>) is
+supplied in the classname parameter, only instances of that class (or
+subclasses of it) will be returned.</p>
+<p>This is an iterator version of <a class="reference internal" href="#tables.Group._f_list_nodes" title="tables.Group._f_list_nodes"><tt class="xref py py-meth docutils literal"><span class="pre">Group._f_list_nodes()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group._f_list_nodes">
+<tt class="descclassname">Group.</tt><tt class="descname">_f_list_nodes</tt><big>(</big><em>classname=None</em><big>)</big><a class="headerlink" href="#tables.Group._f_list_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <em>list</em> with children nodes.</p>
+<p>This is a list-returning version of <a class="reference internal" href="#tables.Group._f_iter_nodes" title="tables.Group._f_iter_nodes"><tt class="xref py py-meth docutils literal"><span class="pre">Group._f_iter_nodes()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group._f_walk_groups">
+<tt class="descclassname">Group.</tt><tt class="descname">_f_walk_groups</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Group._f_walk_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recursively iterate over descendent groups (not leaves).</p>
+<p>This method starts by yielding <em>self</em>, and then it goes on to
+recursively iterate over all child groups in alphanumerical order, top
+to bottom (preorder), following the same procedure.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group._f_walknodes">
+<tt class="descclassname">Group.</tt><tt class="descname">_f_walknodes</tt><big>(</big><em>classname=None</em><big>)</big><a class="headerlink" href="#tables.Group._f_walknodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over descendant nodes.</p>
+<p>This method recursively walks <em>self</em> top to bottom (preorder),
+iterating over child groups in alphanumerical order, and yielding
+nodes.  If classname is supplied, only instances of the named class are
+yielded.</p>
+<p>If <em>classname</em> is Group, it behaves like <a class="reference internal" href="#tables.Group._f_walk_groups" title="tables.Group._f_walk_groups"><tt class="xref py py-meth docutils literal"><span class="pre">Group._f_walk_groups()</span></tt></a>,
+yielding only groups.  If you don&#8217;t want a recursive behavior,
+use <a class="reference internal" href="#tables.Group._f_iter_nodes" title="tables.Group._f_iter_nodes"><tt class="xref py py-meth docutils literal"><span class="pre">Group._f_iter_nodes()</span></tt></a> instead.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Recursively print all the arrays hanging from &#39;/&#39;</span>
+<span class="k">print</span> <span class="s">&quot;Arrays in the object tree &#39;/&#39;:&quot;</span>
+<span class="k">for</span> <span class="n">array</span> <span class="ow">in</span> <span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_f_walknodes</span><span class="p">(</span><span class="s">&#39;Array&#39;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="k">print</span> <span class="n">array</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="group-special-methods">
+<h3>Group special methods<a class="headerlink" href="#group-special-methods" title="Permalink to this headline">¶</a></h3>
+<p>Following are described the methods that automatically trigger actions when a
+Group instance is accessed in a special way.</p>
+<p>This class defines the <tt class="xref py py-meth docutils literal"><span class="pre">__setattr__()</span></tt>, <tt class="xref py py-meth docutils literal"><span class="pre">__getattr__()</span></tt> and
+<tt class="xref py py-meth docutils literal"><span class="pre">__delattr__()</span></tt> methods, and they set, get and delete <em>ordinary Python
+attributes</em> as normally intended. In addition to that, <tt class="xref py py-meth docutils literal"><span class="pre">__getattr__()</span></tt>
+allows getting <em>child nodes</em> by their name for the sake of easy interaction
+on the command line, as long as there is no Python attribute with the same
+name. Groups also allow the interactive completion (when using readline) of
+the names of child nodes. For instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># get a Python attribute</span>
+<span class="n">nchild</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">_v_nchildren</span>
+
+<span class="c"># Add a Table child called &#39;table&#39; under &#39;group&#39;.</span>
+<span class="n">h5file</span><span class="o">.</span><span class="n">create_table</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s">&#39;table&#39;</span><span class="p">,</span> <span class="n">my_description</span><span class="p">)</span>
+<span class="n">table</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">table</span>          <span class="c"># get the table child instance</span>
+<span class="n">group</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="s">&#39;foo&#39;</span>          <span class="c"># set a Python attribute</span>
+
+<span class="c"># (PyTables warns you here about using the name of a child node.)</span>
+<span class="n">foo</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">table</span>            <span class="c"># get a Python attribute</span>
+<span class="k">del</span> <span class="n">group</span><span class="o">.</span><span class="n">table</span>              <span class="c"># delete a Python attribute</span>
+<span class="n">table</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">table</span>          <span class="c"># get the table child instance again</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="tables.Group.__contains__">
+<tt class="descclassname">Group.</tt><tt class="descname">__contains__</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#tables.Group.__contains__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Is there a child with that <cite>name</cite>?</p>
+<p>Returns a true value if the group has a child node (visible or
+hidden) with the given <cite>name</cite> (a string), false otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group.__delattr__">
+<tt class="descclassname">Group.</tt><tt class="descname">__delattr__</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#tables.Group.__delattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a Python attribute called name.</p>
+<p>This method deletes an <em>ordinary Python attribute</em> from the object.
+It does <em>not</em> remove children nodes from this group; for that,
+use <a class="reference internal" href="file_class.html#tables.File.remove_node" title="tables.File.remove_node"><tt class="xref py py-meth docutils literal"><span class="pre">File.remove_node()</span></tt></a> or <a class="reference internal" href="#tables.Node._f_remove" title="tables.Node._f_remove"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_remove()</span></tt></a>.
+It does <em>neither</em> delete a PyTables node attribute; for that,
+use <a class="reference internal" href="file_class.html#tables.File.del_node_attr" title="tables.File.del_node_attr"><tt class="xref py py-meth docutils literal"><span class="pre">File.del_node_attr()</span></tt></a>, <a class="reference internal" href="#tables.Node._f_delattr" title="tables.Node._f_delattr"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_delattr()</span></tt></a> or
+<tt class="xref py py-attr docutils literal"><span class="pre">Node._v_attrs`</span></tt>.</p>
+<p>If there is an attribute and a child node with the same name,
+the child node will be made accessible again via natural naming.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group.__getattr__">
+<tt class="descclassname">Group.</tt><tt class="descname">__getattr__</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#tables.Group.__getattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a Python attribute or child node called name.</p>
+<p>If the object has a Python attribute called name, its value is
+returned. Else, if the node has a child node called name, it is
+returned.  Else, an AttributeError is raised.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group.__iter__">
+<tt class="descclassname">Group.</tt><tt class="descname">__iter__</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Group.__iter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over the child nodes hanging directly from the group.</p>
+<p>This iterator is <em>not</em> recursive.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Non-recursively list all the nodes hanging from &#39;/detector&#39;</span>
+<span class="k">print</span> <span class="s">&quot;Nodes in &#39;/detector&#39; group:&quot;</span>
+<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">detector</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">node</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group.__repr__">
+<tt class="descclassname">Group.</tt><tt class="descname">__repr__</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Group.__repr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a detailed string representation of the group.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s">&#39;data/test.h5&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">group0</span>
+<span class="go">/group0 (Group) &#39;First Group&#39;</span>
+<span class="go">  children := [&#39;tuple1&#39; (Table), &#39;group1&#39; (Group)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group.__setattr__">
+<tt class="descclassname">Group.</tt><tt class="descname">__setattr__</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#tables.Group.__setattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a Python attribute called name with the given value.</p>
+<p>This method stores an <em>ordinary Python attribute</em> in the object. It
+does <em>not</em> store new children nodes under this group; for that, use the
+File.create*() methods (see the File class
+in <a class="reference internal" href="file_class.html#fileclassdescr"><em>The File Class</em></a>). It does <em>neither</em> store a PyTables node
+attribute; for that,
+use <a class="reference internal" href="file_class.html#tables.File.set_node_attr" title="tables.File.set_node_attr"><tt class="xref py py-meth docutils literal"><span class="pre">File.set_node_attr()</span></tt></a>, :meth`:Node._f_setattr`
+or <a class="reference internal" href="#tables.Node._v_attrs" title="tables.Node._v_attrs"><tt class="xref py py-attr docutils literal"><span class="pre">Node._v_attrs</span></tt></a>.</p>
+<p>If there is already a child node with the same name, a
+NaturalNameWarning will be issued and the child node will not be
+accessible via natural naming nor getattr(). It will still be available
+via <a class="reference internal" href="file_class.html#tables.File.get_node" title="tables.File.get_node"><tt class="xref py py-meth docutils literal"><span class="pre">File.get_node()</span></tt></a>, <a class="reference internal" href="#tables.Group._f_get_child" title="tables.Group._f_get_child"><tt class="xref py py-meth docutils literal"><span class="pre">Group._f_get_child()</span></tt></a> and children
+dictionaries in the group (if visible).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Group.__str__">
+<tt class="descclassname">Group.</tt><tt class="descname">__str__</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Group.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a short string representation of the group.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">=</span><span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s">&#39;data/test.h5&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">group0</span>
+<span class="go">/group0 (Group) &#39;First Group&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="the-leaf-class">
+<span id="leafclassdescr"></span><h2>The Leaf class<a class="headerlink" href="#the-leaf-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tables.Leaf">
+<em class="property">class </em><tt class="descclassname">tables.</tt><tt class="descname">Leaf</tt><big>(</big><em>parentnode</em>, <em>name</em>, <em>new=False</em>, <em>filters=None</em>, <em>byteorder=None</em>, <em>_log=True</em><big>)</big><a class="headerlink" href="#tables.Leaf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract base class for all PyTables leaves.</p>
+<p>A leaf is a node (see the Node class in <a class="reference internal" href="#tables.Node" title="tables.Node"><tt class="xref py py-class docutils literal"><span class="pre">Node</span></tt></a>) which hangs from a
+group (see the Group class in <a class="reference internal" href="#tables.Group" title="tables.Group"><tt class="xref py py-class docutils literal"><span class="pre">Group</span></tt></a>) but, unlike a group, it can
+not have any further children below it (i.e. it is an end node).</p>
+<p>This definition includes all nodes which contain actual data (datasets
+handled by the Table - see <a class="reference internal" href="structured_storage.html#tableclassdescr"><em>The Table class</em></a>, Array -
+see <a class="reference internal" href="homogenous_storage.html#arrayclassdescr"><em>The Array class</em></a>, CArray - see <a class="reference internal" href="homogenous_storage.html#carrayclassdescr"><em>The CArray class</em></a>, EArray -
+see <a class="reference internal" href="homogenous_storage.html#earrayclassdescr"><em>The EArray class</em></a>, and VLArray - see <a class="reference internal" href="homogenous_storage.html#vlarrayclassdescr"><em>The VLArray class</em></a>
+classes) and unsupported nodes (the UnImplemented
+class - <a class="reference internal" href="helper_classes.html#unimplementedclassdescr"><em>The UnImplemented class</em></a>) these classes do in fact inherit
+from Leaf.</p>
+<p class="rubric">Leaf attributes</p>
+<p>These instance variables are provided in addition to those in Node
+(see <a class="reference internal" href="#nodeclassdescr"><em>The Node class</em></a>):</p>
+<dl class="attribute">
+<dt id="tables.Leaf.byteorder">
+<tt class="descname">byteorder</tt><a class="headerlink" href="#tables.Leaf.byteorder" title="Permalink to this definition">¶</a></dt>
+<dd><p>The byte ordering of the leaf data <em>on disk</em>.  It will be either
+<tt class="docutils literal"><span class="pre">little</span></tt> or <tt class="docutils literal"><span class="pre">big</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.dtype">
+<tt class="descname">dtype</tt><a class="headerlink" href="#tables.Leaf.dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>The NumPy dtype that most closely matches this leaf type.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.extdim">
+<tt class="descname">extdim</tt><a class="headerlink" href="#tables.Leaf.extdim" title="Permalink to this definition">¶</a></dt>
+<dd><p>The index of the enlargeable dimension (-1 if none).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.nrows">
+<tt class="descname">nrows</tt><a class="headerlink" href="#tables.Leaf.nrows" title="Permalink to this definition">¶</a></dt>
+<dd><p>The length of the main dimension of the leaf data.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.nrowsinbuf">
+<tt class="descname">nrowsinbuf</tt><a class="headerlink" href="#tables.Leaf.nrowsinbuf" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of rows that fit in internal input buffers.</p>
+<p>You can change this to fine-tune the speed or memory
+requirements of your application.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.shape">
+<tt class="descname">shape</tt><a class="headerlink" href="#tables.Leaf.shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>The shape of data in the leaf.</p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="leaf-properties">
+<h3>Leaf properties<a class="headerlink" href="#leaf-properties" title="Permalink to this headline">¶</a></h3>
+<dl class="attribute">
+<dt id="tables.Leaf.chunkshape">
+<tt class="descclassname">Leaf.</tt><tt class="descname">chunkshape</tt><a class="headerlink" href="#tables.Leaf.chunkshape" title="Permalink to this definition">¶</a></dt>
+<dd><p>The HDF5 chunk size for chunked leaves (a tuple).</p>
+<p>This is read-only because you cannot change the chunk size of a
+leaf once it has been created.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.ndim">
+<tt class="descclassname">Leaf.</tt><tt class="descname">ndim</tt><a class="headerlink" href="#tables.Leaf.ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of dimensions of the leaf data.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.filters">
+<tt class="descclassname">Leaf.</tt><tt class="descname">filters</tt><a class="headerlink" href="#tables.Leaf.filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter properties for this leaf</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="helper_classes.html#tables.Filters" title="tables.Filters"><tt class="xref py py-obj docutils literal"><span class="pre">Filters</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.maindim">
+<tt class="descclassname">Leaf.</tt><tt class="descname">maindim</tt><a class="headerlink" href="#tables.Leaf.maindim" title="Permalink to this definition">¶</a></dt>
+<dd><p>The dimension along which iterators work.</p>
+<p>Its value is 0 (i.e. the first dimension) when the dataset is not
+extendable, and self.extdim (where available) for extendable ones.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.flavor">
+<tt class="descclassname">Leaf.</tt><tt class="descname">flavor</tt><a class="headerlink" href="#tables.Leaf.flavor" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of data object read from this leaf.</p>
+<p>It can be any of &#8216;numpy&#8217; or &#8216;python&#8217;.</p>
+<p>You can (and are encouraged to) use this property to get, set
+and delete the FLAVOR HDF5 attribute of the leaf. When the leaf
+has no such attribute, the default flavor is used..</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.size_in_memory">
+<tt class="descclassname">Leaf.</tt><tt class="descname">size_in_memory</tt><a class="headerlink" href="#tables.Leaf.size_in_memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this leaf&#8217;s data in bytes when it is fully loaded into
+memory.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.size_on_disk">
+<tt class="descclassname">Leaf.</tt><tt class="descname">size_on_disk</tt><a class="headerlink" href="#tables.Leaf.size_on_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of this leaf&#8217;s data in bytes as it is stored on disk.  If the
+data is compressed, this shows the compressed size.  In the case of
+uncompressed, chunked data, this may be slightly larger than the amount
+of data, due to partially filled chunks.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="leaf-instance-variables-aliases">
+<h3>Leaf instance variables - aliases<a class="headerlink" href="#leaf-instance-variables-aliases" title="Permalink to this headline">¶</a></h3>
+<p>The following are just easier-to-write aliases to their Node (see
+<a class="reference internal" href="#nodeclassdescr"><em>The Node class</em></a>) counterparts (indicated between parentheses):</p>
+<dl class="attribute">
+<dt id="tables.Leaf.attrs">
+<tt class="descclassname">Leaf.</tt><tt class="descname">attrs</tt><a class="headerlink" href="#tables.Leaf.attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>The associated AttributeSet instance - see <a class="reference internal" href="declarative_classes.html#attributesetclassdescr"><em>The AttributeSet class</em></a>
+(This is an easier-to-write alias of <a class="reference internal" href="#tables.Node._v_attrs" title="tables.Node._v_attrs"><tt class="xref py py-attr docutils literal"><span class="pre">Node._v_attrs</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.name">
+<tt class="descclassname">Leaf.</tt><tt class="descname">name</tt><a class="headerlink" href="#tables.Leaf.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this node in its parent group
+(This is an easier-to-write alias of <a class="reference internal" href="#tables.Node._v_name" title="tables.Node._v_name"><tt class="xref py py-attr docutils literal"><span class="pre">Node._v_name</span></tt></a>).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.object_id">
+<tt class="descclassname">Leaf.</tt><tt class="descname">object_id</tt><a class="headerlink" href="#tables.Leaf.object_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>A node identifier, which may change from run to run.
+(This is an easier-to-write alias of <a class="reference internal" href="#tables.Node._v_objectid" title="tables.Node._v_objectid"><tt class="xref py py-attr docutils literal"><span class="pre">Node._v_objectid</span></tt></a>)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tables.Leaf.title">
+<tt class="descclassname">Leaf.</tt><tt class="descname">title</tt><a class="headerlink" href="#tables.Leaf.title" title="Permalink to this definition">¶</a></dt>
+<dd><p>A description for this node
+(This is an easier-to-write alias of <a class="reference internal" href="#tables.Node._v_title" title="tables.Node._v_title"><tt class="xref py py-attr docutils literal"><span class="pre">Node._v_title</span></tt></a>).</p>
+</dd></dl>
+
+</div>
+<div class="section" id="leaf-methods">
+<h3>Leaf methods<a class="headerlink" href="#leaf-methods" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="tables.Leaf.close">
+<tt class="descclassname">Leaf.</tt><tt class="descname">close</tt><big>(</big><em>flush=True</em><big>)</big><a class="headerlink" href="#tables.Leaf.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close this node in the tree.</p>
+<p>This method is completely equivalent to <a class="reference internal" href="#tables.Leaf._f_close" title="tables.Leaf._f_close"><tt class="xref py py-meth docutils literal"><span class="pre">Leaf._f_close()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.copy">
+<tt class="descclassname">Leaf.</tt><tt class="descname">copy</tt><big>(</big><em>newparent=None</em>, <em>newname=None</em>, <em>overwrite=False</em>, <em>createparents=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#tables.Leaf.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy this node and return the new one.</p>
+<p>This method has the behavior described in <a class="reference internal" href="#tables.Node._f_copy" title="tables.Node._f_copy"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_copy()</span></tt></a>. Please
+note that there is no recursive flag since leaves do not have child
+nodes.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Note that unknown parameters passed to this method will be
+ignored, so may want to double check the spelling of these
+(i.e. if you write them incorrectly, they will most probably
+be ignored).</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>title</strong> :</p>
+<blockquote>
+<div><p>The new title for the destination. If omitted or None, the original
+title is used.</p>
+</div></blockquote>
+<p><strong>filters</strong> : Filters</p>
+<blockquote>
+<div><p>Specifying this parameter overrides the original filter properties
+in the source node. If specified, it must be an instance of the
+Filters class (see <a class="reference internal" href="helper_classes.html#filtersclassdescr"><em>The Filters class</em></a>). The default is to
+copy the filter properties from the source node.</p>
+</div></blockquote>
+<p><strong>copyuserattrs</strong> :</p>
+<blockquote>
+<div><p>You can prevent the user attributes from being copied by setting
+this parameter to False. The default is to copy them.</p>
+</div></blockquote>
+<p><strong>start, stop, step</strong> : int</p>
+<blockquote>
+<div><p>Specify the range of rows to be copied; the default is to copy all
+the rows.</p>
+</div></blockquote>
+<p><strong>stats</strong> :</p>
+<blockquote>
+<div><p>This argument may be used to collect statistics on the copy
+process. When used, it should be a dictionary with keys &#8216;groups&#8217;,
+&#8216;leaves&#8217; and &#8216;bytes&#8217; having a numeric value. Their values will be
+incremented to reflect the number of groups, leaves and bytes,
+respectively, that have been copied during the operation.</p>
+</div></blockquote>
+<p><strong>chunkshape</strong> :</p>
+<blockquote class="last">
+<div><p>The chunkshape of the new leaf.  It supports a couple of special
+values.  A value of keep means that the chunkshape will be the same
+than original leaf (this is the default).  A value of auto means
+that a new shape will be computed automatically in order to ensure
+best performance when accessing the dataset through the main
+dimension.  Any other value should be an integer or a tuple
+matching the dimensions of the leaf.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.flush">
+<tt class="descclassname">Leaf.</tt><tt class="descname">flush</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Leaf.flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush pending data to disk.</p>
+<p>Saves whatever remaining buffered data to disk. It also releases I/O
+buffers, so if you are filling many datasets in the same PyTables
+session, please call flush() extensively so as to help PyTables to keep
+memory requirements low.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.isvisible">
+<tt class="descclassname">Leaf.</tt><tt class="descname">isvisible</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Leaf.isvisible" title="Permalink to this definition">¶</a></dt>
+<dd><p>Is this node visible?</p>
+<p>This method has the behavior described in <a class="reference internal" href="#tables.Node._f_isvisible" title="tables.Node._f_isvisible"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_isvisible()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.move">
+<tt class="descclassname">Leaf.</tt><tt class="descname">move</tt><big>(</big><em>newparent=None</em>, <em>newname=None</em>, <em>overwrite=False</em>, <em>createparents=False</em><big>)</big><a class="headerlink" href="#tables.Leaf.move" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move or rename this node.</p>
+<p>This method has the behavior described in <a class="reference internal" href="#tables.Node._f_move" title="tables.Node._f_move"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_move()</span></tt></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.rename">
+<tt class="descclassname">Leaf.</tt><tt class="descname">rename</tt><big>(</big><em>newname</em><big>)</big><a class="headerlink" href="#tables.Leaf.rename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rename this node in place.</p>
+<p>This method has the behavior described in <a class="reference internal" href="#tables.Node._f_rename" title="tables.Node._f_rename"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_rename()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.remove">
+<tt class="descclassname">Leaf.</tt><tt class="descname">remove</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Leaf.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove this node from the hierarchy.</p>
+<p>This method has the behavior described
+in <a class="reference internal" href="#tables.Node._f_remove" title="tables.Node._f_remove"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_remove()</span></tt></a>. Please note that there is no recursive flag
+since leaves do not have child nodes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.get_attr">
+<tt class="descclassname">Leaf.</tt><tt class="descname">get_attr</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#tables.Leaf.get_attr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a PyTables attribute from this node.</p>
+<p>This method has the behavior described in <a class="reference internal" href="#tables.Node._f_getattr" title="tables.Node._f_getattr"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_getattr()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.set_attr">
+<tt class="descclassname">Leaf.</tt><tt class="descname">set_attr</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#tables.Leaf.set_attr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a PyTables attribute for this node.</p>
+<p>This method has the behavior described in <a class="reference internal" href="#tables.Node._f_setattr" title="tables.Node._f_setattr"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_setattr()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.del_attr">
+<tt class="descclassname">Leaf.</tt><tt class="descname">del_attr</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#tables.Leaf.del_attr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a PyTables attribute from this node.</p>
+<p>This method has the behavior described in <tt class="xref py py-meth docutils literal"><span class="pre">Node_f_delAttr()</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.truncate">
+<tt class="descclassname">Leaf.</tt><tt class="descname">truncate</tt><big>(</big><em>size</em><big>)</big><a class="headerlink" href="#tables.Leaf.truncate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Truncate the main dimension to be size rows.</p>
+<p>If the main dimension previously was larger than this size, the extra
+data is lost.  If the main dimension previously was shorter, it is
+extended, and the extended part is filled with the default values.</p>
+<p>The truncation operation can only be applied to <em>enlargeable</em> datasets,
+else a TypeError will be raised.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf.__len__">
+<tt class="descclassname">Leaf.</tt><tt class="descname">__len__</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.Leaf.__len__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the length of the main dimension of the leaf data.</p>
+<p>Please note that this may raise an OverflowError on 32-bit platforms
+for datasets having more than 2**31-1 rows.  This is a limitation of
+Python that you can work around by using the nrows or shape attributes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.Leaf._f_close">
+<tt class="descclassname">Leaf.</tt><tt class="descname">_f_close</tt><big>(</big><em>flush=True</em><big>)</big><a class="headerlink" href="#tables.Leaf._f_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close this node in the tree.</p>
+<p>This method has the behavior described in <a class="reference internal" href="#tables.Node._f_close" title="tables.Node._f_close"><tt class="xref py py-meth docutils literal"><span class="pre">Node._f_close()</span></tt></a>.
+Besides that, the optional argument flush tells whether to flush
+pending data to disk or not before closing.</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Hierarchy definition classes</a><ul>
+<li><a class="reference internal" href="#the-node-class">The Node class</a><ul>
+<li><a class="reference internal" href="#node-instance-variables-location-dependent">Node instance variables - location dependent</a></li>
+<li><a class="reference internal" href="#node-instance-variables-location-independent">Node instance variables - location independent</a></li>
+<li><a class="reference internal" href="#node-instance-variables-attribute-shorthands">Node instance variables - attribute shorthands</a></li>
+<li><a class="reference internal" href="#node-methods-hierarchy-manipulation">Node methods - hierarchy manipulation</a></li>
+<li><a class="reference internal" href="#node-methods-attribute-handling">Node methods - attribute handling</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-group-class">The Group class</a><ul>
+<li><a class="reference internal" href="#group-properties">Group properties</a></li>
+<li><a class="reference internal" href="#group-methods">Group methods</a></li>
+<li><a class="reference internal" href="#group-special-methods">Group special methods</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-leaf-class">The Leaf class</a><ul>
+<li><a class="reference internal" href="#leaf-properties">Leaf properties</a></li>
+<li><a class="reference internal" href="#leaf-instance-variables-aliases">Leaf instance variables - aliases</a></li>
+<li><a class="reference internal" href="#leaf-methods">Leaf methods</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="file_class.html"
+                        title="previous chapter">File manipulation class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="structured_storage.html"
+                        title="next chapter">Structured storage classes</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/usersguide/libref/hierarchy_classes.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="structured_storage.html" title="Structured storage classes"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="file_class.html" title="File manipulation class"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
+
+          <li><a href="../index.html" >PyTables User&#8217;s Guide</a> &raquo;</li>
+          <li><a href="../libref.html" >Library Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2011-2013, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

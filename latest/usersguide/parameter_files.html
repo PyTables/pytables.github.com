@@ -1,0 +1,599 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PyTables parameter files &mdash; PyTables 2.4.0+1.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.4.0+1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 2.4.0+1.dev documentation" href="../index.html" />
+    <link rel="up" title="PyTables User’s Guide" href="index.html" />
+    <link rel="next" title="Utilities" href="utilities.html" />
+    <link rel="prev" title="Condition Syntax" href="condition_syntax.html" /> 
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="utilities.html" title="Utilities"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="condition_syntax.html" title="Condition Syntax"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
+
+          <li><a href="index.html" accesskey="U">PyTables User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pytables-parameter-files">
+<span id="parameter-files"></span><h1>PyTables parameter files<a class="headerlink" href="#pytables-parameter-files" title="Permalink to this headline">¶</a></h1>
+<p>PyTables issues warnings when certain limits are exceeded.  Those limits are
+not intrinsic limitations of the underlying software, but rather are
+proactive measures to avoid large resource consumptions.  The default limits
+should be enough for most of cases, and users should try to respect them.
+However, in some situations, it can be convenient to increase (or decrease)
+these limits.</p>
+<p>Also, and in order to get maximum performance, PyTables implements a series
+of sophisticated features, like I/O buffers or different kind of caches (for
+nodes, chunks and other internal metadata).  These features comes with a
+default set of parameters that ensures a decent performance in most of
+situations.  But, as there is always a need for every case, it is handy to
+have the possibility to fine-tune some of these parameters.</p>
+<p>Because of these reasons, PyTables implements a couple of ways to change the
+values of these parameters.  All the <em>tunable</em> parameters live in the
+<tt class="file docutils literal"><span class="pre">tables/parameters.py</span></tt>.  The user can choose to change them in the
+parameter files themselves for a global and persistent change.  Moreover, if
+he wants a finer control, he can pass any of these parameters directly to the
+<tt class="xref py py-func docutils literal"><span class="pre">tables.openFile()</span></tt> function, and the new parameters will only take
+effect in the corresponding file (the defaults will continue to be in the
+parameter files).</p>
+<p>A description of all of the tunable parameters follows.  As the defaults
+stated here may change from release to release, please check with your actual
+parameter files so as to know your actual default values.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>Changing the next parameters may have a very bad effect in the resource
+consumption and performance of your PyTables scripts.</p>
+<p class="last">Please be careful when touching these!</p>
+</div>
+<div class="section" id="tunable-parameters-in-parameters-py">
+<h2>Tunable parameters in parameters.py<a class="headerlink" href="#tunable-parameters-in-parameters-py" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="recommended-maximum-values">
+<h3>Recommended maximum values<a class="headerlink" href="#recommended-maximum-values" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.MAX_COLUMNS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_COLUMNS</tt><em class="property"> = 512</em><a class="headerlink" href="#tables.parameters.MAX_COLUMNS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number of columns in <a class="reference internal" href="libref/structured_storage.html#tables.Table" title="tables.Table"><tt class="xref py py-class docutils literal"><span class="pre">tables.Table</span></tt></a> objects before a
+<a class="reference internal" href="libref/helper_classes.html#tables.PerformanceWarning" title="tables.PerformanceWarning"><tt class="xref py py-exc docutils literal"><span class="pre">tables.PerformanceWarning</span></tt></a> is issued.  This limit is somewhat
+arbitrary and can be increased.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.MAX_NODE_ATTRS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_NODE_ATTRS</tt><em class="property"> = 4096</em><a class="headerlink" href="#tables.parameters.MAX_NODE_ATTRS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum allowed number of attributes in a node.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.MAX_GROUP_WIDTH">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_GROUP_WIDTH</tt><em class="property"> = 16384</em><a class="headerlink" href="#tables.parameters.MAX_GROUP_WIDTH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum allowed number of children hanging from a group.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.MAX_TREE_DEPTH">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_TREE_DEPTH</tt><em class="property"> = 2048</em><a class="headerlink" href="#tables.parameters.MAX_TREE_DEPTH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum depth in object tree allowed.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.MAX_UNDO_PATH_LENGTH">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_UNDO_PATH_LENGTH</tt><em class="property"> = 10240</em><a class="headerlink" href="#tables.parameters.MAX_UNDO_PATH_LENGTH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum length of paths allowed in undo/redo operations.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="cache-limits">
+<h3>Cache limits<a class="headerlink" href="#cache-limits" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.CHUNK_CACHE_NELMTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">CHUNK_CACHE_NELMTS</tt><em class="property"> = 521</em><a class="headerlink" href="#tables.parameters.CHUNK_CACHE_NELMTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of elements for HDF5 chunk cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.CHUNK_CACHE_PREEMPT">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">CHUNK_CACHE_PREEMPT</tt><em class="property"> = 0.0</em><a class="headerlink" href="#tables.parameters.CHUNK_CACHE_PREEMPT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chunk preemption policy.  This value should be between 0 and 1
+inclusive and indicates how much chunks that have been fully read are
+favored for preemption. A value of zero means fully read chunks are
+treated no differently than other chunks (the preemption is strictly
+LRU) while a value of one means fully read chunks are always preempted
+before other chunks.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.CHUNK_CACHE_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">CHUNK_CACHE_SIZE</tt><em class="property"> = 2097152</em><a class="headerlink" href="#tables.parameters.CHUNK_CACHE_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Size (in bytes) for HDF5 chunk cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.COND_CACHE_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">COND_CACHE_SLOTS</tt><em class="property"> = 128</em><a class="headerlink" href="#tables.parameters.COND_CACHE_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number of conditions for table queries to be kept in memory.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.METADATA_CACHE_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">METADATA_CACHE_SIZE</tt><em class="property"> = 1048576</em><a class="headerlink" href="#tables.parameters.METADATA_CACHE_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Size (in bytes) of the HDF5 metadata cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.NODE_CACHE_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">NODE_CACHE_SLOTS</tt><em class="property"> = 64</em><a class="headerlink" href="#tables.parameters.NODE_CACHE_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number of unreferenced nodes to be kept in memory.</p>
+<p>If positive, this is the number of <em>unreferenced</em> nodes to be kept in
+the metadata cache. Least recently used nodes are unloaded from memory
+when this number of loaded nodes is reached. To load a node again,
+simply access it as usual. Nodes referenced by user variables are not
+taken into account nor unloaded.</p>
+<p>Negative value means that all the touched nodes will be kept in an
+internal dictionary.  This is the faster way to load/retrieve nodes.
+However, and in order to avoid a large memory comsumption, the user will
+be warned when the number of loaded nodes will reach the
+<tt class="docutils literal"><span class="pre">-NODE_CACHE_SLOTS</span></tt> value.</p>
+<p>Finally, a value of zero means that any cache mechanism is disabled.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="parameters-for-the-different-internal-caches">
+<h3>Parameters for the different internal caches<a class="headerlink" href="#parameters-for-the-different-internal-caches" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.BOUNDS_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">BOUNDS_MAX_SIZE</tt><em class="property"> = 1048576</em><a class="headerlink" href="#tables.parameters.BOUNDS_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum size for bounds values cached during index lookups.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.BOUNDS_MAX_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">BOUNDS_MAX_SLOTS</tt><em class="property"> = 4096</em><a class="headerlink" href="#tables.parameters.BOUNDS_MAX_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of slots for the BOUNDS cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.ITERSEQ_MAX_ELEMENTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">ITERSEQ_MAX_ELEMENTS</tt><em class="property"> = 1024</em><a class="headerlink" href="#tables.parameters.ITERSEQ_MAX_ELEMENTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of iterator elements cached in data lookups.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.ITERSEQ_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">ITERSEQ_MAX_SIZE</tt><em class="property"> = 1048576</em><a class="headerlink" href="#tables.parameters.ITERSEQ_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum space that will take ITERSEQ cache (in bytes).</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.ITERSEQ_MAX_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">ITERSEQ_MAX_SLOTS</tt><em class="property"> = 128</em><a class="headerlink" href="#tables.parameters.ITERSEQ_MAX_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of slots in ITERSEQ cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.LIMBOUNDS_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">LIMBOUNDS_MAX_SIZE</tt><em class="property"> = 262144</em><a class="headerlink" href="#tables.parameters.LIMBOUNDS_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum size for the query limits (for example, <tt class="docutils literal"><span class="pre">(lim1,</span> <span class="pre">lim2)</span></tt>
+in conditions like <tt class="docutils literal"><span class="pre">lim1</span> <span class="pre">&lt;=</span> <span class="pre">col</span> <span class="pre">&lt;</span> <span class="pre">lim2</span></tt>) cached during index lookups
+(in bytes).</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.LIMBOUNDS_MAX_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">LIMBOUNDS_MAX_SLOTS</tt><em class="property"> = 128</em><a class="headerlink" href="#tables.parameters.LIMBOUNDS_MAX_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of slots for LIMBOUNDS cache.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.TABLE_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">TABLE_MAX_SIZE</tt><em class="property"> = 1048576</em><a class="headerlink" href="#tables.parameters.TABLE_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum size for table chunks cached during index queries.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.SORTED_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">SORTED_MAX_SIZE</tt><em class="property"> = 1048576</em><a class="headerlink" href="#tables.parameters.SORTED_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum size for sorted values cached during index lookups.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.SORTEDLR_MAX_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">SORTEDLR_MAX_SIZE</tt><em class="property"> = 8388608</em><a class="headerlink" href="#tables.parameters.SORTEDLR_MAX_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum size for chunks in last row cached in index lookups (in
+bytes).</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.SORTEDLR_MAX_SLOTS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">SORTEDLR_MAX_SLOTS</tt><em class="property"> = 1024</em><a class="headerlink" href="#tables.parameters.SORTEDLR_MAX_SLOTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of chunks for SORTEDLR cache.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="parameters-for-general-cache-behaviour">
+<h3>Parameters for general cache behaviour<a class="headerlink" href="#parameters-for-general-cache-behaviour" title="Permalink to this headline">¶</a></h3>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The next parameters will not take any effect if passed to the openFile()
+function, so they can only be changed in a <em>global</em> way.  You can change
+them in the file, but this is strongly discouraged unless you know well
+what you are doing.</p>
+</div>
+<dl class="data">
+<dt id="tables.parameters.DISABLE_EVERY_CYCLES">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">DISABLE_EVERY_CYCLES</tt><em class="property"> = 10</em><a class="headerlink" href="#tables.parameters.DISABLE_EVERY_CYCLES" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of cycles in which a cache will be forced to be disabled
+if the hit ratio is lower than the LOWEST_HIT_RATIO (see below).  This
+value should provide time enough to check whether the cache is being
+efficient or not.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.ENABLE_EVERY_CYCLES">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">ENABLE_EVERY_CYCLES</tt><em class="property"> = 50</em><a class="headerlink" href="#tables.parameters.ENABLE_EVERY_CYCLES" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of cycles in which a cache will be forced to be
+(re-)enabled, irregardingly of the hit ratio. This will provide a chance
+for checking if we are in a better scenario for doing caching again.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.LOWEST_HIT_RATIO">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">LOWEST_HIT_RATIO</tt><em class="property"> = 0.6</em><a class="headerlink" href="#tables.parameters.LOWEST_HIT_RATIO" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimum acceptable hit ratio for a cache to avoid disabling (and
+freeing) it.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="parameters-for-the-i-o-buffer-in-leaf-objects">
+<h3>Parameters for the I/O buffer in Leaf objects<a class="headerlink" href="#parameters-for-the-i-o-buffer-in-leaf-objects" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.IO_BUFFER_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">IO_BUFFER_SIZE</tt><em class="property"> = 1048576</em><a class="headerlink" href="#tables.parameters.IO_BUFFER_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The PyTables internal buffer size for I/O purposes.  Should not
+exceed the amount of highest level cache size in your CPU.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.BUFFER_TIMES">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">BUFFER_TIMES</tt><em class="property"> = 100</em><a class="headerlink" href="#tables.parameters.BUFFER_TIMES" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum buffersize/rowsize ratio before issuing a
+<a class="reference internal" href="libref/helper_classes.html#tables.PerformanceWarning" title="tables.PerformanceWarning"><tt class="xref py py-exc docutils literal"><span class="pre">tables.PerformanceWarning</span></tt></a>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="miscellaneous">
+<h3>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.EXPECTED_ROWS_EARRAY">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">EXPECTED_ROWS_EARRAY</tt><em class="property"> = 1000</em><a class="headerlink" href="#tables.parameters.EXPECTED_ROWS_EARRAY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default expected number of rows for <tt class="xref py py-class docutils literal"><span class="pre">EArray</span></tt> objects.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.EXPECTED_ROWS_TABLE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">EXPECTED_ROWS_TABLE</tt><em class="property"> = 10000</em><a class="headerlink" href="#tables.parameters.EXPECTED_ROWS_TABLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default expected number of rows for <tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt> objects.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.PYTABLES_SYS_ATTRS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">PYTABLES_SYS_ATTRS</tt><em class="property"> = True</em><a class="headerlink" href="#tables.parameters.PYTABLES_SYS_ATTRS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set this to <tt class="docutils literal"><span class="pre">False</span></tt> if you don&#8217;t want to create PyTables system
+attributes in datasets.  Also, if set to <tt class="docutils literal"><span class="pre">False</span></tt> the possible existing
+system attributes are not considered for guessing the class of the node
+during its loading from disk (this work is delegated to the PyTables&#8217;
+class discoverer function for general HDF5 files).</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.MAX_NUMEXPR_THREADS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_NUMEXPR_THREADS</tt><em class="property"> = None</em><a class="headerlink" href="#tables.parameters.MAX_NUMEXPR_THREADS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of threads that PyTables should use internally in
+Numexpr.  If <cite>None</cite>, it is automatically set to the number of cores in
+your machine. In general, it is a good idea to set this to the number of
+cores in your machine or, when your machine has many of them (e.g. &gt; 4),
+perhaps one less than this.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.MAX_BLOSC_THREADS">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">MAX_BLOSC_THREADS</tt><em class="property"> = None</em><a class="headerlink" href="#tables.parameters.MAX_BLOSC_THREADS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of threads that PyTables should use internally in
+Blosc.  If <cite>None</cite>, it is automatically set to the number of cores in
+your machine. In general, it is a good idea to set this to the number of
+cores in your machine or, when your machine has many of them (e.g. &gt; 4),
+perhaps one less than this.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="hdf5-driver-management">
+<h3>HDF5 driver management<a class="headerlink" href="#hdf5-driver-management" title="Permalink to this headline">¶</a></h3>
+<dl class="data">
+<dt id="tables.parameters.DRIVER">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">DRIVER</tt><em class="property"> = None</em><a class="headerlink" href="#tables.parameters.DRIVER" title="Permalink to this definition">¶</a></dt>
+<dd><p>The HDF5 driver that should be used for reading/writing to the file.</p>
+<p>Following drivers are supported:</p>
+<blockquote>
+<div><ul class="simple">
+<li>H5FD_SEC2: this driver uses POSIX file-system functions like read
+and write to perform I/O to a single, permanent file on local
+disk with no system buffering.
+This driver is POSIX-compliant and is the default file driver for
+all systems.</li>
+<li>H5FD_DIRECT: this is the H5FD_SEC2 driver except data is written
+to or read from the file synchronously without being cached by
+the system.</li>
+<li>H5FD_WINDOWS: this driver was modified in HDF5-1.8.8 to be a
+wrapper of the POSIX driver, H5FD_SEC2. This change should not
+affect user applications.</li>
+<li>H5FD_STDIO: this driver uses functions from the standard C
+stdio.h to perform I/O to a single, permanent file on local disk
+with additional system buffering.</li>
+<li>H5FD_CORE: with this driver, an application can work with a file
+in memory for faster reads and writes. File contents are kept in
+memory until the file is closed. At closing, the memory version
+of the file can be written back to disk or abandoned.</li>
+</ul>
+</div></blockquote>
+<p>The following drivers are not currently supported:</p>
+<blockquote>
+<div><ul class="simple">
+<li>H5FD_LOG: this is the H5FD_SEC2 driver with logging capabilities.</li>
+<li>H5FD_FAMILY: with this driver, the HDF5 file’s address space is
+partitioned into pieces and sent to separate storage files using
+an underlying driver of the user’s choice.
+This driver is for systems that do not support files larger than
+2 gigabytes.</li>
+<li>H5FD_MULTI: with this driver, data can be stored in multiple
+files according to the type of the data. I/O might work better if
+data is stored in separate files based on the type of data.
+The Split driver is a special case of this driver.</li>
+<li>H5FD_SPLIT: this file driver splits a file into two parts.
+One part stores metadata, and the other part stores raw data.
+This splitting a file into two parts is a limited case of the
+Multi driver.</li>
+<li>H5FD_MPIO: this is the standard HDF5 file driver for parallel
+file systems. This driver uses the MPI standard for both
+communication and file I/O.</li>
+<li>H5FD_MPIPOSIX: this parallel file system driver uses MPI for
+communication and POSIX file-system calls for file I/O.</li>
+<li>H5FD_STREAM: this driver is no longer available.</li>
+</ul>
+</div></blockquote>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">the <a class="reference external" href="http://www.hdfgroup.org/HDF5/doc/UG/08_TheFile.html#Drivers">Drivers section</a> of the <a class="reference external" href="http://www.hdfgroup.org/HDF5/doc/UG/index.html">HDF5 User&#8217;s Guide</a> for
+more information.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>not all supported drivers are always available. For example the
+H5FD_WINDOWS driver is not available on non Windows platforms.</p>
+<p class="last">If the user try to use a driver that is not available on the target
+platform a <tt class="xref py py-exc docutils literal"><span class="pre">RuntimeError</span></tt> is raised.</p>
+</div>
+<p class="versionadded">
+<span class="versionmodified">New in version 3.0.</span></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.DRIVER_DIRECT_ALIGNMENT">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">DRIVER_DIRECT_ALIGNMENT</tt><em class="property"> = 0</em><a class="headerlink" href="#tables.parameters.DRIVER_DIRECT_ALIGNMENT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies the required alignment boundary in memory.</p>
+<p>A value of 0 (zero) means to use HDF5 Library’s default value.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 3.0.</span></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.DRIVER_DIRECT_BLOCK_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">DRIVER_DIRECT_BLOCK_SIZE</tt><em class="property"> = 0</em><a class="headerlink" href="#tables.parameters.DRIVER_DIRECT_BLOCK_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies the file system block size.</p>
+<p>A value of 0 (zero) means to use HDF5 Library’s default value of 4KB.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 3.0.</span></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.DRIVER_DIRECT_CBUF_SIZE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">DRIVER_DIRECT_CBUF_SIZE</tt><em class="property"> = 0</em><a class="headerlink" href="#tables.parameters.DRIVER_DIRECT_CBUF_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies the copy buffer size.</p>
+<p>A value of 0 (zero) means to use HDF5 Library’s default value.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 3.0.</span></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.DRIVER_CORE_INCREMENT">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">DRIVER_CORE_INCREMENT</tt><em class="property"> = 65536</em><a class="headerlink" href="#tables.parameters.DRIVER_CORE_INCREMENT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Core driver memory increment.</p>
+<p>Specifies the increment by which allocated memory is to be increased
+each time more memory is required.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 3.0.</span></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.DRIVER_CORE_BACKING_STORE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">DRIVER_CORE_BACKING_STORE</tt><em class="property"> = 1</em><a class="headerlink" href="#tables.parameters.DRIVER_CORE_BACKING_STORE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables backing store for the core driver.</p>
+<p>With the H5FD_CORE driver, if the DRIVER_CORE_BACKING_STORE is set
+to 1 (True), the file contents are flushed to a file with the same name
+as this core file when the file is closed or access to the file is
+terminated in memory.</p>
+<p>The application is allowed to open an existing file with H5FD_CORE
+driver. In that case, if the DRIVER_CORE_BACKING_STORE is set to 1 and
+the flags for <a class="reference internal" href="libref/top_level.html#tables.open_file" title="tables.open_file"><tt class="xref py py-func docutils literal"><span class="pre">tables.open_file()</span></tt></a> is set to H5F_ACC_RDWR, any change
+to the file contents are saved to the file when the file is closed.
+If backing_store is set to 0 and the flags for <a class="reference internal" href="libref/top_level.html#tables.open_file" title="tables.open_file"><tt class="xref py py-func docutils literal"><span class="pre">tables.open_file()</span></tt></a>
+is set to H5F_ACC_RDWR, any change to the file contents will be lost
+when the file is closed. If the flags for <a class="reference internal" href="libref/top_level.html#tables.open_file" title="tables.open_file"><tt class="xref py py-func docutils literal"><span class="pre">tables.open_file()</span></tt></a> is
+set to H5F_ACC_RDONLY, no change to the file is allowed either in
+memory or on file.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 3.0.</span></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tables.parameters.DRIVER_CORE_IMAGE">
+<tt class="descclassname">tables.parameters.</tt><tt class="descname">DRIVER_CORE_IMAGE</tt><em class="property"> = None</em><a class="headerlink" href="#tables.parameters.DRIVER_CORE_IMAGE" title="Permalink to this definition">¶</a></dt>
+<dd><p>String containing an HDF5 file image.</p>
+<p>If this oprion is passed to the <a class="reference internal" href="libref/top_level.html#tables.open_file" title="tables.open_file"><tt class="xref py py-func docutils literal"><span class="pre">tables.open_file()</span></tt></a> function then the
+returned file object is set up using the specified image.</p>
+<p>A file image can be retrieved from an existing (and opened) file object
+using the <a class="reference internal" href="libref/file_class.html#tables.File.get_file_image" title="tables.File.get_file_image"><tt class="xref py py-meth docutils literal"><span class="pre">tables.File.get_file_image()</span></tt></a> method.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">requires HDF5 &gt;= 1.8.9.</p>
+</div>
+<p class="versionadded">
+<span class="versionmodified">New in version 3.0.</span></p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../index.html">
+          <img class="logo" src="../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">PyTables parameter files</a><ul>
+<li><a class="reference internal" href="#tunable-parameters-in-parameters-py">Tunable parameters in parameters.py</a><ul>
+<li><a class="reference internal" href="#recommended-maximum-values">Recommended maximum values</a></li>
+<li><a class="reference internal" href="#cache-limits">Cache limits</a></li>
+<li><a class="reference internal" href="#parameters-for-the-different-internal-caches">Parameters for the different internal caches</a></li>
+<li><a class="reference internal" href="#parameters-for-general-cache-behaviour">Parameters for general cache behaviour</a></li>
+<li><a class="reference internal" href="#parameters-for-the-i-o-buffer-in-leaf-objects">Parameters for the I/O buffer in Leaf objects</a></li>
+<li><a class="reference internal" href="#miscellaneous">Miscellaneous</a></li>
+<li><a class="reference internal" href="#hdf5-driver-management">HDF5 driver management</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="condition_syntax.html"
+                        title="previous chapter">Condition Syntax</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="utilities.html"
+                        title="next chapter">Utilities</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/usersguide/parameter_files.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="utilities.html" title="Utilities"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="condition_syntax.html" title="Condition Syntax"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
+
+          <li><a href="index.html" >PyTables User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2011-2013, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

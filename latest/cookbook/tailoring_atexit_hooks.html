@@ -1,0 +1,178 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tailoring atexit hooks &mdash; PyTables 2.4.0+1.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.4.0+1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 2.4.0+1.dev documentation" href="../index.html" />
+    <link rel="up" title="PyTables Cookbook" href="index.html" />
+    <link rel="next" title="Using your own custom data types" href="custom_data_types.html" />
+    <link rel="prev" title="Installing PyTables when you’re not root" href="no_root_install.html" /> 
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="custom_data_types.html" title="Using your own custom data types"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="no_root_install.html" title="Installing PyTables when you’re not root"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
+
+          <li><a href="index.html" accesskey="U">PyTables Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tailoring-atexit-hooks">
+<h1>Tailoring <cite>atexit</cite> hooks<a class="headerlink" href="#tailoring-atexit-hooks" title="Permalink to this headline">¶</a></h1>
+<p>In some situations you may want to tailor the typical messages that PyTables
+outputs:</p>
+<div class="highlight-python"><pre>Closing remaining open files: /tmp/prova.h5... done</pre>
+</div>
+<p>The responsible of this behaviour is the <tt class="xref py py-meth docutils literal"><span class="pre">tables.file.close_open_files()</span></tt>
+function that is being registered via <tt class="xref py py-func docutils literal"><span class="pre">atexit.register()</span></tt> Python function.
+Although you can&#8217;t de-register already registered cleanup functions, you can
+register new ones to tailor the existing behaviour.
+For example, if you  register this function:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">my_close_open_files</span><span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+    <span class="n">open_files</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">_open_files</span>
+    <span class="n">are_open_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">open_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">are_open_files</span><span class="p">:</span>
+        <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Closing remaining open files:&quot;</span><span class="p">,</span>
+    <span class="k">for</span> <span class="n">fileh</span> <span class="ow">in</span> <span class="n">open_files</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">open_files</span><span class="p">[</span><span class="n">fileh</span><span class="p">]</span><span class="o">.</span><span class="n">filename</span><span class="p">,),</span>
+        <span class="n">open_files</span><span class="p">[</span><span class="n">fileh</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;done&quot;</span><span class="p">,</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">are_open_files</span><span class="p">:</span>
+        <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span>
+
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">atexit</span>
+<span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">my_close_open_files</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>then, you won&#8217;t get the closing messages anymore because the new registered
+function is executed before the existing one.
+If you want the messages back again, just set the verbose parameter to true.</p>
+<p>You can also use the <cite>atexit</cite> hooks to perform other cleanup functions as well.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../index.html">
+          <img class="logo" src="../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="no_root_install.html"
+                        title="previous chapter">Installing PyTables when you&#8217;re not root</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="custom_data_types.html"
+                        title="next chapter">Using your own custom data types</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/cookbook/tailoring_atexit_hooks.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="custom_data_types.html" title="Using your own custom data types"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="no_root_install.html" title="Installing PyTables when you’re not root"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
+
+          <li><a href="index.html" >PyTables Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2011-2013, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

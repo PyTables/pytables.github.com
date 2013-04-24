@@ -1,0 +1,325 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.indexes &mdash; PyTables 2.4.0+1.dev documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.4.0+1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 2.4.0+1.dev documentation" href="../../index.html" />
+    <link rel="up" title="tables" href="../tables.html" /> 
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
+
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../tables.html" accesskey="U">tables</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tables.indexes</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: June 02, 2004</span>
+<span class="c"># Author:  Francesc Alted - faltet@pytables.com</span>
+<span class="c">#</span>
+<span class="c"># $Source: /cvsroot/pytables/pytables/tables/indexes.py $</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Here is defined the IndexArray class.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">bisect</span> <span class="kn">import</span> <span class="n">bisect_left</span><span class="p">,</span> <span class="n">bisect_right</span>
+
+<span class="kn">from</span> <span class="nn">tables.node</span> <span class="kn">import</span> <span class="n">NotLoggedMixin</span>
+<span class="kn">from</span> <span class="nn">tables.carray</span> <span class="kn">import</span> <span class="n">CArray</span>
+<span class="kn">from</span> <span class="nn">tables.earray</span> <span class="kn">import</span> <span class="n">EArray</span>
+<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">indexesextension</span>
+
+<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span><span class="p">,</span> <span class="n">previous_api_property</span>
+
+<span class="c"># Declarations for inheriting</span>
+
+
+<span class="k">class</span> <span class="nc">CacheArray</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">EArray</span><span class="p">,</span> <span class="n">indexesextension</span><span class="o">.</span><span class="n">CacheArray</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Container for keeping index caches of 1st and 2nd level.&quot;&quot;&quot;</span>
+
+    <span class="c"># Class identifier.</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;CACHEARRAY&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">LastRowArray</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">CArray</span><span class="p">,</span> <span class="n">indexesextension</span><span class="o">.</span><span class="n">LastRowArray</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Container for keeping sorted and indices values of last row of</span>
+<span class="sd">    an index.&quot;&quot;&quot;</span>
+
+    <span class="c"># Class identifier.</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;LASTROWARRAY&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="IndexArray"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.indexes.IndexArray">[docs]</a><span class="k">class</span> <span class="nc">IndexArray</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">EArray</span><span class="p">,</span> <span class="n">indexesextension</span><span class="o">.</span><span class="n">IndexArray</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represent the index (sorted or reverse index) dataset in HDF5 file.</span>
+
+<span class="sd">    All NumPy typecodes are supported except for complex datatypes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parentnode</span>
+<span class="sd">        The Index class from which this object will hang off.</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+
+<span class="sd">            Renamed from *parentNode* to *parentnode*</span>
+
+<span class="sd">    name : str</span>
+<span class="sd">        The name of this node in its parent group.</span>
+<span class="sd">    atom</span>
+<span class="sd">        An Atom object representing the shape and type of the atomic objects to</span>
+<span class="sd">        be saved. Only scalar atoms are supported.</span>
+<span class="sd">    title</span>
+<span class="sd">        Sets a TITLE attribute on the array entity.</span>
+<span class="sd">    filters : Filters</span>
+<span class="sd">        An instance of the Filters class that provides information about the</span>
+<span class="sd">        desired I/O filters to be applied during the life of this object.</span>
+<span class="sd">    byteorder</span>
+<span class="sd">        The byteroder of the data on-disk.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Class identifier.</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;INDEXARRAY&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+
+    <span class="c"># Properties</span>
+    <span class="c"># ~~~~~~~~~~</span>
+    <span class="n">chunksize</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;The chunksize for this object.&quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">slicesize</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;The slicesize for this object.&quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="c"># Other methods</span>
+    <span class="c"># ~~~~~~~~~~~~~</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">atom</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create an IndexArray instance.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">_g_join</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">atom</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># The shape and chunkshape needs to be fixed here</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&quot;sorted&quot;</span><span class="p">:</span>
+                <span class="n">reduction</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">reduction</span>
+                <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">slicesize</span> <span class="o">//</span> <span class="n">reduction</span><span class="p">)</span>
+                <span class="n">chunkshape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">chunksize</span> <span class="o">//</span> <span class="n">reduction</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">slicesize</span><span class="p">)</span>
+                <span class="n">chunkshape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">chunksize</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># The shape and chunkshape will be read from disk later on</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">chunkshape</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">IndexArray</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+            <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span>
+            <span class="n">chunkshape</span><span class="o">=</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="n">byteorder</span><span class="p">)</span>
+
+    <span class="c"># This version of searchBin uses both ranges (1st level) and</span>
+    <span class="c"># bounds (2nd level) caches. It uses a cache for boundary rows,</span>
+    <span class="c"># but not for &#39;sorted&#39; rows (this is only supported for the</span>
+    <span class="c"># &#39;optimized&#39; types).</span>
+    <span class="k">def</span> <span class="nf">_search_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nrow</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span> <span class="o">=</span> <span class="n">item</span>
+        <span class="n">result1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">result2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ranges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span><span class="o">.</span><span class="n">rvcache</span>
+        <span class="n">boundscache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundscache</span>
+        <span class="c"># First, look at the beginning of the slice</span>
+        <span class="n">begin</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">nrow</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="c"># Look for items at the beginning of sorted slices</span>
+        <span class="k">if</span> <span class="n">item1</span> <span class="o">&lt;=</span> <span class="n">begin</span><span class="p">:</span>
+            <span class="n">result1</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">item2</span> <span class="o">&lt;</span> <span class="n">begin</span><span class="p">:</span>
+            <span class="n">result2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">result1</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">result2</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">result1</span><span class="p">,</span> <span class="n">result2</span><span class="p">)</span>
+        <span class="c"># Then, look for items at the end of the sorted slice</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">nrow</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">result1</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">item1</span> <span class="o">&gt;</span> <span class="n">end</span><span class="p">:</span>
+                <span class="n">result1</span> <span class="o">=</span> <span class="n">hi</span>
+        <span class="k">if</span> <span class="n">result2</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">item2</span> <span class="o">&gt;=</span> <span class="n">end</span><span class="p">:</span>
+                <span class="n">result2</span> <span class="o">=</span> <span class="n">hi</span>
+        <span class="k">if</span> <span class="n">result1</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">result2</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">result1</span><span class="p">,</span> <span class="n">result2</span><span class="p">)</span>
+        <span class="c"># Finally, do a lookup for item1 and item2 if they were not found</span>
+        <span class="c"># Lookup in the middle of slice for item1</span>
+        <span class="n">chunksize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span>  <span class="c"># Number of elements/chunksize</span>
+        <span class="n">nchunk</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="c"># Try to get the bounds row from the LRU cache</span>
+        <span class="n">nslot</span> <span class="o">=</span> <span class="n">boundscache</span><span class="o">.</span><span class="n">getslot</span><span class="p">(</span><span class="n">nrow</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nslot</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># Cache hit. Use the row kept there.</span>
+            <span class="n">bounds</span> <span class="o">=</span> <span class="n">boundscache</span><span class="o">.</span><span class="n">getitem</span><span class="p">(</span><span class="n">nslot</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># No luck with cached data. Read the row and put it in the cache.</span>
+            <span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="n">nrow</span><span class="p">]</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">bounds</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">bounds</span><span class="o">.</span><span class="n">itemsize</span>
+            <span class="n">boundscache</span><span class="o">.</span><span class="n">setitem</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result1</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># Search the appropriate chunk in bounds cache</span>
+            <span class="n">nchunk</span> <span class="o">=</span> <span class="n">bisect_left</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="n">item1</span><span class="p">)</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_sorted_slice</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">chunksize</span> <span class="o">*</span> <span class="n">nchunk</span><span class="p">,</span>
+                                            <span class="n">chunksize</span> <span class="o">*</span> <span class="p">(</span><span class="n">nchunk</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">result1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bisect_left</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">chunksize</span><span class="p">)</span>
+            <span class="n">result1</span> <span class="o">+=</span> <span class="n">chunksize</span> <span class="o">*</span> <span class="n">nchunk</span>
+        <span class="c"># Lookup in the middle of slice for item2</span>
+        <span class="k">if</span> <span class="n">result2</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># Search the appropriate chunk in bounds cache</span>
+            <span class="n">nchunk2</span> <span class="o">=</span> <span class="n">bisect_right</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="n">item2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">nchunk2</span> <span class="o">!=</span> <span class="n">nchunk</span><span class="p">:</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_sorted_slice</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">chunksize</span> <span class="o">*</span> <span class="n">nchunk2</span><span class="p">,</span>
+                                                <span class="n">chunksize</span> <span class="o">*</span> <span class="p">(</span><span class="n">nchunk2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">result2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bisect_right</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">item2</span><span class="p">,</span> <span class="n">chunksize</span><span class="p">)</span>
+            <span class="n">result2</span> <span class="o">+=</span> <span class="n">chunksize</span> <span class="o">*</span> <span class="n">nchunk2</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">result1</span><span class="p">,</span> <span class="n">result2</span><span class="p">)</span>
+
+    <span class="n">_searchBin</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_search_bin</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;A compact representation of this class&quot;</span>
+        <span class="k">return</span> <span class="s">&quot;IndexArray(path=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A verbose representation of this class&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="s">&quot;&quot;&quot;</span><span class="si">%s</span><span class="s"></span>
+<span class="s">  atom = </span><span class="si">%r</span><span class="s"></span>
+<span class="s">  shape = </span><span class="si">%s</span><span class="s"></span>
+<span class="s">  nrows = </span><span class="si">%s</span><span class="s"></span>
+<span class="s">  chunksize = </span><span class="si">%s</span><span class="s"></span>
+<span class="s">  slicesize = </span><span class="si">%s</span><span class="s"></span>
+<span class="s">  byteorder = </span><span class="si">%r</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span>
+
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## fill-column: 72</span>
+<span class="c">## End:</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 2.4.0+1.dev documentation</a> &raquo;</li>
+
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../tables.html" >tables</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2011-2013, The PyTables Governance Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>
