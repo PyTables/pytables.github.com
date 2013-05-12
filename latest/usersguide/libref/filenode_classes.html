@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Filenode Module &mdash; PyTables 3.0.0b1 documentation</title>
+    <title>Filenode Module &mdash; PyTables 3.0.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.0.0b1',
+        VERSION:     '3.0.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.0.0b1 documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.0.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Library Reference" href="../libref.html" />
     <link rel="next" title="Optimization tips" href="../optimization.html" />
     <link rel="prev" title="General purpose expression evaluator class" href="expr_class.html" /> 
@@ -57,7 +57,7 @@
         <li class="right" >
           <a href="expr_class.html" title="General purpose expression evaluator class"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.0.0b1 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.0.0rc1 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >PyTables User&#8217;s Guide</a> &raquo;</li>
           <li><a href="../libref.html" accesskey="U">Library Reference</a> &raquo;</li> 
@@ -81,7 +81,11 @@ file.  Use the open_node() function to open an existing (i.e. created
 with new_node()) node for read-only or read-write access.  Read acces
 is always available.  Write access (enabled on new files and files
 opened with mode &#8216;a+&#8217;) only allows appending data to a file node.</p>
+<p>Currently only binary I/O is supported.</p>
 <p>See <a class="reference internal" href="../filenode.html#filenode-usersguide"><em>filenode - simulating a filesystem with PyTables</em></a> for instructions on use.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0: </span>In version 3.0 the module as been completely rewritten to be fully
+compliant with the interfaces defined in the <tt class="xref py py-mod docutils literal"><span class="pre">io</span></tt> module.</p>
 <div class="section" id="module-constants">
 <h2>Module constants<a class="headerlink" href="#module-constants" title="Permalink to this headline">¶</a></h2>
 <dl class="data">
@@ -106,8 +110,8 @@ opened with mode &#8216;a+&#8217;) only allows appending data to a file node.</p
 <p>Additional named arguments where and name must be passed to specify where
 the file node is to be created. Other named arguments such as title and
 filters may also be passed.</p>
-<p>The special named argument expectedsize, indicating an estimate of the file
-size in bytes, may also be passed. It returns the file node object.</p>
+<p>The special named argument expectedsize, indicating an estimate of the
+file size in bytes, may also be passed. It returns the file node object.</p>
 </dd></dl>
 
 <dl class="function">
@@ -122,65 +126,122 @@ is positioned at the end of the file.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="the-filenode-abstract-class">
-<h2>The FileNode abstract class<a class="headerlink" href="#the-filenode-abstract-class" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="the-rawpytablesio-base-class">
+<h2>The RawPyTablesIO base class<a class="headerlink" href="#the-rawpytablesio-base-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="tables.nodes.filenode.FileNode">
-<em class="property">class </em><tt class="descclassname">tables.nodes.filenode.</tt><tt class="descname">FileNode</tt><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#FileNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.FileNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is the ancestor of ROFileNode and RAFileNode (see below).</p>
-<p>Instances of these classes are returned when new_node() or
-open_node() are called. It represents a new file node associated
-with a PyTables node, providing a standard Python file interface
-to it.</p>
-<p>This abstract class provides only an implementation of the reading methods
-needed to implement a file-like object over a PyTables node. The attribute
-set of the node becomes available via the attrs property. You can add
-attributes there, but try to avoid attribute names in all caps or starting
-with &#8216;_&#8217;, since they may clash with internal attributes.</p>
-<p>The node used as storage is also made available via the read-only attribute
-node. Please do not tamper with this object if it&#8217;s avoidable, since you
-may break the operation of the file node object.</p>
-<p>The line_separator property contains the string used as a line separator,
-and defaults to os.linesep. It can be set to any reasonably-sized string
-you want.</p>
-<p>The constructor sets the closed, softspace and _line_separator attributes to
-their initial values, as well as the node attribute to None.  Sub-classes
-should set the node, mode and offset attributes.</p>
-<p>Version 1 implements the file storage as a UInt8 uni-dimensional EArray.
-Version 2 uses an UInt8 N vector EArray.</p>
+<dt id="tables.nodes.filenode.RawPyTablesIO">
+<em class="property">class </em><tt class="descclassname">tables.nodes.filenode.</tt><tt class="descname">RawPyTablesIO</tt><big>(</big><em>node</em>, <em>mode=None</em><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for raw binary I/O on HDF5 files using PyTables.</p>
 </dd></dl>
 
-<div class="section" id="filenode-attributes">
-<h3>FileNode attributes<a class="headerlink" href="#filenode-attributes" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="rawpytablesio-attributes">
+<h3>RawPyTablesIO attributes<a class="headerlink" href="#rawpytablesio-attributes" title="Permalink to this headline">¶</a></h3>
 <dl class="attribute">
-<dt id="tables.nodes.filenode.FileNode.attrs">
-<tt class="descclassname">FileNode.</tt><tt class="descname">attrs</tt><a class="headerlink" href="#tables.nodes.filenode.FileNode.attrs" title="Permalink to this definition">¶</a></dt>
-<dd><p>A property pointing to the attribute set of the file node.</p>
+<dt id="tables.nodes.filenode.RawPyTablesIO.mode">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">mode</tt><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.mode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>File mode</p>
 </dd></dl>
 
 </div>
-<div class="section" id="filenode-methods">
-<h3>FileNode methods<a class="headerlink" href="#filenode-methods" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="rawpytablesio-methods">
+<h3>RawPyTablesIO methods<a class="headerlink" href="#rawpytablesio-methods" title="Permalink to this headline">¶</a></h3>
 <dl class="method">
-<dt id="tables.nodes.filenode.FileNode.close">
-<tt class="descclassname">FileNode.</tt><tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#FileNode.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.FileNode.close" title="Permalink to this definition">¶</a></dt>
-<dd><p>Flushes the file and closes it.</p>
-<p>After calling this method the node attribute becomes None and
-the attrs property is no longer available.</p>
+<dt id="tables.nodes.filenode.RawPyTablesIO.tell">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">tell</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.tell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.tell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return current stream position.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="tables.nodes.filenode.FileNode.seek">
-<tt class="descclassname">FileNode.</tt><tt class="descname">seek</tt><big>(</big><em>offset</em>, <em>whence=0</em><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#FileNode.seek"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.FileNode.seek" title="Permalink to this definition">¶</a></dt>
-<dd><p>Moves to a new file position.</p>
-<p>See file.seek.__doc__ for more information.</p>
+<dt id="tables.nodes.filenode.RawPyTablesIO.seek">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">seek</tt><big>(</big><em>pos</em>, <em>whence=0</em><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.seek"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.seek" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change stream position.</p>
+<p>Change the stream position to byte offset offset. offset is
+interpreted relative to the position indicated by whence.  Values
+for whence are:</p>
+<ul class="simple">
+<li>0 &#8211; start of stream (the default); offset should be zero or positive</li>
+<li>1 &#8211; current stream position; offset may be negative</li>
+<li>2 &#8211; end of stream; offset is usually negative</li>
+</ul>
+<p>Return the new absolute position.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="tables.nodes.filenode.FileNode.tell">
-<tt class="descclassname">FileNode.</tt><tt class="descname">tell</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#FileNode.tell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.FileNode.tell" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the current file position.</p>
-<p>See file.tell.__doc__ for more information.</p>
+<dt id="tables.nodes.filenode.RawPyTablesIO.seekable">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">seekable</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.seekable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.seekable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether object supports random access.</p>
+<p>If False, seek(), tell() and truncate() will raise IOError.
+This method may need to do a test seek().</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RawPyTablesIO.fileno">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">fileno</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.fileno"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.fileno" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns underlying file descriptor if one exists.</p>
+<p>An IOError is raised if the IO object does not use a file descriptor.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RawPyTablesIO.close">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush and close the IO object.</p>
+<p>This method has no effect if the file is already closed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RawPyTablesIO.flush">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">flush</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.flush"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush write buffers, if applicable.</p>
+<p>This is not implemented for read-only and non-blocking streams.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RawPyTablesIO.truncate">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">truncate</tt><big>(</big><em>pos=None</em><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.truncate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.truncate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Truncate file to size bytes.</p>
+<p>Size defaults to the current IO position as reported by tell().
+Return the new size.</p>
+<p>Currently, this method only makes sense to grow the file node,
+since data can not be rewritten nor deleted.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RawPyTablesIO.readable">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">readable</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.readable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.readable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether object was opened for reading.</p>
+<p>If False, read() will raise IOError.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RawPyTablesIO.writable">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">writable</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.writable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.writable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether object was opened for writing.</p>
+<p>If False, write() and truncate() will raise IOError.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RawPyTablesIO.readinto">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">readinto</tt><big>(</big><em>b</em><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.readinto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.readinto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read up to len(b) bytes into b.</p>
+<p>Returns number of bytes read (0 for EOF), or None if the object
+is set not to block as has no data to read.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RawPyTablesIO.readline">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">readline</tt><big>(</big><em>limit=-1</em><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.readline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.readline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read and return a line from the stream.</p>
+<p>If limit is specified, at most limit bytes will be read.</p>
+<p>The line terminator is always <tt class="docutils literal"><span class="pre">\n</span></tt> for binary files; for text
+files, the newlines argument to open can be used to select the line
+terminator(s) recognized.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RawPyTablesIO.write">
+<tt class="descclassname">RawPyTablesIO.</tt><tt class="descname">write</tt><big>(</big><em>b</em><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RawPyTablesIO.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RawPyTablesIO.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the given buffer to the IO stream.</p>
+<p>Returns the number of bytes written, which may be less than len(b).</p>
 </dd></dl>
 
 </div>
@@ -195,77 +256,126 @@ the attrs property is no longer available.</p>
 PyTables node, providing a standard Python file interface to it.
 The node has to have been created on a previous occasion
 using the new_node() function.</p>
-<p>This constructor is not intended to be used directly.
+<p>The node used as storage is also made available via the read-only
+attribute node.  Please do not tamper with this object if it&#8217;s
+avoidable, since you may break the operation of the file node object.</p>
+<p>The constructor is not intended to be used directly.
 Use the open_node() function in read-only mode (&#8216;r&#8217;) instead.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Version 1:</th><td class="field-body">implements the file storage as a UInt8 uni-dimensional EArray.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Version 2:</th><td class="field-body">uses an UInt8 N vector EArray.</td>
+</tr>
+</tbody>
+</table>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0: </span>The offset attribute is no more available, please use seek/tell
+methods instead.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0: </span>The line_separator property is no more available.
+The only line separator used for binary I/O is <tt class="docutils literal"><span class="pre">\n</span></tt>.</p>
 </dd></dl>
 
+<div class="section" id="rofilenode-attributes">
+<h3>ROFileNode attributes<a class="headerlink" href="#rofilenode-attributes" title="Permalink to this headline">¶</a></h3>
+<dl class="attribute">
+<dt id="tables.nodes.filenode.ROFileNode.attrs">
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">attrs</tt><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>A property pointing to the attribute set of the file node.</p>
+</dd></dl>
+
+</div>
 <div class="section" id="rofilenode-methods">
 <h3>ROFileNode methods<a class="headerlink" href="#rofilenode-methods" title="Permalink to this headline">¶</a></h3>
 <dl class="method">
 <dt id="tables.nodes.filenode.ROFileNode.flush">
-<tt class="descclassname">ROFileNode.</tt><tt class="descname">flush</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#ROFileNode.flush"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.flush" title="Permalink to this definition">¶</a></dt>
-<dd><p>Flushes the file node.</p>
-<p>See file.flush.__doc__ for more information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.ROFileNode.next">
-<tt class="descclassname">ROFileNode.</tt><tt class="descname">next</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.next" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the next line of text.</p>
-<p>Raises StopIteration when finished.
-See file.next.__doc__ for more information.</p>
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">flush</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush write buffers, if applicable.</p>
+<p>This is not implemented for read-only and non-blocking streams.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="tables.nodes.filenode.ROFileNode.read">
-<tt class="descclassname">ROFileNode.</tt><tt class="descname">read</tt><big>(</big><em>size=None</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.read" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads at most &#8216;size&#8217; bytes.</p>
-<p>See file.read.__doc__ for more information.</p>
-</dd></dl>
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">read</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="tables.nodes.filenode.ROFileNode.readline">
-<tt class="descclassname">ROFileNode.</tt><tt class="descname">readline</tt><big>(</big><em>size=-1</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.readline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads the next text line.</p>
-<p>See file.readline.__doc__ for more information.</p>
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">readline</tt><big>(</big><em>limit=-1</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.readline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read and return a line from the stream.</p>
+<p>If limit is specified, at most limit bytes will be read.</p>
+<p>The line terminator is always <tt class="docutils literal"><span class="pre">\n</span></tt> for binary files; for text
+files, the newlines argument to open can be used to select the line
+terminator(s) recognized.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="tables.nodes.filenode.ROFileNode.readlines">
-<tt class="descclassname">ROFileNode.</tt><tt class="descname">readlines</tt><big>(</big><em>sizehint=-1</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.readlines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads the text lines into a list.</p>
-<p>See file.readlines.__doc__ for more information.</p>
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">readlines</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.readlines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of lines from the stream.</p>
+<p>hint can be specified to control the number of lines read: no more
+lines will be read if the total size (in bytes/characters) of all
+lines so far exceeds hint.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="tables.nodes.filenode.ROFileNode.xreadlines">
-<tt class="descclassname">ROFileNode.</tt><tt class="descname">xreadlines</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.xreadlines" title="Permalink to this definition">¶</a></dt>
-<dd><p>For backward compatibility.</p>
-<p>See file.xreadlines.__doc__ for more information.</p>
+<dt id="tables.nodes.filenode.ROFileNode.close">
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush and close the IO object.</p>
+<p>This method has no effect if the file is already closed.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="tables.nodes.filenode.ROFileNode.truncate">
-<tt class="descclassname">ROFileNode.</tt><tt class="descname">truncate</tt><big>(</big><em>size=None</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.truncate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Truncates the file node to at most &#8216;size&#8217; bytes.</p>
-<p>This raises an IOError when called on read-only nodes.</p>
-<p>See file.truncate.__doc__ for more information.</p>
+<dt id="tables.nodes.filenode.ROFileNode.seek">
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">seek</tt><big>(</big><em>pos</em>, <em>whence=0</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.seek" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change stream position.</p>
+<p>Change the stream position to byte offset offset. offset is
+interpreted relative to the position indicated by whence.  Values
+for whence are:</p>
+<ul class="simple">
+<li>0 &#8211; start of stream (the default); offset should be zero or positive</li>
+<li>1 &#8211; current stream position; offset may be negative</li>
+<li>2 &#8211; end of stream; offset is usually negative</li>
+</ul>
+<p>Return the new absolute position.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="tables.nodes.filenode.ROFileNode.write">
-<tt class="descclassname">ROFileNode.</tt><tt class="descname">write</tt><big>(</big><em>string</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.write" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes the string to the file.</p>
-<p>This raises an IOError when called on read-only nodes.</p>
-<p>See file.write.__doc__ for more information.</p>
+<dt id="tables.nodes.filenode.ROFileNode.tell">
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">tell</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.tell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return current stream position.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="tables.nodes.filenode.ROFileNode.writelines">
-<tt class="descclassname">ROFileNode.</tt><tt class="descname">writelines</tt><big>(</big><em>sequence</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.writelines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes the strings to the file.</p>
-<p>This raises an IOError when called on read-only nodes.</p>
-<p>See file.writelines.__doc__ for more information.</p>
+<dt id="tables.nodes.filenode.ROFileNode.readable">
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">readable</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.readable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether object was opened for reading.</p>
+<p>If False, read() will raise IOError.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.ROFileNode.writable">
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">writable</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.writable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether object was opened for writing.</p>
+<p>If False, write() and truncate() will raise IOError.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.ROFileNode.seekable">
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">seekable</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.seekable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether object supports random access.</p>
+<p>If False, seek(), tell() and truncate() will raise IOError.
+This method may need to do a test seek().</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.ROFileNode.fileno">
+<tt class="descclassname">ROFileNode.</tt><tt class="descname">fileno</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.ROFileNode.fileno" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns underlying file descriptor if one exists.</p>
+<p>An IOError is raised if the IO object does not use a file descriptor.</p>
 </dd></dl>
 
 </div>
@@ -284,77 +394,148 @@ Other named arguments such as &#8216;title&#8217; and &#8216;filters&#8217; may 
 passed.  The special named argument &#8216;expectedsize&#8217;, indicating an
 estimate of the file size in bytes, may also be passed.</p>
 <p>Write access means reading as well as appending data is allowed.</p>
-<p>This constructor is not intended to be used directly.
+<p>The node used as storage is also made available via the read-only
+attribute node.  Please do not tamper with this object if it&#8217;s
+avoidable, since you may break the operation of the file node object.</p>
+<p>The constructor is not intended to be used directly.
 Use the new_node() or open_node() functions instead.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Version 1:</th><td class="field-body">implements the file storage as a UInt8 uni-dimensional EArray.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Version 2:</th><td class="field-body">uses an UInt8 N vector EArray.</td>
+</tr>
+</tbody>
+</table>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0: </span>The offset attribute is no more available, please use seek/tell
+methods instead.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0: </span>The line_separator property is no more available.
+The only line separator used for binary I/O is <tt class="docutils literal"><span class="pre">\n</span></tt>.</p>
 </dd></dl>
 
+<div class="section" id="rafilenode-attributes">
+<h3>RAFileNode attributes<a class="headerlink" href="#rafilenode-attributes" title="Permalink to this headline">¶</a></h3>
+<dl class="attribute">
+<dt id="tables.nodes.filenode.RAFileNode.attrs">
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">attrs</tt><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>A property pointing to the attribute set of the file node.</p>
+</dd></dl>
+
+</div>
 <div class="section" id="rafilenode-methods">
 <h3>RAFileNode methods<a class="headerlink" href="#rafilenode-methods" title="Permalink to this headline">¶</a></h3>
 <dl class="method">
 <dt id="tables.nodes.filenode.RAFileNode.flush">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">flush</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/tables/nodes/filenode.html#RAFileNode.flush"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.flush" title="Permalink to this definition">¶</a></dt>
-<dd><p>Flushes the file node.</p>
-<p>See file.flush.__doc__ for more information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.RAFileNode.next">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">next</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.next" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the next line of text.</p>
-<p>Raises StopIteration when finished.
-See file.next.__doc__ for more information.</p>
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">flush</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush write buffers, if applicable.</p>
+<p>This is not implemented for read-only and non-blocking streams.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="tables.nodes.filenode.RAFileNode.read">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">read</tt><big>(</big><em>size=None</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.read" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads at most &#8216;size&#8217; bytes.</p>
-<p>See file.read.__doc__ for more information.</p>
-</dd></dl>
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">read</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="tables.nodes.filenode.RAFileNode.readline">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">readline</tt><big>(</big><em>size=-1</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.readline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads the next text line.</p>
-<p>See file.readline.__doc__ for more information.</p>
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">readline</tt><big>(</big><em>limit=-1</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.readline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read and return a line from the stream.</p>
+<p>If limit is specified, at most limit bytes will be read.</p>
+<p>The line terminator is always <tt class="docutils literal"><span class="pre">\n</span></tt> for binary files; for text
+files, the newlines argument to open can be used to select the line
+terminator(s) recognized.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="tables.nodes.filenode.RAFileNode.readlines">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">readlines</tt><big>(</big><em>sizehint=-1</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.readlines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads the text lines into a list.</p>
-<p>See file.readlines.__doc__ for more information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.RAFileNode.xreadlines">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">xreadlines</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.xreadlines" title="Permalink to this definition">¶</a></dt>
-<dd><p>For backward compatibility.</p>
-<p>See file.xreadlines.__doc__ for more information.</p>
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">readlines</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.readlines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of lines from the stream.</p>
+<p>hint can be specified to control the number of lines read: no more
+lines will be read if the total size (in bytes/characters) of all
+lines so far exceeds hint.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="tables.nodes.filenode.RAFileNode.truncate">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">truncate</tt><big>(</big><em>size=None</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.truncate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Truncates the file node to at most &#8216;size&#8217; bytes.</p>
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">truncate</tt><big>(</big><em>pos=None</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.truncate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Truncate file to size bytes.</p>
+<p>Size defaults to the current IO position as reported by tell().
+Return the new size.</p>
 <p>Currently, this method only makes sense to grow the file node,
-since data can not be rewritten nor deleted.
-See file.truncate.__doc__ for more information.</p>
+since data can not be rewritten nor deleted.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="tables.nodes.filenode.RAFileNode.write">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">write</tt><big>(</big><em>string</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.write" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes the string to the file.</p>
-<p>Writing an empty string does nothing, but requires the file to be open.
-See file.write.__doc__ for more information.</p>
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">write</tt><big>(</big><em>b</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the given buffer to the IO stream.</p>
+<p>Returns the number of bytes written, which may be less than len(b).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="tables.nodes.filenode.RAFileNode.writelines">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">writelines</tt><big>(</big><em>sequence</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.writelines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes the sequence of strings to the file.</p>
-<p>See file.writelines.__doc__ for more information.</p>
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">writelines</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.writelines" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RAFileNode.close">
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flush and close the IO object.</p>
+<p>This method has no effect if the file is already closed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RAFileNode.seek">
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">seek</tt><big>(</big><em>pos</em>, <em>whence=0</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.seek" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change stream position.</p>
+<p>Change the stream position to byte offset offset. offset is
+interpreted relative to the position indicated by whence.  Values
+for whence are:</p>
+<ul class="simple">
+<li>0 &#8211; start of stream (the default); offset should be zero or positive</li>
+<li>1 &#8211; current stream position; offset may be negative</li>
+<li>2 &#8211; end of stream; offset is usually negative</li>
+</ul>
+<p>Return the new absolute position.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RAFileNode.tell">
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">tell</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.tell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return current stream position.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RAFileNode.readable">
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">readable</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.readable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether object was opened for reading.</p>
+<p>If False, read() will raise IOError.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RAFileNode.writable">
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">writable</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.writable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether object was opened for writing.</p>
+<p>If False, write() and truncate() will raise IOError.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RAFileNode.seekable">
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">seekable</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.seekable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether object supports random access.</p>
+<p>If False, seek(), tell() and truncate() will raise IOError.
+This method may need to do a test seek().</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tables.nodes.filenode.RAFileNode.fileno">
+<tt class="descclassname">RAFileNode.</tt><tt class="descname">fileno</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.fileno" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns underlying file descriptor if one exists.</p>
+<p>An IOError is raised if the IO object does not use a file descriptor.</p>
 </dd></dl>
 
 </div>
@@ -375,16 +556,18 @@ See file.write.__doc__ for more information.</p>
 <li><a class="reference internal" href="#">Filenode Module</a><ul>
 <li><a class="reference internal" href="#module-constants">Module constants</a></li>
 <li><a class="reference internal" href="#module-functions">Module functions</a></li>
-<li><a class="reference internal" href="#the-filenode-abstract-class">The FileNode abstract class</a><ul>
-<li><a class="reference internal" href="#filenode-attributes">FileNode attributes</a></li>
-<li><a class="reference internal" href="#filenode-methods">FileNode methods</a></li>
+<li><a class="reference internal" href="#the-rawpytablesio-base-class">The RawPyTablesIO base class</a><ul>
+<li><a class="reference internal" href="#rawpytablesio-attributes">RawPyTablesIO attributes</a></li>
+<li><a class="reference internal" href="#rawpytablesio-methods">RawPyTablesIO methods</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#the-rofilenode-class">The ROFileNode class</a><ul>
+<li><a class="reference internal" href="#rofilenode-attributes">ROFileNode attributes</a></li>
 <li><a class="reference internal" href="#rofilenode-methods">ROFileNode methods</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#the-rafilenode-class">The RAFileNode class</a><ul>
+<li><a class="reference internal" href="#rafilenode-attributes">RAFileNode attributes</a></li>
 <li><a class="reference internal" href="#rafilenode-methods">RAFileNode methods</a></li>
 </ul>
 </li>
@@ -440,7 +623,7 @@ See file.write.__doc__ for more information.</p>
         <li class="right" >
           <a href="expr_class.html" title="General purpose expression evaluator class"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.0.0b1 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.0.0rc1 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >PyTables User&#8217;s Guide</a> &raquo;</li>
           <li><a href="../libref.html" >Library Reference</a> &raquo;</li> 
@@ -449,7 +632,7 @@ See file.write.__doc__ for more information.</p>
     </div>
 
     <div class="footer">
-        &copy; Copyright 2011-2013, The PyTables Governance Team.
+        &copy; Copyright 2011-2013, PyTables maintainers.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
     <!-- cloud_sptheme 1.3 -->
