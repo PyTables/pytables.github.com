@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Structured storage classes &mdash; PyTables 3.0.0rc1 documentation</title>
+    <title>Structured storage classes &mdash; PyTables 3.0.0rc2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.0.0rc1',
+        VERSION:     '3.0.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.0.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.0.0rc2 documentation" href="../../index.html" />
     <link rel="up" title="Library Reference" href="../libref.html" />
     <link rel="next" title="Homogenous storage classes" href="homogenous_storage.html" />
     <link rel="prev" title="Hierarchy definition classes" href="hierarchy_classes.html" /> 
@@ -57,7 +57,7 @@
         <li class="right" >
           <a href="hierarchy_classes.html" title="Hierarchy definition classes"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.0.0rc1 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.0.0rc2 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >PyTables User&#8217;s Guide</a> &raquo;</li>
           <li><a href="../libref.html" accesskey="U">Library Reference</a> &raquo;</li> 
@@ -335,8 +335,7 @@ a NumPy object. If it does not exist, a KeyError is raised.</p>
 <p>If a range is not supplied, <em>all the rows</em> in the table are iterated
 upon - you can also use the <a class="reference internal" href="#tables.Table.__iter__" title="tables.Table.__iter__"><tt class="xref py py-meth docutils literal"><span class="pre">Table.__iter__()</span></tt></a> special method for
 that purpose. If you want to iterate over a given <em>range of rows</em> in
-the table, you may use the start, stop and step parameters, which have
-the same meaning as in <a class="reference internal" href="#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">Table.read()</span></tt></a>.</p>
+the table, you may use the start, stop and step parameters.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">When in the middle of a table row iterator, you should not
@@ -353,6 +352,10 @@ unexpected errors will happen.</p>
 </div>
 <p class="rubric">Notes</p>
 <p>This iterator can be nested (see <a class="reference internal" href="#tables.Table.where" title="tables.Table.where"><tt class="xref py py-meth docutils literal"><span class="pre">Table.where()</span></tt></a> for an example).</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0: </span>If the <em>start</em> parameter is provided and <em>stop</em> is None then the
+table is iterated from <em>start</em> to the last line.
+In PyTables &lt; 3.0 only one element was returned.</p>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">result</span> <span class="o">=</span> <span class="p">[</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;var2&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">iterrows</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
                                         <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;var1&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">20</span> <span class="p">]</span>
@@ -378,9 +381,11 @@ ensure a fully sorted order, the index must be a CSI one.  You may want
 to use the checkCSI argument in order to explicitly check for the
 existence of a CSI index.</p>
 <p>The meaning of the start, stop and step arguments is the same as in
-<a class="reference internal" href="#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">Table.read()</span></tt></a>.  However, in this case a negative value of step is
-supported, meaning that the results will be returned in reverse sorted
-order.</p>
+<a class="reference internal" href="#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">Table.read()</span></tt></a>.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0: </span>If the <em>start</em> parameter is provided and <em>stop</em> is None then the
+table is iterated from <em>start</em> to the last line.
+In PyTables &lt; 3.0 only one element was returned.</p>
 </dd></dl>
 
 <dl class="method">
@@ -389,11 +394,7 @@ order.</p>
 <dd><p>Get data in the table as a (record) array.</p>
 <p>The start, stop and step parameters can be used to select only
 a <em>range of rows</em> in the table. Their meanings are the same as
-in the built-in range() Python function, except that negative
-values of step are not allowed yet. Moreover, if only start is
-specified, then stop will be set to start + 1. If you do not
-specify neither start nor stop, then <em>all the rows</em> in the
-table are selected.</p>
+in the built-in Python slices.</p>
 <p>If field is supplied only the named column will be selected.
 If the column is not nested, an <em>array</em> of the current flavor
 will be returned; if it is, a <em>structured array</em> will be used
@@ -419,7 +420,21 @@ in the current system&#8217;s byteorder, regardless of how it is
 stored on disk. If the out parameter is specified, the output
 array also must be in the current system&#8217;s byteorder.</p>
 <p class="versionchanged">
-<span class="versionmodified">Changed in version 3.0: </span>Added the <em>out</em> parameter.</p>
+<span class="versionmodified">Changed in version 3.0: </span>Added the <em>out</em> parameter.  Also the start, stop and step
+parameters now behave like in slice.</p>
+<p class="rubric">Examples</p>
+<p>Reading the entire table:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Reading record n. 6:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Reading from record n. 6 to the end of the table:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -447,9 +462,10 @@ returned; if it is, a <em>structured array</em> will be used instead.  If no
 field is specified, all the columns will be returned in a structured
 array of the current flavor.</p>
 <p>The meaning of the start, stop and step arguments is the same as in
-<a class="reference internal" href="#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">Table.read()</span></tt></a>.  However, in this case a negative value of step is
-supported, meaning that the results will be returned in reverse sorted
-order.</p>
+<a class="reference internal" href="#tables.Table.read" title="tables.Table.read"><tt class="xref py py-meth docutils literal"><span class="pre">Table.read()</span></tt></a>.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0.</span></p>
+<p>The start, stop and step parameters now behave like in slice.</p>
 </dd></dl>
 
 <dl class="method">
@@ -547,7 +563,7 @@ string or Python buffer.</p>
 
 <dl class="method">
 <dt id="tables.Table.modify_column">
-<tt class="descclassname">Table.</tt><tt class="descname">modify_column</tt><big>(</big><em>start=None</em>, <em>stop=None</em>, <em>step=1</em>, <em>column=None</em>, <em>colname=None</em><big>)</big><a class="headerlink" href="#tables.Table.modify_column" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">Table.</tt><tt class="descname">modify_column</tt><big>(</big><em>start=None</em>, <em>stop=None</em>, <em>step=None</em>, <em>column=None</em>, <em>colname=None</em><big>)</big><a class="headerlink" href="#tables.Table.modify_column" title="Permalink to this definition">¶</a></dt>
 <dd><p>Modify one single column in the row slice [start:stop:step].</p>
 <p>The colname argument specifies the name of the column in the
 table to be modified with the data given in column.  This
@@ -563,7 +579,7 @@ array records, and a string or Python buffer.</p>
 
 <dl class="method">
 <dt id="tables.Table.modify_columns">
-<tt class="descclassname">Table.</tt><tt class="descname">modify_columns</tt><big>(</big><em>start=None</em>, <em>stop=None</em>, <em>step=1</em>, <em>columns=None</em>, <em>names=None</em><big>)</big><a class="headerlink" href="#tables.Table.modify_columns" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">Table.</tt><tt class="descname">modify_columns</tt><big>(</big><em>start=None</em>, <em>stop=None</em>, <em>step=None</em>, <em>columns=None</em>, <em>names=None</em><big>)</big><a class="headerlink" href="#tables.Table.modify_columns" title="Permalink to this definition">¶</a></dt>
 <dd><p>Modify a series of columns in the row slice [start:stop:step].</p>
 <p>The names argument specifies the names of the columns in the
 table to be modified with the data given in columns.  This
@@ -589,7 +605,7 @@ rows.  This method returns the number of rows modified.</p>
 
 <dl class="method">
 <dt id="tables.Table.modify_rows">
-<tt class="descclassname">Table.</tt><tt class="descname">modify_rows</tt><big>(</big><em>start=None</em>, <em>stop=None</em>, <em>step=1</em>, <em>rows=None</em><big>)</big><a class="headerlink" href="#tables.Table.modify_rows" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">Table.</tt><tt class="descname">modify_rows</tt><big>(</big><em>start=None</em>, <em>stop=None</em>, <em>step=None</em>, <em>rows=None</em><big>)</big><a class="headerlink" href="#tables.Table.modify_rows" title="Permalink to this definition">¶</a></dt>
 <dd><p>Modify a series of rows in the slice [start:stop:step].</p>
 <p>The values in the selected rows will be modified with the data given in
 rows.  This method returns the number of rows modified.  Should the
@@ -601,12 +617,15 @@ before changing data.</p>
 
 <dl class="method">
 <dt id="tables.Table.remove_rows">
-<tt class="descclassname">Table.</tt><tt class="descname">remove_rows</tt><big>(</big><em>start</em>, <em>stop=None</em><big>)</big><a class="headerlink" href="#tables.Table.remove_rows" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">Table.</tt><tt class="descname">remove_rows</tt><big>(</big><em>start=None</em>, <em>stop=None</em>, <em>step=None</em><big>)</big><a class="headerlink" href="#tables.Table.remove_rows" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove a range of rows in the table.</p>
-<p>If only start is supplied, only this row is to be deleted.  If a range
-is supplied, i.e. both the start and stop parameters are passed, all
-the rows in the range are removed. A step parameter is not supported,
-and it is not foreseen to be implemented anytime soon.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0.</span></p>
+<p>The start, stop and step parameters now behave like in slice.</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">remove_row()</p>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -618,16 +637,39 @@ meaning that the count starts from the end.  A value of 0 means the
 first row.</p>
 </div></blockquote>
 <p><strong>stop</strong> : int</p>
-<blockquote class="last">
+<blockquote>
 <div><p>Sets the last row to be removed to stop-1, i.e. the end point is
 omitted (in the Python range() tradition). Negative values are also
-accepted. A special value of None (the default) means removing just
-the row supplied in start.</p>
+accepted.</p>
+</div></blockquote>
+<p><strong>step</strong> : int</p>
+<blockquote class="last">
+<div><p>The step size between rows to remove.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 3.0.</span></p>
 </div></blockquote>
 </td>
 </tr>
 </tbody>
 </table>
+<p class="rubric">Examples</p>
+<p>Removing rows from 5 to 10 (excluded):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span><span class="o">.</span><span class="n">remove_rows</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Removing all rows starting drom the 10th:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span><span class="o">.</span><span class="n">remove_rows</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Removing the 6th row:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span><span class="o">.</span><span class="n">remove_rows</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">removing a single row can be done using the specific
+<tt class="xref py py-meth docutils literal"><span class="pre">remove_row()</span></tt> method.</p>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -718,9 +760,7 @@ mostly intended for interactive usage. To disable it, just specify a
 <p>If a range is supplied (by setting some of the start, stop or step
 parameters), only the rows in that range and fulfilling the condition
 are used. The meaning of the start, stop and step parameters is the
-same as in the range() Python function, except that negative values of
-step are not allowed. Moreover, if only start is specified, then stop
-will be set to start + 1.</p>
+same as for Python slices.</p>
 <p>When possible, indexed columns participating in the condition will be
 used to speed up the search. It is recommended that you place the
 indexed columns as left and out in the condition as possible. Anyway,
@@ -756,6 +796,9 @@ iterators over the same table. For example:</p>
 used, but you may as well use any of the other reading iterators that
 Table objects offer. See the file <tt class="file docutils literal"><span class="pre">examples/nested-iter.py</span></tt> for
 the full code.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 3.0.</span></p>
+<p>The start, stop and step parameters now behave like in slice.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1699,7 +1742,7 @@ set to value.</p>
         <li class="right" >
           <a href="hierarchy_classes.html" title="Hierarchy definition classes"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.0.0rc1 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.0.0rc2 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >PyTables User&#8217;s Guide</a> &raquo;</li>
           <li><a href="../libref.html" >Library Reference</a> &raquo;</li> 
