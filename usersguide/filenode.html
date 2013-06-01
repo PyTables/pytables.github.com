@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>filenode - simulating a filesystem with PyTables &mdash; PyTables 2.4.0 documentation</title>
+    <title>filenode - simulating a filesystem with PyTables &mdash; PyTables 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,9 +31,9 @@
     <script type="text/javascript" src="../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 2.4.0 documentation" href="../index.html" />
+    <link rel="top" title="PyTables 3.0.0 documentation" href="../index.html" />
     <link rel="up" title="PyTables User’s Guide" href="index.html" />
-    <link rel="next" title="netcdf3 - a PyTables NetCDF3 emulation API (deprecated)" href="netcdf3.html" />
+    <link rel="next" title="Supported data types in PyTables" href="datatypes.html" />
     <link rel="prev" title="Optimization tips" href="optimization.html" /> 
   </head>
   <body>
@@ -46,12 +46,18 @@
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="netcdf3.html" title="netcdf3 - a PyTables NetCDF3 emulation API (deprecated)"
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="datatypes.html" title="Supported data types in PyTables"
              accesskey="N">next</a> &nbsp; &nbsp;</li>
         <li class="right" >
           <a href="optimization.html" title="Optimization tips"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 2.4.0 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
 
           <li><a href="index.html" accesskey="U">PyTables User&#8217;s Guide</a> &raquo;</li> 
       </ul>
@@ -65,137 +71,111 @@
           <div class="body">
             
   <div class="section" id="filenode-simulating-a-filesystem-with-pytables">
-<h1>filenode - simulating a filesystem with PyTables<a class="headerlink" href="#filenode-simulating-a-filesystem-with-pytables" title="Permalink to this headline">¶</a></h1>
+<span id="filenode-usersguide"></span><h1>filenode - simulating a filesystem with PyTables<a class="headerlink" href="#filenode-simulating-a-filesystem-with-pytables" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="what-is-filenode">
 <h2>What is filenode?<a class="headerlink" href="#what-is-filenode" title="Permalink to this headline">¶</a></h2>
-<p>filenode is a module which enables you to
-create a PyTables database of nodes which can be used like regular
-opened files in Python. In other words, you can store a file in a
-PyTables database, and read and write it as you would do with any
-other file in Python. Used in conjunction with PyTables hierarchical
-database organization, you can have your database turned into an open,
-extensible, efficient, high capacity, portable and metadata-rich
-filesystem for data exchange with other systems (including backup
-purposes).</p>
-<p>Between the main features of filenode, one
-can list:</p>
+<p>filenode is a module which enables you to create a PyTables database of nodes
+which can be used like regular opened files in Python. In other words, you
+can store a file in a PyTables database, and read and write it as you would
+do with any other file in Python. Used in conjunction with PyTables
+hierarchical database organization, you can have your database turned into an
+open, extensible, efficient, high capacity, portable and metadata-rich
+filesystem for data exchange with other systems (including backup purposes).</p>
+<p>Between the main features of filenode, one can list:</p>
 <ul class="simple">
-<li><em>Open:</em> Since it relies on PyTables,
-which in turn, sits over HDF5 (see <a class="reference internal" href="bibliography.html#hdfg1"><em>[HDGG1]</em></a>), a standard hierarchical data format from
-NCSA.</li>
-<li><em>Extensible:</em> You can define new types of
-nodes, and their instances will be safely preserved (as are normal
-groups, leafs and attributes) by PyTables applications having no
-knowledge of their types. Moreover, the set of possible attributes
-for a node is not fixed, so you can define your own node
-attributes.</li>
-<li><em>Efficient:</em> Thanks to PyTables&#8217; proven
-extreme efficiency on handling huge amounts of data.
-filenode can make use of PyTables&#8217; on-the-fly
-compression and decompression of data.</li>
-<li><em>High capacity:</em> Since PyTables and HDF5
-are designed for massive data storage (they use 64-bit addressing
-even where the platform does not support it natively).</li>
-<li><em>Portable:</em> Since the HDF5 format has an
-architecture-neutral design, and the HDF5 libraries and PyTables
-are known to run under a variety of platforms. Besides that, a
-PyTables database fits into a single file, which poses no trouble
-for transportation.</li>
-<li><em>Metadata-rich:</em> Since PyTables can store
-arbitrary key-value pairs (even Python objects!) for every
-database node. Metadata may include authorship, keywords, MIME
-types and encodings, ownership information, access control lists
-(ACL), decoding functions and anything you can imagine!</li>
+<li><em>Open:</em> Since it relies on PyTables, which in turn, sits over HDF5 (see
+<a class="reference internal" href="bibliography.html#hdfg1"><em>[HDGG1]</em></a>), a standard hierarchical data format from NCSA.</li>
+<li><em>Extensible:</em> You can define new types of nodes, and their instances will
+be safely preserved (as are normal groups, leafs and attributes) by
+PyTables applications having no knowledge of their types. Moreover, the set
+of possible attributes for a node is not fixed, so you can define your own
+node attributes.</li>
+<li><em>Efficient:</em> Thanks to PyTables&#8217; proven extreme efficiency on handling huge
+amounts of data. filenode can make use of PyTables&#8217; on-the-fly compression
+and decompression of data.</li>
+<li><em>High capacity:</em> Since PyTables and HDF5 are designed for massive data
+storage (they use 64-bit addressing even where the platform does not
+support it natively).</li>
+<li><em>Portable:</em> Since the HDF5 format has an architecture-neutral design, and
+the HDF5 libraries and PyTables are known to run under a variety of
+platforms. Besides that, a PyTables database fits into a single file, which
+poses no trouble for transportation.</li>
+<li><em>Metadata-rich:</em> Since PyTables can store arbitrary key-value pairs (even
+Python objects!) for every database node. Metadata may include authorship,
+keywords, MIME types and encodings, ownership information, access control
+lists (ACL), decoding functions and anything you can imagine!</li>
 </ul>
 </div>
 <div class="section" id="finding-a-filenode-node">
 <h2>Finding a filenode node<a class="headerlink" href="#finding-a-filenode-node" title="Permalink to this headline">¶</a></h2>
-<p>filenode nodes can be recognized because they
-have a NODE_TYPE system attribute with a
-&#8216;file&#8217; value. It is recommended that you use the
-<tt class="xref py py-meth docutils literal"><span class="pre">File.getNodeAttr()</span></tt> method of tables.File class
-to get the NODE_TYPE attribute independently of the
-nature (group or leaf) of the node, so you do not need to care
-about.</p>
+<p>filenode nodes can be recognized because they have a NODE_TYPE system
+attribute with a &#8216;file&#8217; value. It is recommended that you use the
+<tt class="xref py py-meth docutils literal"><span class="pre">File.get_node_attr()</span></tt> method of tables.File class to get the NODE_TYPE
+attribute independently of the nature (group or leaf) of the node, so you do
+not need to care about.</p>
 </div>
 <div class="section" id="filenode-simulating-files-inside-pytables">
 <h2>filenode - simulating files inside PyTables<a class="headerlink" href="#filenode-simulating-files-inside-pytables" title="Permalink to this headline">¶</a></h2>
-<p>The filenode module is part of the
-nodes sub-package of PyTables. The recommended way
-to import the module is:</p>
+<p>The filenode module is part of the nodes sub-package of PyTables. The
+recommended way to import the module is:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tables.nodes</span> <span class="kn">import</span> <span class="n">filenode</span>
 </pre></div>
 </div>
-<p>However, filenode exports very few symbols,
-so you can import * for interactive usage. In fact,
-you will most probably only use the NodeType
-constant and the newNode() and
-openNode() calls.</p>
-<p>The NodeType constant contains the value that
-the NODE_TYPE system attribute of a node file is
-expected to contain (&#8216;file&#8217;, as we have seen).
-Although this is not expected to change, you should use
-filenode.NodeType instead of the literal
-&#8216;file&#8217; when possible.</p>
-<p>newNode() and openNode()
-are the equivalent to the Python file() call (alias
-open()) for ordinary files. Their arguments differ
-from that of file(), but this is the only point
-where you will note the difference between working with a node file
-and working with an ordinary file.</p>
-<p>For this little tutorial, we will assume that we have a PyTables
-database opened for writing. Also, if you are somewhat lazy at typing
-sentences, the code that we are going to explain is included in the
-examples/filenodes1.py file.</p>
+<p>However, filenode exports very few symbols, so you can import * for
+interactive usage. In fact, you will most probably only use the NodeType
+constant and the new_node() and open_node() calls.</p>
+<p>The NodeType constant contains the value that the NODE_TYPE system attribute
+of a node file is expected to contain (&#8216;file&#8217;, as we have seen).
+Although this is not expected to change, you should use filenode.NodeType
+instead of the literal &#8216;file&#8217; when possible.</p>
+<p>new_node() and open_node() are the equivalent to the Python file() call (alias
+open()) for ordinary files. Their arguments differ from that of file(), but
+this is the only point where you will note the difference between working
+with a node file and working with an ordinary file.</p>
+<p>For this little tutorial, we will assume that we have a PyTables database
+opened for writing. Also, if you are somewhat lazy at typing sentences, the
+code that we are going to explain is included in the examples/filenodes1.py
+file.</p>
 <p>You can create a brand new file with these sentences:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tables</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">openFile</span><span class="p">(</span><span class="s">&#39;fnode.h5&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s">&#39;fnode.h5&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="section" id="creating-a-new-file-node">
 <h3>Creating a new file node<a class="headerlink" href="#creating-a-new-file-node" title="Permalink to this headline">¶</a></h3>
-<p>Creation of a new file node is achieved with the
-newNode() call. You must tell it in which
-PyTables file you want to create it, where in the PyTables hierarchy
-you want to create the node and which will be its name. The PyTables
-file is the first argument to newNode(); it will
-be also called the &#8216;host PyTables file&#8217;. The
-other two arguments must be given as keyword arguments
-where and name, respectively.
-As a result of the call, a brand new appendable and readable file
-node object is returned.</p>
-<p>So let us create a new node file in the previously opened
-h5file PyTables file, named
-&#8216;fnode_test&#8217; and placed right under the root of
-the database hierarchy. This is that command:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span> <span class="o">=</span> <span class="n">filenode</span><span class="o">.</span><span class="n">newNode</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;fnode_test&#39;</span><span class="p">)</span>
+<p>Creation of a new file node is achieved with the new_node() call. You must
+tell it in which PyTables file you want to create it, where in the PyTables
+hierarchy you want to create the node and which will be its name. The
+PyTables file is the first argument to new_node(); it will be also called the
+&#8216;host PyTables file&#8217;. The other two arguments must be given as keyword
+arguments where and name, respectively.
+As a result of the call, a brand new appendable and readable file node object
+is returned.</p>
+<p>So let us create a new node file in the previously opened h5file PyTables
+file, named &#8216;fnode_test&#8217; and placed right under the root of the database
+hierarchy. This is that command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span> <span class="o">=</span> <span class="n">filenode</span><span class="o">.</span><span class="n">new_node</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;fnode_test&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>That is basically all you need to create a file node. Simple,
-isn&#8217;t it? From that point on, you can use fnode
-as any opened Python file (i.e. you can write data, read data, lines
-of text and so on).</p>
-<p>newNode() accepts some more keyword
-arguments. You can give a title to your file with the
-title argument. You can use PyTables&#8217; compression
-features with the filters argument. If you know
-beforehand the size that your file will have, you can give its final
-file size in bytes to the expectedsize argument
-so that the PyTables library would be able to optimize the data
-access.</p>
-<p>newNode() creates a PyTables node where it
-is told to. To prove it, we will try to get the
-NODE_TYPE attribute from the newly created
-node:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">h5file</span><span class="o">.</span><span class="n">getNodeAttr</span><span class="p">(</span><span class="s">&#39;/fnode_test&#39;</span><span class="p">,</span> <span class="s">&#39;NODE_TYPE&#39;</span><span class="p">)</span>
+<p>That is basically all you need to create a file node. Simple, isn&#8217;t it? From
+that point on, you can use fnode as any opened Python file (i.e. you can
+write data, read data, lines of text and so on).</p>
+<p>new_node() accepts some more keyword arguments. You can give a title to your
+file with the title argument. You can use PyTables&#8217; compression features with
+the filters argument. If you know beforehand the size that your file will
+have, you can give its final file size in bytes to the expectedsize argument
+so that the PyTables library would be able to optimize the data access.</p>
+<p>new_node() creates a PyTables node where it is told to. To prove it, we will
+try to get the NODE_TYPE attribute from the newly created node:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">h5file</span><span class="o">.</span><span class="n">get_node_attr</span><span class="p">(</span><span class="s">&#39;/fnode_test&#39;</span><span class="p">,</span> <span class="s">&#39;NODE_TYPE&#39;</span><span class="p">)</span>
 <span class="go">file</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="using-a-file-node">
 <h3>Using a file node<a class="headerlink" href="#using-a-file-node" title="Permalink to this headline">¶</a></h3>
-<p>As stated above, you can use the new node file as any other
-opened file. Let us try to write some text in and read it:</p>
+<p>As stated above, you can use the new node file as any other opened file. Let
+us try to write some text in and read it:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">fnode</span><span class="p">,</span> <span class="s">&quot;This is a test text line.&quot;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">fnode</span><span class="p">,</span> <span class="s">&quot;And this is another one.&quot;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">fnode</span>
@@ -211,16 +191,14 @@ opened file. Let us try to write some text in and read it:</p>
 <span class="go">&#39;Of course, file methods can also be used.&#39;</span>
 </pre></div>
 </div>
-<p>This was run on a Unix system, so newlines are expressed as
-&#8216;n&#8217;. In fact, you can override the line
-separator for a file by setting its lineSeparator
+<p>This was run on a Unix system, so newlines are expressed as &#8216;n&#8217;. In fact,
+you can override the line separator for a file by setting its line_separator
 property to any string you want.</p>
-<p>While using a file node, you should take care of closing it
-<em>before</em> you close the PyTables host file.
-Because of the way PyTables works, your data it will not be at a
-risk, but every operation you execute after closing the host file
-will fail with a ValueError. To close a file
-node, simply delete it or call its close()
+<p>While using a file node, you should take care of closing it <em>before</em> you
+close the PyTables host file.
+Because of the way PyTables works, your data it will not be at a risk, but
+every operation you execute after closing the host file will fail with a
+ValueError. To close a file node, simply delete it or call its close()
 method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">fnode</span><span class="o">.</span><span class="n">closed</span>
@@ -230,25 +208,20 @@ method:</p>
 </div>
 <div class="section" id="opening-an-existing-file-node">
 <h3>Opening an existing file node<a class="headerlink" href="#opening-an-existing-file-node" title="Permalink to this headline">¶</a></h3>
-<p>If you have a file node that you created using
-newNode(), you can open it later by calling
-openNode(). Its arguments are similar to that of
-file() or open(): the first
-argument is the PyTables node that you want to open (i.e. a node
-with a NODE_TYPE attribute having a
-&#8216;file&#8217; value), and the second argument is a mode
-string indicating how to open the file. Contrary to
-file(), openNode() can not be
-used to create a new file node.</p>
-<p>File nodes can be opened in read-only mode
-(&#8216;r&#8217;) or in read-and-append mode
-(&#8216;a+&#8217;). Reading from a file node is allowed in
-both modes, but appending is only allowed in the second one. Just
-like Python files do, writing data to an appendable file places it
-after the file pointer if it is on or beyond the end of the file, or
-otherwise after the existing data. Let us see an example:</p>
+<p>If you have a file node that you created using new_node(), you can open it
+later by calling open_node(). Its arguments are similar to that of file() or
+open(): the first argument is the PyTables node that you want to open (i.e. a
+node with a NODE_TYPE attribute having a &#8216;file&#8217; value), and the second
+argument is a mode string indicating how to open the file. Contrary to
+file(), open_node() can not be used to create a new file node.</p>
+<p>File nodes can be opened in read-only mode (&#8216;r&#8217;) or in read-and-append mode
+(&#8216;a+&#8217;). Reading from a file node is allowed in both modes, but appending is
+only allowed in the second one. Just like Python files do, writing data to an
+appendable file places it after the file pointer if it is on or beyond the
+end of the file, or otherwise after the existing data. Let us see an
+example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">node</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">fnode_test</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span> <span class="o">=</span> <span class="n">filenode</span><span class="o">.</span><span class="n">openNode</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s">&#39;a+&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span> <span class="o">=</span> <span class="n">filenode</span><span class="o">.</span><span class="n">open_node</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s">&#39;a+&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="nb">repr</span><span class="p">(</span><span class="n">fnode</span><span class="o">.</span><span class="n">readline</span><span class="p">())</span>
 <span class="go">&#39;This is a test text line.\\n&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">fnode</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
@@ -258,10 +231,9 @@ otherwise after the existing data. Let us see an example:</p>
 <span class="go">&#39;&#39;</span>
 </pre></div>
 </div>
-<p>Of course, the data append process places the pointer at the
-end of the file, so the last readline() call hit
-EOF. Let us seek to the beginning of the file to
-see the whole contents of our file:</p>
+<p>Of course, the data append process places the pointer at the end of the file,
+so the last readline() call hit EOF. Let us seek to the beginning of the file
+to see the whole contents of our file:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fnode</span><span class="p">:</span>
 <span class="gp">... </span>  <span class="k">print</span> <span class="nb">repr</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
@@ -271,34 +243,28 @@ see the whole contents of our file:</p>
 <span class="go">&#39;Of course, file methods can also be used.This is a new line.\\n&#39;</span>
 </pre></div>
 </div>
-<p>As you can check, the last string we wrote was correctly
-appended at the end of the file, instead of overwriting the second
-line, where the file pointer was positioned by the time of the
-appending.</p>
+<p>As you can check, the last string we wrote was correctly appended at the end
+of the file, instead of overwriting the second line, where the file pointer
+was positioned by the time of the appending.</p>
 </div>
 <div class="section" id="adding-metadata-to-a-file-node">
 <h3>Adding metadata to a file node<a class="headerlink" href="#adding-metadata-to-a-file-node" title="Permalink to this headline">¶</a></h3>
-<p>You can associate arbitrary metadata to any open node file,
-regardless of its mode, as long as the host PyTables file is
-writable. Of course, you could use the
-setNodeAttr() method of
-tables.File to do it directly on the proper node,
-but filenode offers a much more comfortable way
-to do it. filenode objects have an
-attrs property which gives you direct access to
-their corresponding AttributeSet object.</p>
-<p>For instance, let us see how to associate MIME type metadata
-to our file node:</p>
+<p>You can associate arbitrary metadata to any open node file, regardless of its
+mode, as long as the host PyTables file is writable. Of course, you could use
+the set_node_attr() method of tables.File to do it directly on the proper node,
+but filenode offers a much more comfortable way to do it. filenode objects
+have an attrs property which gives you direct access to their corresponding
+AttributeSet object.</p>
+<p>For instance, let us see how to associate MIME type metadata to our file
+node:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="s">&#39;text/plain; charset=us-ascii&#39;</span>
 </pre></div>
 </div>
-<p>As simple as A-B-C. You can put nearly anything in an
-attribute, which opens the way to authorship, keywords, permissions
-and more. Moreover, there is not a fixed list of attributes.
-However, you should avoid names in all caps or starting with
-&#8216;_&#8217;, since PyTables and
-filenode may use them internally. Some valid
-examples:</p>
+<p>As simple as A-B-C. You can put nearly anything in an attribute, which opens
+the way to authorship, keywords, permissions and more. Moreover, there is not
+a fixed list of attributes.
+However, you should avoid names in all caps or starting with &#8216;_&#8217;, since
+PyTables and filenode may use them internally. Some valid examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">author</span> <span class="o">=</span> <span class="s">&quot;Ivan Vilata i Balaguer&quot;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">creation_date</span> <span class="o">=</span> <span class="s">&#39;2004-10-20T13:25:25+0200&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keywords_en</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;FileNode&quot;</span><span class="p">,</span> <span class="s">&quot;test&quot;</span><span class="p">,</span> <span class="s">&quot;metadata&quot;</span><span class="p">]</span>
@@ -307,8 +273,8 @@ examples:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnode</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">acl</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;ivan&#39;</span><span class="p">:</span> <span class="s">&#39;rw&#39;</span><span class="p">,</span> <span class="s">&#39;@users&#39;</span><span class="p">:</span> <span class="s">&#39;r&#39;</span><span class="p">}</span>
 </pre></div>
 </div>
-<p>You can check that these attributes get stored by running the
-ptdump command on the host PyTables file.</p>
+<p>You can check that these attributes get stored by running the ptdump command
+on the host PyTables file.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>ptdump -a fnode.h5:/fnode_test
 /fnode_test <span class="o">(</span>EArray<span class="o">(</span>113,<span class="o">))</span> <span class="s1">&#39;&#39;</span>
 /fnode_test.attrs <span class="o">(</span>AttributeSet<span class="o">)</span>, 14 attributes:
@@ -328,275 +294,44 @@ keywords_en :<span class="o">=</span> <span class="o">[</span><span class="s1">&
 owner :<span class="o">=</span> <span class="s1">&#39;ivan&#39;</span><span class="o">]</span>
 </pre></div>
 </div>
-<p>Note that filenode makes no assumptions
-about the meaning of your metadata, so its handling is entirely left
-to your needs and imagination.</p>
+<p>Note that filenode makes no assumptions about the meaning of your metadata,
+so its handling is entirely left to your needs and imagination.</p>
 </div>
 </div>
 <div class="section" id="complementary-notes">
 <h2>Complementary notes<a class="headerlink" href="#complementary-notes" title="Permalink to this headline">¶</a></h2>
-<p>You can use file nodes and PyTables groups to mimic a filesystem
-with files and directories. Since you can store nearly anything you
-want as file metadata, this enables you to use a PyTables file as a
-portable compressed backup, even between radically different
-platforms. Take this with a grain of salt, since node files are
-restricted in their naming (only valid Python identifiers are valid);
-however, remember that you can use node titles and metadata to
-overcome this limitation. Also, you may need to devise some strategy
-to represent special files such as devices, sockets and such (not
+<p>You can use file nodes and PyTables groups to mimic a filesystem with files
+and directories. Since you can store nearly anything you want as file
+metadata, this enables you to use a PyTables file as a portable compressed
+backup, even between radically different platforms. Take this with a grain of
+salt, since node files are restricted in their naming (only valid Python
+identifiers are valid); however, remember that you can use node titles and
+metadata to overcome this limitation. Also, you may need to devise some
+strategy to represent special files such as devices, sockets and such (not
 necessarily using filenode).</p>
-<p>We are eager to hear your opinion about
-filenode and its potential uses. Suggestions to
-improve filenode and create other node types are
-also welcome. Do not hesitate to contact us!</p>
+<p>We are eager to hear your opinion about filenode and its potential uses.
+Suggestions to improve filenode and create other node types are also welcome.
+Do not hesitate to contact us!</p>
 </div>
 <div class="section" id="current-limitations">
 <h2>Current limitations<a class="headerlink" href="#current-limitations" title="Permalink to this headline">¶</a></h2>
-<p>filenode is still a young piece of software,
-so it lacks some functionality. This is a list of known current
-limitations:</p>
+<p>filenode is still a young piece of software, so it lacks some functionality.
+This is a list of known current limitations:</p>
 <ol class="arabic simple">
-<li>Node files can only be opened for read-only or read and
-append mode. This should be enhanced in the future.</li>
+<li>Node files can only be opened for read-only or read and append mode. This
+should be enhanced in the future.</li>
 <li>Near future?</li>
-<li>There is no universal newline support yet. This is likely to
-be implemented in a near future.</li>
-<li>Sparse files (files with lots of zeros) are not treated
-specially; if you want them to take less space, you should be
-better off using compression.</li>
+<li>Only binary I/O is supported currently (read/write strings of bytes)</li>
+<li>There is no universal newline support yet. The only new-line character
+used at the moment is <tt class="docutils literal"><span class="pre">\n</span></tt>. This is likely to be improved in a near
+future.</li>
+<li>Sparse files (files with lots of zeros) are not treated specially; if you
+want them to take less space, you should be better off using compression.</li>
 </ol>
-<p>These limitations still make filenode
-entirely adequate to work with most binary and text files. Of course,
-suggestions and patches are welcome.</p>
-</div>
-<div class="section" id="filenode-module-reference">
-<h2>filenode module reference<a class="headerlink" href="#filenode-module-reference" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="global-constants">
-<h3>Global constants<a class="headerlink" href="#global-constants" title="Permalink to this headline">¶</a></h3>
-<dl class="data">
-<dt id="tables.nodes.filenode.NodeType">
-<tt class="descclassname">tables.nodes.filenode.</tt><tt class="descname">NodeType</tt><a class="headerlink" href="#tables.nodes.filenode.NodeType" title="Permalink to this definition">¶</a></dt>
-<dd><p>Value for NODE_TYPE node system attribute.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="tables.nodes.filenode.NodeTypeVersions">
-<tt class="descclassname">tables.nodes.filenode.</tt><tt class="descname">NodeTypeVersions</tt><a class="headerlink" href="#tables.nodes.filenode.NodeTypeVersions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Supported values for NODE_TYPE_VERSION node system attribute.</p>
-</dd></dl>
-
-</div>
-<div class="section" id="global-functions">
-<h3>Global functions<a class="headerlink" href="#global-functions" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
-<dt id="tables.nodes.filenode.newNode">
-<tt class="descclassname">tables.nodes.filenode.</tt><tt class="descname">newNode</tt><big>(</big><em>h5file</em>, <em>where</em>, <em>name</em>, <em>title=&quot;&quot;</em>, <em>filters=None</em>, <em>expectedsize=1000</em><big>)</big><a class="reference internal" href="../_modules/tables/nodes/filenode.html#newNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.newNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a new file node object in the specified PyTables
-file object. Additional named arguments where
-and name must be passed to specify where the
-file node is to be created. Other named arguments such as
-title and filters may also
-be passed. The special named argument
-expectedsize, indicating an estimate of the
-file size in bytes, may also be passed. It returns the file node
-object.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="tables.nodes.filenode.openNode">
-<tt class="descclassname">tables.nodes.filenode.</tt><tt class="descname">openNode</tt><big>(</big><em>node</em>, <em>mode = 'r'</em><big>)</big><a class="reference internal" href="../_modules/tables/nodes/filenode.html#openNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.openNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Opens an existing file node. Returns a file node object from
-the existing specified PyTables node. If mode is not specified or
-it is &#8216;r&#8217;, the file can only be read, and the
-pointer is positioned at the beginning of the file. If mode is
-&#8216;a+&#8217;, the file can be read and appended, and
-the pointer is positioned at the end of the file.</p>
-</dd></dl>
-
-</div>
-<div class="section" id="the-filenode-abstract-class">
-<h3>The FileNode abstract class<a class="headerlink" href="#the-filenode-abstract-class" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="tables.nodes.filenode.FileNode">
-<em class="property">class </em><tt class="descclassname">tables.nodes.filenode.</tt><tt class="descname">FileNode</tt><a class="reference internal" href="../_modules/tables/nodes/filenode.html#FileNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.FileNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is the ancestor of ROFileNode and
-RAFileNode (see below). Instances of these
-classes are returned when newNode() or
-openNode() are called. It represents a new file
-node associated with a PyTables node, providing a standard Python
-file interface to it.</p>
-<p>This abstract class provides only an implementation of the
-reading methods needed to implement a file-like object over a
-PyTables node. The attribute set of the node becomes available via
-the attrs property. You can add attributes there,
-but try to avoid attribute names in all caps or starting with
-&#8216;_&#8217;, since they may clash with internal
-attributes.</p>
-<p>The node used as storage is also made available via the
-read-only attribute node. Please do not tamper
-with this object unless unavoidably, since you may break the
-operation of the file node object.</p>
-<p>The lineSeparator property contains the
-string used as a line separator, and defaults to
-os.linesep. It can be set to any reasonably-sized
-string you want.</p>
-<p>The constructor sets the closed,
-softspace and _lineSeparator
-attributes to their initial values, as well as the
-node attribute to None.
-Sub-classes should set the node,
-mode and offset attributes.</p>
-<p>Version 1 implements the file storage as a
-UInt8 uni-dimensional EArray.</p>
-</dd></dl>
-
-<div class="section" id="filenode-methods">
-<h4>FileNode methods<a class="headerlink" href="#filenode-methods" title="Permalink to this headline">¶</a></h4>
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.getLineSeparator">
-<tt class="descclassname">FileNode.</tt><tt class="descname">getLineSeparator</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.FileNode.getLineSeparator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the line separator string.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.setLineSeparator">
-<tt class="descclassname">FileNode.</tt><tt class="descname">setLineSeparator</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.FileNode.setLineSeparator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the line separator string.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.getAttrs">
-<tt class="descclassname">FileNode.</tt><tt class="descname">getAttrs</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/tables/nodes/filenode.html#FileNode.getAttrs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.FileNode.getAttrs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the attribute set of the file node.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.close">
-<tt class="descclassname">FileNode.</tt><tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/tables/nodes/filenode.html#FileNode.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.FileNode.close" title="Permalink to this definition">¶</a></dt>
-<dd><p>Flushes the file and closes it. The
-node attribute becomes
-None and the attrs
-property becomes no longer available.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.next">
-<tt class="descclassname">FileNode.</tt><tt class="descname">next</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.FileNode.next" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the next line of text. Raises
-StopIteration when lines are exhausted. See
-file.next.__doc__ for more
-information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.read">
-<tt class="descclassname">FileNode.</tt><tt class="descname">read</tt><big>(</big><em>size=None</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.FileNode.read" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads at most size bytes. See
-file.read.__doc__ for more information</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.readline">
-<tt class="descclassname">FileNode.</tt><tt class="descname">readline</tt><big>(</big><em>size=-1</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.FileNode.readline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads the next text line. See
-file.readline.__doc__ for more
-information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.readlines">
-<tt class="descclassname">FileNode.</tt><tt class="descname">readlines</tt><big>(</big><em>sizehint=-1</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.FileNode.readlines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads the text lines. See
-file.readlines.__doc__ for more
-information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.seek">
-<tt class="descclassname">FileNode.</tt><tt class="descname">seek</tt><big>(</big><em>offset</em>, <em>whence=0</em><big>)</big><a class="reference internal" href="../_modules/tables/nodes/filenode.html#FileNode.seek"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.FileNode.seek" title="Permalink to this definition">¶</a></dt>
-<dd><p>Moves to a new file position. See
-file.seek.__doc__ for more
-information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.tell">
-<tt class="descclassname">FileNode.</tt><tt class="descname">tell</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/tables/nodes/filenode.html#FileNode.tell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.FileNode.tell" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the current file position. See
-file.tell.__doc__ for more
-information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.FileNode.xreadlines">
-<tt class="descclassname">FileNode.</tt><tt class="descname">xreadlines</tt><big>(</big><big>)</big><a class="headerlink" href="#tables.nodes.filenode.FileNode.xreadlines" title="Permalink to this definition">¶</a></dt>
-<dd><p>For backward compatibility. See
-file.xreadlines.__doc__ for more
-information.</p>
-</dd></dl>
-
-</div>
-</div>
-<div class="section" id="the-rofilenode-class">
-<h3>The ROFileNode class<a class="headerlink" href="#the-rofilenode-class" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="tables.nodes.filenode.ROFileNode">
-<em class="property">class </em><tt class="descclassname">tables.nodes.filenode.</tt><tt class="descname">ROFileNode</tt><a class="reference internal" href="../_modules/tables/nodes/filenode.html#ROFileNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.ROFileNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instances of this class are returned when
-openNode() is called in read-only mode
-(&#8216;r&#8217;). This is a descendant of
-FileNode class, so it inherits all its methods.
-Moreover, it does not define any other useful method, just some
-protections against users intents to write on file.</p>
-</dd></dl>
-
-</div>
-<div class="section" id="the-rafilenode-class">
-<h3>The RAFileNode class<a class="headerlink" href="#the-rafilenode-class" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="tables.nodes.filenode.RAFileNode">
-<em class="property">class </em><tt class="descclassname">tables.nodes.filenode.</tt><tt class="descname">RAFileNode</tt><a class="reference internal" href="../_modules/tables/nodes/filenode.html#RAFileNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RAFileNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instances of this class are returned when either
-newNode() is called or when
-openNode() is called in append mode
-(&#8216;a+&#8217;). This is a descendant of
-FileNode class, so it inherits all its methods.
-It provides additional methods that allow to write on file
-nodes.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.RAFileNode.flush">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">flush</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/tables/nodes/filenode.html#RAFileNode.flush"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.flush" title="Permalink to this definition">¶</a></dt>
-<dd><p>Flushes the file node. See
-file.flush.__doc__ for more information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.RAFileNode.truncate">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">truncate</tt><big>(</big><em>size=None</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.truncate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Truncates the file node to at most size
-bytes. Currently, this method only makes sense to grow the file
-node, since data can not be rewritten nor deleted. See
-file.truncate.__doc__ for more information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.RAFileNode.write">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">write</tt><big>(</big><em>string</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.write" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes the string to the file. Writing an empty string does
-nothing, but requires the file to be open. See
-file.write.__doc__ for more information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="tables.nodes.filenode.RAFileNode.writelines">
-<tt class="descclassname">RAFileNode.</tt><tt class="descname">writelines</tt><big>(</big><em>sequence</em><big>)</big><a class="headerlink" href="#tables.nodes.filenode.RAFileNode.writelines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes the sequence of strings to the file. See
-file.writelines.__doc__ for more information.</p>
-</dd></dl>
-
-</div>
+<p>These limitations still make filenode entirely adequate to work with most
+binary and text files. Of course, suggestions and patches are welcome.</p>
+<p>See <a class="reference internal" href="libref/filenode_classes.html#filenode-classes"><em>Filenode Module</em></a> for detailed documentation on the filenode
+interface.</p>
 </div>
 </div>
 
@@ -623,17 +358,6 @@ file.writelines.__doc__ for more information.</p>
 </li>
 <li><a class="reference internal" href="#complementary-notes">Complementary notes</a></li>
 <li><a class="reference internal" href="#current-limitations">Current limitations</a></li>
-<li><a class="reference internal" href="#filenode-module-reference">filenode module reference</a><ul>
-<li><a class="reference internal" href="#global-constants">Global constants</a></li>
-<li><a class="reference internal" href="#global-functions">Global functions</a></li>
-<li><a class="reference internal" href="#the-filenode-abstract-class">The FileNode abstract class</a><ul>
-<li><a class="reference internal" href="#filenode-methods">FileNode methods</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#the-rofilenode-class">The ROFileNode class</a></li>
-<li><a class="reference internal" href="#the-rafilenode-class">The RAFileNode class</a></li>
-</ul>
-</li>
 </ul>
 </li>
 </ul>
@@ -642,8 +366,8 @@ file.writelines.__doc__ for more information.</p>
   <p class="topless"><a href="optimization.html"
                         title="previous chapter">Optimization tips</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="netcdf3.html"
-                        title="next chapter">netcdf3 - a PyTables NetCDF3 emulation API (deprecated)</a></p>
+  <p class="topless"><a href="datatypes.html"
+                        title="next chapter">Supported data types in PyTables</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/usersguide/filenode.txt"
@@ -675,12 +399,18 @@ file.writelines.__doc__ for more information.</p>
           <a href="../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="netcdf3.html" title="netcdf3 - a PyTables NetCDF3 emulation API (deprecated)"
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="datatypes.html" title="Supported data types in PyTables"
              >next</a> &nbsp; &nbsp;</li>
         <li class="right" >
           <a href="optimization.html" title="Optimization tips"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 2.4.0 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
 
           <li><a href="index.html" >PyTables User&#8217;s Guide</a> &raquo;</li> 
       </ul>
@@ -688,7 +418,7 @@ file.writelines.__doc__ for more information.</p>
     </div>
 
     <div class="footer">
-        &copy; Copyright 2011-2012, The PyTables Governance Team.
+        &copy; Copyright 2011-2013, PyTables maintainers.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
     <!-- cloud_sptheme 1.3 -->
