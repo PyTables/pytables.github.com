@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tutorials &mdash; PyTables 3.0.0 documentation</title>
+    <title>Tutorials &mdash; PyTables 3.1.0dev documentation</title>
     
     <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '3.0.0',
+        VERSION:     '3.1.0dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.0.0 documentation" href="../index.html" />
+    <link rel="top" title="PyTables 3.1.0dev documentation" href="../index.html" />
     <link rel="up" title="PyTables User’s Guide" href="index.html" />
     <link rel="next" title="Library Reference" href="libref.html" />
     <link rel="prev" title="Installation" href="installation.html" /> 
@@ -57,7 +57,7 @@
         <li class="right" >
           <a href="installation.html" title="Installation"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.1.0dev documentation</a> &raquo;</li>
 
           <li><a href="index.html" accesskey="U">PyTables User&#8217;s Guide</a> &raquo;</li> 
       </ul>
@@ -86,10 +86,8 @@ global function, or method, look at the doc strings or go to the library
 reference in <a class="reference internal" href="libref.html#library-reference"><em>Library Reference</em></a>. If you are reading this in PDF or HTML
 formats, follow the corresponding hyperlink near each newly introduced
 entity.</p>
-<p>Please note that throughout this document the terms
-<em>column</em> and <em>field</em> will be used
-interchangeably, as will the terms <em>row</em> and
-<em>record</em>.</p>
+<p>Please note that throughout this document the terms <em>column</em> and <em>field</em>
+will be used interchangeably, as will the terms <em>row</em> and <em>record</em>.</p>
 <div class="section" id="getting-started">
 <h2>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
 <p>In this section, we will see how to define our own records in Python and save
@@ -306,9 +304,8 @@ data in table is exhausted. These rows are filtered using the expression:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">x</span><span class="p">[</span><span class="s">&#39;TDCcount&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="ow">and</span> <span class="mi">20</span> <span class="o">&lt;=</span> <span class="n">x</span><span class="p">[</span><span class="s">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">50</span>
 </pre></div>
 </div>
-<p>So, we are selecting the values of the pressure
-column from filtered records to create the final list and assign it to
-pressure variable.</p>
+<p>So, we are selecting the values of the pressure column from filtered records
+to create the final list and assign it to pressure variable.</p>
 <p>We could have used a normal for loop to accomplish the same purpose, but I
 find comprehension syntax to be more compact and elegant.</p>
 <p>PyTables do offer other, more powerful ways of performing selections which
@@ -326,6 +323,34 @@ cuts:</p>
 they also look more compact, and are among the greatests features for
 PyTables, so be sure that you use them a lot. See <a class="reference internal" href="condition_syntax.html#condition-syntax"><em>Condition Syntax</em></a> and
 <a class="reference internal" href="optimization.html#searchoptim"><em>Accelerating your searches</em></a> for more information on in-kernel and indexed selections.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>A special care should be taken when the query condition includes
+string literals.  Indeed Python 2 string literals are string of
+bytes while Python 3 strings are unicode objects.</p>
+<p>With reference to the above definition of <tt class="xref py py-class docutils literal"><span class="pre">Particle</span></tt> it has to be
+noted that the type of the &#8220;name&#8221; column do not change depending on the
+Python version used (of course).
+It always corresponds to strings of bytes.</p>
+<p>Any condition involving the &#8220;name&#8221; column should be written using the
+appropriate type for string literals in order to avoid
+<tt class="xref py py-exc docutils literal"><span class="pre">TypeError</span></tt>s.</p>
+<p>Suppose one wants to get rows corresponding to specific particle names.</p>
+<p>The code below will work fine in Python 2 but will fail with a
+<tt class="xref py py-exc docutils literal"><span class="pre">TypeError</span></tt> in Python 3:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">condition</span> <span class="o">=</span> <span class="s">&#39;(name == &quot;Particle:      5&quot;) | (name == &quot;Particle:      7&quot;)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">condition</span><span class="p">):</span>  <span class="c"># TypeError in Python3</span>
+<span class="gp">... </span>    <span class="c"># do something with &quot;record&quot;</span>
+</pre></div>
+</div>
+<p>The reason is that in Python 3 &#8220;condition&#8221; implies a comparison
+between a string of bytes (&#8220;name&#8221; column contents) and an unicode
+literals.</p>
+<p>The correct way to write the condition is:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">condition</span> <span class="o">=</span> <span class="s">&#39;(name == b&quot;Particle:      5&quot;) | (name == b&quot;Particle:      7&quot;)&#39;</span>
+</pre></div>
+</div>
+</div>
 <p>That&#8217;s enough about selections for now. The next section will show you how to
 save these selected results to a file.</p>
 </div>
@@ -2375,7 +2400,7 @@ this may change in the future.</td></tr>
         <li class="right" >
           <a href="installation.html" title="Installation"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.1.0dev documentation</a> &raquo;</li>
 
           <li><a href="index.html" >PyTables User&#8217;s Guide</a> &raquo;</li> 
       </ul>
