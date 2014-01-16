@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.parameters &mdash; PyTables 3.1.0dev documentation</title>
+    <title>tables.parameters &mdash; PyTables 3.1.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.1.0dev',
+        VERSION:     '3.1.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.1.0dev documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.1.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="tables" href="../tables.html" /> 
   </head>
   <body>
@@ -49,7 +49,7 @@
         <li class="right" >
           <a href="../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.1.0dev documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.1.0rc1 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../tables.html" accesskey="U">tables</a> &raquo;</li> 
@@ -225,13 +225,14 @@
 <span class="c"># number of leaves, try increasing this value and see if it fits better</span>
 <span class="c"># for you. Please report back your feedback.</span>
 <span class="n">NODE_CACHE_SLOTS</span> <span class="o">=</span> <span class="mi">64</span>
-<span class="sd">&quot;&quot;&quot;Maximum number of unreferenced nodes to be kept in memory.</span>
+<span class="sd">&quot;&quot;&quot;Maximum number of nodes to be kept in the metadata cache.</span>
 
-<span class="sd">If positive, this is the number of *unreferenced* nodes to be kept in</span>
-<span class="sd">the metadata cache. Least recently used nodes are unloaded from memory</span>
-<span class="sd">when this number of loaded nodes is reached. To load a node again,</span>
-<span class="sd">simply access it as usual. Nodes referenced by user variables are not</span>
-<span class="sd">taken into account nor unloaded.</span>
+<span class="sd">It is the number of nodes to be kept in the metadata cache. Least recently</span>
+<span class="sd">used nodes are unloaded from memory when this number of loaded nodes is</span>
+<span class="sd">reached. To load a node again, simply access it as usual.</span>
+<span class="sd">Nodes referenced by user variables and, in general, all nodes that are still</span>
+<span class="sd">open are registered in the node manager and can be quickly accessed even</span>
+<span class="sd">if they are not in the cache.</span>
 
 <span class="sd">Negative value means that all the touched nodes will be kept in an</span>
 <span class="sd">internal dictionary.  This is the faster way to load/retrieve nodes.</span>
@@ -333,6 +334,11 @@
 <span class="sd">      memory until the file is closed. At closing, the memory version</span>
 <span class="sd">      of the file can be written back to disk or abandoned.</span>
 
+<span class="sd">    * H5FD_SPLIT: this file driver splits a file into two parts.</span>
+<span class="sd">      One part stores metadata, and the other part stores raw data.</span>
+<span class="sd">      This splitting a file into two parts is a limited case of the</span>
+<span class="sd">      Multi driver.</span>
+
 <span class="sd">The following drivers are not currently supported:</span>
 
 <span class="sd">    * H5FD_LOG: this is the H5FD_SEC2 driver with logging capabilities.</span>
@@ -347,11 +353,6 @@
 <span class="sd">      files according to the type of the data. I/O might work better if</span>
 <span class="sd">      data is stored in separate files based on the type of data.</span>
 <span class="sd">      The Split driver is a special case of this driver.</span>
-
-<span class="sd">    * H5FD_SPLIT: this file driver splits a file into two parts.</span>
-<span class="sd">      One part stores metadata, and the other part stores raw data.</span>
-<span class="sd">      This splitting a file into two parts is a limited case of the</span>
-<span class="sd">      Multi driver.</span>
 
 <span class="sd">    * H5FD_MPIO: this is the standard HDF5 file driver for parallel</span>
 <span class="sd">      file systems. This driver uses the MPI standard for both</span>
@@ -477,6 +478,32 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="n">DRIVER_SPLIT_META_EXT</span> <span class="o">=</span> <span class="s">&#39;-m.h5&#39;</span>
+<span class="sd">&quot;&quot;&quot;The extension for the metadata file used by the H5FD_SPLIT driver.</span>
+
+<span class="sd">If this option is passed to the :func:`tables.openFile` function along</span>
+<span class="sd">with driver=&#39;H5FD_SPLIT&#39;, the extension is appended to the name passed</span>
+<span class="sd">as the first parameter to form the name of the metadata file. If the</span>
+<span class="sd">string &#39;%s&#39; is used in the extension, the metadata file name is formed</span>
+<span class="sd">by replacing &#39;%s&#39; with the name passed as the first parameter instead.</span>
+
+<span class="sd">.. versionadded:: 3.1</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">DRIVER_SPLIT_RAW_EXT</span> <span class="o">=</span> <span class="s">&#39;-r.h5&#39;</span>
+<span class="sd">&quot;&quot;&quot;The extension for the raw data file used by the H5FD_SPLIT driver.</span>
+
+<span class="sd">If this option is passed to the :func:`tables.openFile` function along</span>
+<span class="sd">with driver=&#39;H5FD_SPLIT&#39;, the extension is appended to the name passed</span>
+<span class="sd">as the first parameter to form the name of the raw data file. If the</span>
+<span class="sd">string &#39;%s&#39; is used in the extension, the raw data file name is formed</span>
+<span class="sd">by replacing &#39;%s&#39; with the name passed as the first parameter instead.</span>
+
+<span class="sd">.. versionadded:: 3.1</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
 
 <span class="c">## Local Variables:</span>
 <span class="c">## mode: python</span>
@@ -525,7 +552,7 @@
         <li class="right" >
           <a href="../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.1.0dev documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.1.0rc1 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../tables.html" >tables</a> &raquo;</li> 
@@ -534,7 +561,7 @@
     </div>
 
     <div class="footer">
-        &copy; Copyright 2011-2013, PyTables maintainers.
+        &copy; Copyright 2011-2014, PyTables maintainers.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
     <!-- cloud_sptheme 1.3 -->
