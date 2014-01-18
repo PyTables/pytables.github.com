@@ -336,13 +336,13 @@
             <span class="n">base_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
             <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_directory</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
 
-        <span class="c"># Fetch the external file and save a reference to it.</span>
-        <span class="c"># Check first in already opened files.</span>
-        <span class="n">open_files</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">_open_files</span>
-        <span class="k">if</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">open_files</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span> <span class="o">=</span> <span class="n">open_files</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span><span class="o">.</span><span class="n">isopen</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># XXX: implement better consistency checks</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span><span class="o">.</span><span class="n">filename</span> <span class="o">==</span> <span class="n">filename</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;mode&#39;</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="ExternalLink.umount"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.ExternalLink.umount">[docs]</a>    <span class="k">def</span> <span class="nf">umount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
