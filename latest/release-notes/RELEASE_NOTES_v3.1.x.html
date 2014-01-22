@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Release notes for PyTables 3.1 series &mdash; PyTables 3.1.0rc1 documentation</title>
+    <title>Release notes for PyTables 3.1 series &mdash; PyTables 3.1.0rc2 documentation</title>
     
     <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '3.1.0rc1',
+        VERSION:     '3.1.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.1.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="PyTables 3.1.0rc2 documentation" href="../index.html" />
     <link rel="up" title="PyTables Release Notes" href="../release_notes.html" />
     <link rel="next" title="Release notes for PyTables 3.0 series" href="RELEASE_NOTES_v3.0.x.html" />
     <link rel="prev" title="Migrating from PyTables 1.x to 2.x" href="../MIGRATING_TO_2.x.html" /> 
@@ -57,7 +57,7 @@
         <li class="right" >
           <a href="../MIGRATING_TO_2.x.html" title="Migrating from PyTables 1.x to 2.x"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.1.0rc1 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.1.0rc2 documentation</a> &raquo;</li>
 
           <li><a href="../release_notes.html" accesskey="U">PyTables Release Notes</a> &raquo;</li> 
       </ul>
@@ -82,8 +82,8 @@
 </tr>
 </tbody>
 </table>
-<div class="section" id="changes-from-3-0-to-3-1-0rc1">
-<h2>Changes from 3.0 to 3.1.0rc1<a class="headerlink" href="#changes-from-3-0-to-3-1-0rc1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="changes-from-3-0-to-3-1-0rc2">
+<h2>Changes from 3.0 to 3.1.0rc2<a class="headerlink" href="#changes-from-3-0-to-3-1-0rc2" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="new-features">
 <h3>New features<a class="headerlink" href="#new-features" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
@@ -108,6 +108,23 @@ Release Notes</a>), are now available in PyTables via the blosc filter
 <div class="section" id="improvements">
 <h3>Improvements<a class="headerlink" href="#improvements" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
+<li>The node caching mechanism has been completely redesigned to be simpler and
+less dependent from specific behaviours of the <tt class="docutils literal"><span class="pre">__del__</span></tt> method.
+Now PyTables is compatible with the forthcoming Python 3.4.
+Closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/306">gh-306</a>.</li>
+<li>PyTables no longer uses shared/cached file handlers. This change somewhat
+improves support for concurrent reading allowing the user to safely open the
+same file in different threads for reading (requires HDF5 &gt;= 1.8.7).
+More details about this change can be found in the <a class="reference internal" href="#backward-incompatible-changes">Backward incompatible
+changes</a> section.
+See also <a class="reference external" href="https://github.com/PyTables/PyTables/issues/130">gh-130</a>, <a class="reference external" href="https://github.com/PyTables/PyTables/issues/129">gh-129</a> <a class="reference external" href="https://github.com/PyTables/PyTables/issues/292">gh-292</a> and <a class="reference external" href="https://github.com/PyTables/PyTables/issues/216">gh-216</a>.</li>
+<li>PyTables is now able to detect and use external installations of the <a class="reference external" href="http://www.blosc.org">Blosc</a>
+library (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/104">gh-104</a>).  If <a class="reference external" href="http://www.blosc.org">Blosc</a> is not found in the system, and the
+user do not specify a custom installation directory, then it is used an internal
+copy of the <a class="reference external" href="http://www.blosc.org">Blosc</a> source code.</li>
+<li>Automatically disable extended float support if a buggy version of HDF5
+is detected (see also <a class="reference external" href="http://hdf-forum.184993.n3.nabble.com/Issues-with-H5T-NATIVE-LDOUBLE-tt4026450.html">Issues with H5T_NATIVE_LDOUBLE</a>).
+See also <a class="reference external" href="https://github.com/PyTables/PyTables/issues/275">gh-275</a>, <a class="reference external" href="https://github.com/PyTables/PyTables/issues/290">gh-290</a> and <a class="reference external" href="https://github.com/PyTables/PyTables/issues/300">gh-300</a>.</li>
 <li>Documented an unexpected behaviour with string literals in query conditions
 on Python 3 (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/265">gh-265</a>)</li>
 <li>The deprecated <tt class="xref py py-mod docutils literal"><span class="pre">getopt</span></tt> module has been dropped in favour of
@@ -121,24 +138,9 @@ on Python 3 (closes <a class="reference external" href="https://github.com/PyTab
 <li>Enabled <a class="reference external" href="https://travis-ci.org">Travis-CI</a> builds for <a class="reference external" href="http://www.python.org">Python</a> 3.3</li>
 <li><tt class="xref py py-meth docutils literal"><span class="pre">Tables.read_coordinates()</span></tt> now also works with boolean indices input.
 Closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/287">gh-287</a> and <a class="reference external" href="https://github.com/PyTables/PyTables/issues/298">gh-298</a>.</li>
-<li>Automatically disable extended float support if a buggy version of HDF5
-is detected (see also <a class="reference external" href="http://hdf-forum.184993.n3.nabble.com/Issues-with-H5T-NATIVE-LDOUBLE-tt4026450.html">Issues with H5T_NATIVE_LDOUBLE</a>).
-See also <a class="reference external" href="https://github.com/PyTables/PyTables/issues/275">gh-275</a>, <a class="reference external" href="https://github.com/PyTables/PyTables/issues/290">gh-290</a> and <a class="reference external" href="https://github.com/PyTables/PyTables/issues/300">gh-300</a>.</li>
 <li>Improved compatibility with <a class="reference external" href="http://www.numpy.org">numpy</a> &gt;= 1.8 (see <a class="reference external" href="https://github.com/PyTables/PyTables/issues/259">gh-259</a>)</li>
 <li>The code of the benchmark programs (bench directory) has been updated.
 Closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/114">gh-114</a>.</li>
-<li>The node caching mechanism has been completely redesigned to be simpler and
-less dependent from specific behaviours of the <tt class="docutils literal"><span class="pre">__del__</span></tt> method.
-Now PyTables is compatible with the forthcoming Python 3.4.
-Closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/306">gh-306</a>.</li>
-<li>PyTables no longer uses shared/cached file handlers. This change somewhat
-improves support for concurrent reading allowing the user to safely open the
-same file in different threads for reading.
-See also <a class="reference external" href="https://github.com/PyTables/PyTables/issues/130">gh-130</a>, <a class="reference external" href="https://github.com/PyTables/PyTables/issues/129">gh-129</a> <a class="reference external" href="https://github.com/PyTables/PyTables/issues/292">gh-292</a> and <a class="reference external" href="https://github.com/PyTables/PyTables/issues/216">gh-216</a>.</li>
-<li>PyTables is now able to detect and use external installations of the <a class="reference external" href="http://www.blosc.org">Blosc</a>
-library (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/104">gh-104</a>).  If <a class="reference external" href="http://www.blosc.org">Blosc</a> is not found in the system, and the
-user do not specify a custom installation directory, then it is used an internal
-copy of the <a class="reference external" href="http://www.blosc.org">Blosc</a> source code.</li>
 </ul>
 </div>
 <div class="section" id="bugs-fixed">
@@ -149,13 +151,15 @@ copy of the <a class="reference external" href="http://www.blosc.org">Blosc</a> 
 an <a class="reference internal" href="../usersguide/libref/declarative_classes.html#tables.Atom" title="tables.Atom"><tt class="xref py py-class docutils literal"><span class="pre">Atom</span></tt></a> (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/209">gh-209</a> and <a class="reference external" href="https://github.com/PyTables/PyTables/issues/296">gh-296</a>)</li>
 <li>Prevent creation of a table with no columns (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/18">gh-18</a> and
 <a class="reference external" href="https://github.com/PyTables/PyTables/issues/299">gh-299</a>)</li>
-<li>Fixed a memory leak that occurs when iterating over
+<li>Fixed a memory leak that occured when iterating over
 <a class="reference internal" href="../usersguide/libref/homogenous_storage.html#tables.CArray" title="tables.CArray"><tt class="xref py py-class docutils literal"><span class="pre">CArray</span></tt></a>/<a class="reference internal" href="../usersguide/libref/homogenous_storage.html#tables.EArray" title="tables.EArray"><tt class="xref py py-class docutils literal"><span class="pre">EArray</span></tt></a> objects (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/308">gh-308</a>,
 see also <a class="reference external" href="https://github.com/PyTables/PyTables/issues/309">gh-309</a>).
 Many thanks to Alistair Muldal.</li>
 <li>Make NaN types sort to the end. Closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/282">gh-282</a> and <a class="reference external" href="https://github.com/PyTables/PyTables/issues/313">gh-313</a></li>
+<li>Fixed selection on float columns when NaNs are present (closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/327">gh-327</a>
+and <a class="reference external" href="https://github.com/PyTables/PyTables/issues/330">gh-330</a>)</li>
 <li>Fix computation of the buffer size for iterations on rows.
-The buffes size was overestimated resulting in a <tt class="xref py py-exc docutils literal"><span class="pre">MemoryError</span></tt>
+The buffers size was overestimated resulting in a <tt class="xref py py-exc docutils literal"><span class="pre">MemoryError</span></tt>
 in some cases.
 Closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/316">gh-316</a>. Thamks to bbudescu.</li>
 <li>Better check of file open mode. Closes <a class="reference external" href="https://github.com/PyTables/PyTables/issues/318">gh-318</a>.</li>
@@ -172,6 +176,65 @@ In order to guarantee a smoother transition the old API is still usable even
 if it is now deprecated.</p>
 <p>The plan for the complete transition to the new API is outlined in
 <a class="reference external" href="https://github.com/PyTables/PyTables/issues/224">gh-224</a>.</p>
+</div>
+<div class="section" id="backward-incompatible-changes">
+<h3>Backward incompatible changes<a class="headerlink" href="#backward-incompatible-changes" title="Permalink to this headline">¶</a></h3>
+<p>In PyTables &lt;= 3.0 file handles (objects that are returned by the
+<a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><tt class="xref py py-func docutils literal"><span class="pre">open_file()</span></tt></a> function) were stored in an internal registry and re-used
+when possible.</p>
+<p>Two subsequent attempts to open the same file (with compatible open mode)
+returned the same file handle in PyTables &lt;= 3.0:</p>
+<div class="highlight-python"><pre>In [1]: import tables
+In [2]: print(tables.__version__)
+3.0.0
+In [3]: a = tables.open_file('test.h5', 'a')
+In [4]: b = tables.open_file('test.h5', 'a')
+In [5]: a is b
+Out[5]: True</pre>
+</div>
+<p>All this is an implementation detail, it happened under the hood and the user
+had no control over the process.</p>
+<p>This kind of behaviour was considered a feature since it can speed up opening
+of files in case of repeated opens and it also avoids any potential problem
+related to multiple opens, a practice that the HDF5 developers recommend to
+avoid (see also <a class="reference external" href="http://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Open">H5Fopen</a> reference page).</p>
+<p>The trick, of course, is that files are not opened multiple times at HDF5
+level, rather an open file is referenced several times.</p>
+<p>The big drawback of this approach is that there are really few chances to use
+PyTables safely in a multi thread program.  Several bug reports have been
+filed regarding this topic.</p>
+<p>After long discussions about the possibility to actually achieve concurrent I/O
+and about patterns that should be used for the I/O in concurrent programs
+PyTables developers decided to remove the <em>black magic under the hood</em> and
+allow the users to implement the patterns they want.</p>
+<p>Starting from PyTables 3.1 file handles are no more re-used (<em>shared</em>) and
+each call to the <a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><tt class="xref py py-func docutils literal"><span class="pre">open_file()</span></tt></a> function returns a new file handle:</p>
+<div class="highlight-python"><pre>In [1]: import tables
+In [2]: print tables.__version__
+3.1.0dev
+In [3]: a = tables.open_file('test.h5', 'a')
+In [4]: b = tables.open_file('test.h5', 'a')
+In [5]: a is b
+Out[5]: False</pre>
+</div>
+<p>It is important to stress that the new implementation still has an internal
+registry (implementation detail) and it is still <strong>not thread safe</strong>.
+Just now a smart enough developer should be able to use PyTables in a
+muti-thread program without too much headaches.</p>
+<p>The new implementation behaves differently from the previous one, although the
+API has not been changed.  Now users should pay more attention when they open a
+file multiple times (as recommended in the <a class="reference external" href="http://www.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-Open">HDF5 reference</a> ) and they
+should take care of using them in an appropriate way.</p>
+<p>Please note that the <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.open_count" title="tables.File.open_count"><tt class="xref py py-attr docutils literal"><span class="pre">File.open_count</span></tt></a> property was originally intended
+to keep track of the number of references to the same file handle.
+In PyTables &gt;= 3.1, despite of the name, it maintains the same semantics, just
+now its value should never be higher that 1.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">HDF5 versions lower than 1.8.7 are not fully compatible with PyTables 3.1.
+A partial support to HDF5 &lt; 1.8.7 is still provided but in that case
+multiple file opens are not allowed at all (even in read-only mode).</p>
+</div>
 <blockquote>
 <div><p><strong>Enjoy data!</strong></p>
 <p class="attribution">&mdash;The PyTables Developers</p>
@@ -192,11 +255,12 @@ if it is now deprecated.</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Release notes for PyTables 3.1 series</a><ul>
-<li><a class="reference internal" href="#changes-from-3-0-to-3-1-0rc1">Changes from 3.0 to 3.1.0rc1</a><ul>
+<li><a class="reference internal" href="#changes-from-3-0-to-3-1-0rc2">Changes from 3.0 to 3.1.0rc2</a><ul>
 <li><a class="reference internal" href="#new-features">New features</a></li>
 <li><a class="reference internal" href="#improvements">Improvements</a></li>
 <li><a class="reference internal" href="#bugs-fixed">Bugs fixed</a></li>
 <li><a class="reference internal" href="#deprecations">Deprecations</a></li>
+<li><a class="reference internal" href="#backward-incompatible-changes">Backward incompatible changes</a></li>
 </ul>
 </li>
 </ul>
@@ -251,7 +315,7 @@ if it is now deprecated.</p>
         <li class="right" >
           <a href="../MIGRATING_TO_2.x.html" title="Migrating from PyTables 1.x to 2.x"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.1.0rc1 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.1.0rc2 documentation</a> &raquo;</li>
 
           <li><a href="../release_notes.html" >PyTables Release Notes</a> &raquo;</li> 
       </ul>
