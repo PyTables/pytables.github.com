@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Optimization tips &mdash; PyTables 3.0.0 documentation</title>
+    <title>Optimization tips &mdash; PyTables 3.1.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '3.0.0',
+        VERSION:     '3.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.0.0 documentation" href="../index.html" />
+    <link rel="top" title="PyTables 3.1.0 documentation" href="../index.html" />
     <link rel="up" title="PyTables User’s Guide" href="index.html" />
     <link rel="next" title="filenode - simulating a filesystem with PyTables" href="filenode.html" />
     <link rel="prev" title="Filenode Module" href="libref/filenode_classes.html" /> 
@@ -57,7 +57,7 @@
         <li class="right" >
           <a href="libref/filenode_classes.html" title="Filenode Module"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.1.0 documentation</a> &raquo;</li>
 
           <li><a href="index.html" accesskey="U">PyTables User&#8217;s Guide</a> &raquo;</li> 
       </ul>
@@ -807,7 +807,7 @@ speeding-up the write speed in tables when using the Row interface (see
 by using the <a class="reference internal" href="libref/structured_storage.html#tables.Table.append" title="tables.Table.append"><tt class="xref py py-meth docutils literal"><span class="pre">Table.append()</span></tt></a> method and building your own buffers <a class="footnote-reference" href="#id8" id="id4">[4]</a>.</p>
 <p>As an example, imagine that you have a small script that reads and selects
 data over a series of datasets, like this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">readFile</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">read_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
     <span class="s">&quot;Select data from all the tables in filename&quot;</span>
     <span class="n">fileh</span> <span class="o">=</span> <span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
@@ -817,15 +817,15 @@ data over a series of datasets, like this:</p>
     <span class="k">return</span> <span class="n">result</span>
 
 <span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">print</span> <span class="n">readFile</span><span class="p">(</span><span class="s">&quot;myfile.h5&quot;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">read_file</span><span class="p">(</span><span class="s">&quot;myfile.h5&quot;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>In order to accelerate this piece of code, you can rewrite your main program
 to look like:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">psyco</span>
-    <span class="n">psyco</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">readFile</span><span class="p">)</span>
-    <span class="k">print</span> <span class="n">readFile</span><span class="p">(</span><span class="s">&quot;myfile.h5&quot;</span><span class="p">)</span>
+    <span class="n">psyco</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">read_file</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">read_file</span><span class="p">(</span><span class="s">&quot;myfile.h5&quot;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>That&#8217;s all!  From now on, each time that you execute your Python script,
@@ -874,12 +874,12 @@ this approach.</p>
 sets the maximum amount of nodes to be kept in memory at any time.
 As PyTables is meant to be deployed in machines that can have potentially low
 memory, the default for it is quite conservative (you can look at its actual
-value in the NODE_CACHE_SLOTS parameter in module
+value in the <a class="reference internal" href="parameter_files.html#tables.parameters.NODE_CACHE_SLOTS" title="tables.parameters.NODE_CACHE_SLOTS"><tt class="xref py py-data docutils literal"><span class="pre">parameters.NODE_CACHE_SLOTS</span></tt></a> parameter in module
 <tt class="file docutils literal"><span class="pre">tables/parameters.py</span></tt>). However, if you usually need to deal with
 files that have many more nodes than the maximum default, and you have a lot
 of free memory in your system, then you may want to experiment in order to
-see which is the appropriate value of NODE_CACHE_SLOTS that fits better your
-needs.</p>
+see which is the appropriate value of <a class="reference internal" href="parameter_files.html#tables.parameters.NODE_CACHE_SLOTS" title="tables.parameters.NODE_CACHE_SLOTS"><tt class="xref py py-data docutils literal"><span class="pre">parameters.NODE_CACHE_SLOTS</span></tt></a> that
+fits better your needs.</p>
 <p>As an example, look at the next code:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">browse_tables</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
     <span class="n">fileh</span> <span class="o">=</span> <span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;a&#39;</span><span class="p">)</span>
@@ -893,7 +893,7 @@ needs.</p>
 </pre></div>
 </div>
 <p>We will be running the code above against a couple of files having a
-/newgroup containing 100 tables and 1000 tables respectively.  In addition,
+<tt class="docutils literal"><span class="pre">/newgroup</span></tt> containing 100 tables and 1000 tables respectively.  In addition,
 this benchmark is run twice for two different values of the LRU cache size,
 specifically 256 and 1024. You can see the results in
 <a class="reference internal" href="#optimization-table-1"><em>table</em></a>.</p>
@@ -971,22 +971,30 @@ can achieve by allocating more slots in your cache is not worth the amount of
 memory used.</p>
 <p>Also worth noting is that if you have a lot of memory available and
 performance is absolutely critical, you may want to try out a negative value
-for NODE_CACHE_SLOTS.  This will cause that all the touched nodes will be
-kept in an internal dictionary and this is the faster way to load/retrieve
-nodes.
+for <a class="reference internal" href="parameter_files.html#tables.parameters.NODE_CACHE_SLOTS" title="tables.parameters.NODE_CACHE_SLOTS"><tt class="xref py py-data docutils literal"><span class="pre">parameters.NODE_CACHE_SLOTS</span></tt></a>.  This will cause that all the touched
+nodes will be kept in an internal dictionary and this is the faster way to
+load/retrieve nodes.
 However, and in order to avoid a large memory consumption, the user will be
-warned when the number of loaded nodes will reach the -NODE_CACHE_SLOTS
+warned when the number of loaded nodes will reach the <tt class="docutils literal"><span class="pre">-NODE_CACHE_SLOTS</span></tt>
 value.</p>
-<p>Finally, a value of zero in NODE_CACHE_SLOTS means that any cache mechanism
-is disabled.</p>
+<p>Finally, a value of zero in <a class="reference internal" href="parameter_files.html#tables.parameters.NODE_CACHE_SLOTS" title="tables.parameters.NODE_CACHE_SLOTS"><tt class="xref py py-data docutils literal"><span class="pre">parameters.NODE_CACHE_SLOTS</span></tt></a> means that
+any cache mechanism is disabled.</p>
 <p>At any rate, if you feel that this issue is important for you, there is no
 replacement for setting your own experiments up in order to proceed to
-fine-tune the NODE_CACHE_SLOTS parameter.</p>
+fine-tune the <a class="reference internal" href="parameter_files.html#tables.parameters.NODE_CACHE_SLOTS" title="tables.parameters.NODE_CACHE_SLOTS"><tt class="xref py py-data docutils literal"><span class="pre">parameters.NODE_CACHE_SLOTS</span></tt></a> parameter.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">PyTables &gt;= 2.3 sports an optimized LRU cache node written in C, so
 you should expect significantly faster LRU cache operations when
 working with it.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Numerical results reported in <a class="reference internal" href="#optimization-table-1"><em>table</em></a> have been
+obtained with PyTables &lt; 3.1. In PyTables 3.1 the node cache mechanism has
+been completely redesigned so while all comments above are still valid,
+numerical values could be a little bit different from the ones reported in
+<a class="reference internal" href="#optimization-table-1"><em>table</em></a>.</p>
 </div>
 </div>
 <div class="section" id="compacting-your-pytables-files">
@@ -1128,7 +1136,7 @@ with recent versions of PyTables anymore.</td></tr>
         <li class="right" >
           <a href="libref/filenode_classes.html" title="Filenode Module"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.1.0 documentation</a> &raquo;</li>
 
           <li><a href="index.html" >PyTables User&#8217;s Guide</a> &raquo;</li> 
       </ul>
@@ -1136,7 +1144,7 @@ with recent versions of PyTables anymore.</td></tr>
     </div>
 
     <div class="footer">
-        &copy; Copyright 2011-2013, PyTables maintainers.
+        &copy; Copyright 2011-2014, PyTables maintainers.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
     <!-- cloud_sptheme 1.3 -->

@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.description &mdash; PyTables 3.0.0 documentation</title>
+    <title>tables.description &mdash; PyTables 3.1.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.0.0',
+        VERSION:     '3.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.0.0 documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.1.0 documentation" href="../../index.html" />
     <link rel="up" title="tables" href="../tables.html" /> 
   </head>
   <body>
@@ -49,7 +49,7 @@
         <li class="right" >
           <a href="../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.1.0 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../tables.html" accesskey="U">tables</a> &raquo;</li> 
@@ -80,6 +80,7 @@
 
 <span class="c"># Imports</span>
 <span class="c"># =======</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
@@ -324,9 +325,9 @@
     <span class="c"># Bottom-level complex classes are not in the type map, of course.</span>
     <span class="c"># We still want the user to get the compatibility warning, though.</span>
     <span class="n">cprefixes</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&#39;Complex32&#39;</span><span class="p">,</span> <span class="s">&#39;Complex64&#39;</span><span class="p">,</span> <span class="s">&#39;Complex128&#39;</span><span class="p">])</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s">&#39;complex192&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="s">&#39;Complex192Atom&#39;</span><span class="p">):</span>
         <span class="n">cprefixes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;Complex192&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s">&#39;complex256&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="s">&#39;Complex256Atom&#39;</span><span class="p">):</span>
         <span class="n">cprefixes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;Complex256&#39;</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">cprefix</span> <span class="ow">in</span> <span class="n">cprefixes</span><span class="p">:</span>
@@ -335,7 +336,7 @@
 
 <span class="c"># Create all column classes.</span>
 <span class="k">for</span> <span class="n">_newclass</span> <span class="ow">in</span> <span class="n">_generate_col_classes</span><span class="p">():</span>
-    <span class="k">exec</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> = _newclass&#39;</span> <span class="o">%</span> <span class="n">_newclass</span><span class="o">.</span><span class="n">__name__</span>
+    <span class="k">exec</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> = _newclass&#39;</span> <span class="o">%</span> <span class="n">_newclass</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
 <span class="k">del</span> <span class="n">_newclass</span>
 
 
@@ -470,6 +471,9 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classdict</span><span class="p">,</span> <span class="n">nestedlvl</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
 
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">classdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;cannot create an empty data type&quot;</span><span class="p">)</span>
+
         <span class="c"># Do a shallow copy of classdict just in case this is going to</span>
         <span class="c"># be shared by other instances</span>
         <span class="n">newdict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
@@ -493,29 +497,29 @@
         <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="p">)</span> <span class="ow">in</span> <span class="n">classdict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_v_&#39;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">newdict</span><span class="p">:</span>
-                    <span class="c"># print &quot;Warning!&quot;</span>
+                    <span class="c"># print(&quot;Warning!&quot;)</span>
                     <span class="c"># special methods &amp;c: copy to newdict, warn about conflicts</span>
                     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;Can&#39;t set attr </span><span class="si">%r</span><span class="s"> in description class </span><span class="si">%r</span><span class="s">&quot;</span>
                                   <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="c"># print &quot;Special variable!--&gt;&quot;, name, classdict[name]</span>
+                    <span class="c"># print(&quot;Special variable!--&gt;&quot;, name, classdict[name])</span>
                     <span class="n">newdict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">descr</span>
                 <span class="k">continue</span>  <span class="c"># This variable is not needed anymore</span>
 
             <span class="n">columns</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">descr</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">)</span> <span class="ow">and</span>
                     <span class="nb">issubclass</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">IsDescription</span><span class="p">)):</span>
-                <span class="c"># print &quot;Nested object (type I)--&gt;&quot;, name</span>
+                <span class="c"># print(&quot;Nested object (type I)--&gt;&quot;, name)</span>
                 <span class="n">columns</span> <span class="o">=</span> <span class="n">descr</span><span class="p">()</span><span class="o">.</span><span class="n">columns</span>
             <span class="k">elif</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">descr</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">)</span> <span class="ow">and</span>
                   <span class="nb">issubclass</span><span class="p">(</span><span class="n">descr</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span> <span class="n">IsDescription</span><span class="p">)):</span>
-                <span class="c"># print &quot;Nested object (type II)--&gt;&quot;, name</span>
+                <span class="c"># print(&quot;Nested object (type II)--&gt;&quot;, name)</span>
                 <span class="n">columns</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">columns</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="c"># print &quot;Nested object (type III)--&gt;&quot;, name</span>
+                <span class="c"># print(&quot;Nested object (type III)--&gt;&quot;, name)</span>
                 <span class="n">columns</span> <span class="o">=</span> <span class="n">descr</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c"># print &quot;Nested object (type IV)--&gt;&quot;, name</span>
+                <span class="c"># print(&quot;Nested object (type IV)--&gt;&quot;, name)</span>
                 <span class="n">descr</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">descr</span><span class="p">)</span>
             <span class="c"># The copies above and below ensure that the structures</span>
             <span class="c"># provided by the user will remain unchanged even if we</span>
@@ -743,10 +747,10 @@
 
 
 <span class="k">class</span> <span class="nc">MetaIsDescription</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Helper metaclass to return the class variables as a dictionary&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Helper metaclass to return the class variables as a dictionary.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">classdict</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return a new class with a &quot;columns&quot; attribute filled&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Return a new class with a &quot;columns&quot; attribute filled.&quot;&quot;&quot;</span>
 
         <span class="n">newdict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;columns&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="p">}</span>
         <span class="k">if</span> <span class="s">&#39;__doc__&#39;</span> <span class="ow">in</span> <span class="n">classdict</span><span class="p">:</span>
@@ -871,7 +875,7 @@
 
 </div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Test code&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Test code.&quot;&quot;&quot;</span>
 
     <span class="k">class</span> <span class="nc">Info</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>
         <span class="n">_v_pos</span> <span class="o">=</span> <span class="mi">2</span>
@@ -879,7 +883,7 @@
         <span class="n">Value</span> <span class="o">=</span> <span class="n">Float64Col</span><span class="p">()</span>
 
     <span class="k">class</span> <span class="nc">Test</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;A description that has several columns&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;A description that has several columns.&quot;&quot;&quot;</span>
 
         <span class="n">x</span> <span class="o">=</span> <span class="n">Col</span><span class="o">.</span><span class="n">from_type</span><span class="p">(</span><span class="s">&quot;int32&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">Col</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="s">&#39;float&#39;</span><span class="p">,</span> <span class="n">dflt</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
@@ -940,31 +944,31 @@
     <span class="n">klass</span> <span class="o">=</span> <span class="n">Test</span><span class="p">()</span>
     <span class="c"># klass = Info()</span>
     <span class="n">desc</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">klass</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-    <span class="k">print</span> <span class="s">&quot;Description representation (short) ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span>
-    <span class="k">print</span> <span class="s">&quot;Description representation (long) ==&gt;&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">desc</span><span class="p">)</span>
-    <span class="k">print</span> <span class="s">&quot;Column names ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_names</span>
-    <span class="k">print</span> <span class="s">&quot;Column x ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">x</span>
-    <span class="k">print</span> <span class="s">&quot;Column Info ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">Info</span>
-    <span class="k">print</span> <span class="s">&quot;Column Info.value ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">Info</span><span class="o">.</span><span class="n">Value</span>
-    <span class="k">print</span> <span class="s">&quot;Nested column names  ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_nested_names</span>
-    <span class="k">print</span> <span class="s">&quot;Defaults ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_dflts</span>
-    <span class="k">print</span> <span class="s">&quot;Nested Formats ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_nested_formats</span>
-    <span class="k">print</span> <span class="s">&quot;Nested Descriptions ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_nested_descr</span>
-    <span class="k">print</span> <span class="s">&quot;Nested Descriptions (info) ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">_v_nested_descr</span>
-    <span class="k">print</span> <span class="s">&quot;Total size ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_dtype</span><span class="o">.</span><span class="n">itemsize</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Description representation (short) ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Description representation (long) ==&gt;&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">desc</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Column names ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_names</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Column x ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Column Info ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">Info</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Column Info.value ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">Info</span><span class="o">.</span><span class="n">Value</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Nested column names  ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_nested_names</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Defaults ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_dflts</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Nested Formats ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_nested_formats</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Nested Descriptions ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_nested_descr</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Nested Descriptions (info) ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">_v_nested_descr</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Total size ==&gt;&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">_v_dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
 
     <span class="c"># check _f_walk</span>
     <span class="k">for</span> <span class="nb">object</span> <span class="ow">in</span> <span class="n">desc</span><span class="o">.</span><span class="n">_f_walk</span><span class="p">():</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">Description</span><span class="p">):</span>
-            <span class="k">print</span> <span class="s">&quot;******begin object*************&quot;</span><span class="p">,</span>
-            <span class="k">print</span> <span class="s">&quot;name --&gt;&quot;</span><span class="p">,</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_name</span>
-            <span class="c"># print &quot;name --&gt;&quot;, object._v_dtype.name</span>
-            <span class="c"># print &quot;object childs--&gt;&quot;, object._v_names</span>
-            <span class="c"># print &quot;object nested childs--&gt;&quot;, object._v_nested_names</span>
-            <span class="k">print</span> <span class="s">&quot;totalsize--&gt;&quot;</span><span class="p">,</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_dtype</span><span class="o">.</span><span class="n">itemsize</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;******begin object*************&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;name --&gt;&quot;</span><span class="p">,</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_name</span><span class="p">)</span>
+            <span class="c"># print(&quot;name --&gt;&quot;, object._v_dtype.name)</span>
+            <span class="c"># print(&quot;object childs--&gt;&quot;, object._v_names)</span>
+            <span class="c"># print(&quot;object nested childs--&gt;&quot;, object._v_nested_names)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;totalsize--&gt;&quot;</span><span class="p">,</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c"># pass</span>
-            <span class="k">print</span> <span class="s">&quot;leaf --&gt;&quot;</span><span class="p">,</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_name</span><span class="p">,</span> <span class="nb">object</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;leaf --&gt;&quot;</span><span class="p">,</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_name</span><span class="p">,</span> <span class="nb">object</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
     <span class="k">class</span> <span class="nc">testDescParent</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>
         <span class="n">c</span> <span class="o">=</span> <span class="n">Int32Col</span><span class="p">()</span>
@@ -1021,7 +1025,7 @@
         <li class="right" >
           <a href="../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.1.0 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../tables.html" >tables</a> &raquo;</li> 
@@ -1030,7 +1034,7 @@
     </div>
 
     <div class="footer">
-        &copy; Copyright 2011-2013, PyTables maintainers.
+        &copy; Copyright 2011-2014, PyTables maintainers.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
     <!-- cloud_sptheme 1.3 -->

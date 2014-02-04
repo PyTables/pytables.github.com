@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Helper classes &mdash; PyTables 3.0.0 documentation</title>
+    <title>Helper classes &mdash; PyTables 3.1.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.0.0',
+        VERSION:     '3.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.0.0 documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.1.0 documentation" href="../../index.html" />
     <link rel="up" title="Library Reference" href="../libref.html" />
     <link rel="next" title="General purpose expression evaluator class" href="expr_class.html" />
     <link rel="prev" title="Declarative classes" href="declarative_classes.html" /> 
@@ -57,7 +57,7 @@
         <li class="right" >
           <a href="declarative_classes.html" title="Declarative classes"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.1.0 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >PyTables User&#8217;s Guide</a> &raquo;</li>
           <li><a href="../libref.html" accesskey="U">Library Reference</a> &raquo;</li> 
@@ -79,7 +79,7 @@ section and that mainly serve for ancillary purposes.</p>
 <span id="filtersclassdescr"></span><h2>The Filters class<a class="headerlink" href="#the-filters-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="tables.Filters">
-<em class="property">class </em><tt class="descclassname">tables.</tt><tt class="descname">Filters</tt><big>(</big><em>complevel=0</em>, <em>complib='zlib'</em>, <em>shuffle=True</em>, <em>fletcher32=False</em>, <em>_new=True</em><big>)</big><a class="headerlink" href="#tables.Filters" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">tables.</tt><tt class="descname">Filters</tt><big>(</big><em>complevel=0</em>, <em>complib='zlib'</em>, <em>shuffle=True</em>, <em>fletcher32=False</em>, <em>least_significant_digit=None</em>, <em>_new=True</em><big>)</big><a class="headerlink" href="#tables.Filters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Container for filter properties.</p>
 <p>This class is meant to serve as a container that keeps information about
 the filter properties associated with the chunked leaves, that is Table,
@@ -97,11 +97,14 @@ compression.</p>
 </div></blockquote>
 <p><strong>complib</strong> : str</p>
 <blockquote>
-<div><p>Specifies the compression library to be used. Right
-now, &#8216;zlib&#8217; (the default), &#8216;lzo&#8217;, &#8216;bzip2&#8217;
-and &#8216;blosc&#8217; are supported.  Specifying a
-compression library which is not available in the system
-issues a FiltersWarning and sets the library to the default one.</p>
+<div><p>Specifies the compression library to be used. Right now, &#8216;zlib&#8217; (the
+default), &#8216;lzo&#8217;, &#8216;bzip2&#8217; and &#8216;blosc&#8217; are supported.  Additional
+compressors for Blosc like &#8216;blosc:blosclz&#8217; (&#8216;blosclz&#8217; is the default
+in case the additional compressor is not specified), &#8216;blosc:lz4&#8217;,
+&#8216;blosc:lz4hc&#8217;, &#8216;blosc:snappy&#8217; and &#8216;blosc:zlib&#8217; are supported too.
+Specifying a compression library which is not available in the
+system issues a FiltersWarning and sets the library to the default
+one.</p>
 </div></blockquote>
 <p><strong>shuffle</strong> : bool</p>
 <blockquote>
@@ -114,11 +117,26 @@ shuffling defaults to be enabled, else shuffling is
 disabled. Shuffling can only be used when compression is enabled.</p>
 </div></blockquote>
 <p><strong>fletcher32</strong> : bool</p>
-<blockquote class="last">
+<blockquote>
 <div><p>Whether or not to use the
 <em>Fletcher32</em> filter in the HDF5 library.
 This is used to add a checksum on each data chunk. A false
 value (the default) disables the checksum.</p>
+</div></blockquote>
+<p><strong>least_significant_digit</strong> : int</p>
+<blockquote class="last">
+<div><p>If specified, data will be truncated (quantized). In conjunction
+with enabling compression, this produces &#8216;lossy&#8217;, but
+significantly more efficient compression. For example, if
+<em>least_significant_digit=1</em>, data will be quantized using
+<tt class="docutils literal"><span class="pre">around(scale*data)/scale</span></tt>, where <tt class="docutils literal"><span class="pre">scale</span> <span class="pre">=</span> <span class="pre">2**bits</span></tt>, and
+bits is determined so that a precision of 0.1 is retained (in
+this case bits=4). Default is <em>None</em>, or no quantization.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">quantization is only applied if some form of compression is
+enabled</p>
+</div>
 </div></blockquote>
 </td>
 </tr>
@@ -209,9 +227,9 @@ future:</p>
 <span class="gr">ValueError</span>: <span class="n">compression library ``None`` is not supported...</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">filters3</span> <span class="o">=</span> <span class="n">filters1</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">complevel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">complib</span><span class="o">=</span><span class="s">&#39;zlib&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">filters1</span><span class="p">)</span>
-<span class="go">Filters(complevel=0, shuffle=False, fletcher32=False)</span>
+<span class="go">Filters(complevel=0, shuffle=False, fletcher32=False, least_significant_digit=None)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">filters3</span><span class="p">)</span>
-<span class="go">Filters(complevel=1, complib=&#39;zlib&#39;, shuffle=False, fletcher32=False)</span>
+<span class="go">Filters(complevel=1, complib=&#39;zlib&#39;, shuffle=False, fletcher32=False, least_significant_digit=None)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">filters1</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">foobar</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
@@ -708,8 +726,8 @@ that will compare equal to this one.</p>
 <dl class="class">
 <dt id="tables.UnImplemented">
 <em class="property">class </em><tt class="descclassname">tables.</tt><tt class="descname">UnImplemented</tt><big>(</big><em>parentnode</em>, <em>name</em><big>)</big><a class="headerlink" href="#tables.UnImplemented" title="Permalink to this definition">¶</a></dt>
-<dd><p>This class represents datasets not supported by PyTables in an
-HDF5 file.</p>
+<dd><p>This class represents datasets not supported by PyTables in an HDF5
+file.</p>
 <p>When reading a generic HDF5 file (i.e. one that has not been created with
 PyTables, but with some other HDF5 library based tool), chances are that
 the specific combination of datatypes or dataspaces in some dataset might
@@ -809,7 +827,7 @@ exception</li>
 <dl class="method">
 <dt id="tables.HDF5ExtError.format_h5_backtrace">
 <tt class="descname">format_h5_backtrace</tt><big>(</big><em>backtrace=None</em><big>)</big><a class="headerlink" href="#tables.HDF5ExtError.format_h5_backtrace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the HDF5 trace back represented as a list of tuples
+<dd><p>Convert the HDF5 trace back represented as a list of tuples.
 (see <a class="reference internal" href="#tables.HDF5ExtError.h5backtrace" title="tables.HDF5ExtError.h5backtrace"><tt class="xref py py-attr docutils literal"><span class="pre">HDF5ExtError.h5backtrace</span></tt></a>) into a string.</p>
 <p class="versionadded">
 <span class="versionmodified">New in version 2.4.</span></p>
@@ -1089,7 +1107,7 @@ experimental and that users have to use with care.</p>
         <li class="right" >
           <a href="declarative_classes.html" title="Declarative classes"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.1.0 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >PyTables User&#8217;s Guide</a> &raquo;</li>
           <li><a href="../libref.html" >Library Reference</a> &raquo;</li> 
@@ -1098,7 +1116,7 @@ experimental and that users have to use with care.</p>
     </div>
 
     <div class="footer">
-        &copy; Copyright 2011-2013, PyTables maintainers.
+        &copy; Copyright 2011-2014, PyTables maintainers.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
     <!-- cloud_sptheme 1.3 -->

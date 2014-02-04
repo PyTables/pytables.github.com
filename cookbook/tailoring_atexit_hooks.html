@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tailoring atexit hooks &mdash; PyTables 3.0.0 documentation</title>
+    <title>Tailoring atexit hooks &mdash; PyTables 3.1.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '3.0.0',
+        VERSION:     '3.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.0.0 documentation" href="../index.html" />
+    <link rel="top" title="PyTables 3.1.0 documentation" href="../index.html" />
     <link rel="up" title="PyTables Cookbook" href="index.html" />
     <link rel="next" title="Using your own custom data types" href="custom_data_types.html" />
     <link rel="prev" title="Installing PyTables when you’re not root" href="no_root_install.html" /> 
@@ -57,7 +57,7 @@
         <li class="right" >
           <a href="no_root_install.html" title="Installing PyTables when you’re not root"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.1.0 documentation</a> &raquo;</li>
 
           <li><a href="index.html" accesskey="U">PyTables Cookbook</a> &raquo;</li> 
       </ul>
@@ -76,24 +76,33 @@
 outputs:</p>
 <div class="highlight-python"><pre>Closing remaining open files: /tmp/prova.h5... done</pre>
 </div>
-<p>The responsible of this behaviour is the <tt class="xref py py-meth docutils literal"><span class="pre">tables.file.close_open_files()</span></tt>
+<p>The responsible of this behaviour is the <tt class="xref py py-func docutils literal"><span class="pre">tables.file.close_open_files()</span></tt>
 function that is being registered via <tt class="xref py py-func docutils literal"><span class="pre">atexit.register()</span></tt> Python function.
 Although you can&#8217;t de-register already registered cleanup functions, you can
 register new ones to tailor the existing behaviour.
 For example, if you  register this function:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">my_close_open_files</span><span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
-    <span class="n">open_files</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">_open_files</span>
+    <span class="n">open_files</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">_open_files</span>
+
     <span class="n">are_open_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">open_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
     <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">are_open_files</span><span class="p">:</span>
-        <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Closing remaining open files:&quot;</span><span class="p">,</span>
-    <span class="k">for</span> <span class="n">fileh</span> <span class="ow">in</span> <span class="n">open_files</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;Closing remaining open files:&quot;</span><span class="p">)</span>
+
+    <span class="c"># make a copy of the open_files.handlers container for the iteration</span>
+    <span class="n">handlers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">open_files</span><span class="o">.</span><span class="n">handlers</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">fileh</span> <span class="ow">in</span> <span class="n">handlers</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">open_files</span><span class="p">[</span><span class="n">fileh</span><span class="p">]</span><span class="o">.</span><span class="n">filename</span><span class="p">,),</span>
-        <span class="n">open_files</span><span class="p">[</span><span class="n">fileh</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="n">fileh</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+
+        <span class="n">fileh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;done&quot;</span><span class="p">,</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;done&quot;</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">are_open_files</span><span class="p">:</span>
-        <span class="k">print</span> <span class="o">&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">atexit</span>
 <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">my_close_open_files</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
@@ -162,7 +171,7 @@ If you want the messages back again, just set the verbose parameter to true.</p>
         <li class="right" >
           <a href="no_root_install.html" title="Installing PyTables when you’re not root"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.0.0 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.1.0 documentation</a> &raquo;</li>
 
           <li><a href="index.html" >PyTables Cookbook</a> &raquo;</li> 
       </ul>
@@ -170,7 +179,7 @@ If you want the messages back again, just set the verbose parameter to true.</p>
     </div>
 
     <div class="footer">
-        &copy; Copyright 2011-2013, PyTables maintainers.
+        &copy; Copyright 2011-2014, PyTables maintainers.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
     <!-- cloud_sptheme 1.3 -->
