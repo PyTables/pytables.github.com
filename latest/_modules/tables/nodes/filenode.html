@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.nodes.filenode &mdash; PyTables 3.1.0 documentation</title>
+    <title>tables.nodes.filenode &mdash; PyTables 3.1.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '3.1.0',
+        VERSION:     '3.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.1.0 documentation" href="../../../index.html" />
+    <link rel="top" title="PyTables 3.1.1 documentation" href="../../../index.html" />
     <link rel="up" title="tables" href="../../tables.html" /> 
   </head>
   <body>
@@ -49,7 +49,7 @@
         <li class="right" >
           <a href="../../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../../index.html">PyTables 3.1.0 documentation</a> &raquo;</li>
+    <li><a href="../../../index.html">PyTables 3.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../tables.html" accesskey="U">tables</a> &raquo;</li> 
@@ -97,6 +97,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
@@ -110,6 +111,13 @@
 
 <span class="n">NodeTypeVersions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
 <span class="sd">&quot;&quot;&quot;Supported values for NODE_TYPE_VERSION node system attribute.&quot;&quot;&quot;</span>
+
+
+<span class="c"># have a Python2/3 compatible way to check for string</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">string_types</span> <span class="o">=</span> <span class="nb">basestring</span>
+<span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+    <span class="n">string_types</span> <span class="o">=</span> <span class="nb">str</span>
 
 
 <div class="viewcode-block" id="RawPyTablesIO"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.RawPyTablesIO">[docs]</a><span class="k">class</span> <span class="nc">RawPyTablesIO</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">RawIOBase</span><span class="p">):</span>
@@ -765,11 +773,165 @@
 <span class="n">openNode</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">open_node</span><span class="p">)</span>
 
 
+<div class="viewcode-block" id="save_to_filenode"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.save_to_filenode">[docs]</a><span class="k">def</span> <span class="nf">save_to_filenode</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                     <span class="n">title</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Save a file&#39;s contents to a filenode inside a PyTables file.</span>
+
+<span class="sd">    .. versionadded:: 3.2</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h5file</span>
+<span class="sd">      The PyTables file to be written to; can be either a string</span>
+<span class="sd">      giving the file&#39;s location or a :class:`File` object.  If a file</span>
+<span class="sd">      with name *h5file* already exists, it will be opened in</span>
+<span class="sd">      mode ``a``.</span>
+
+<span class="sd">    filename</span>
+<span class="sd">      Path of the file which shall be stored within the PyTables file.</span>
+
+<span class="sd">    where, name</span>
+<span class="sd">      Location of the filenode where the data shall be stored.  If</span>
+<span class="sd">      *name* is not given, and *where* is either a :class:`Group`</span>
+<span class="sd">      object or a string ending on ``/``, the leaf name will be set to</span>
+<span class="sd">      the file name of *filename*.</span>
+
+<span class="sd">    overwrite</span>
+<span class="sd">      Whether or not a possibly existing filenode of the specified</span>
+<span class="sd">      name shall be overwritten.</span>
+
+<span class="sd">    title</span>
+<span class="sd">       A description for this node (it sets the ``TITLE`` HDF5</span>
+<span class="sd">       attribute on disk).</span>
+
+<span class="sd">    filters</span>
+<span class="sd">       An instance of the :class:`Filters` class that provides</span>
+<span class="sd">       information about the desired I/O filters to be applied</span>
+<span class="sd">       during the life of this object.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># sanity checks</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;The file &#39;</span><span class="si">%s</span><span class="s">&#39; could not be read&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">File</span><span class="p">)</span> <span class="ow">and</span> <span class="n">h5file</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s">&quot;r&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;The file &#39;</span><span class="si">%s</span><span class="s">&#39; is opened read-only&quot;</span> <span class="o">%</span> <span class="n">h5file</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+
+    <span class="c"># guess filenode&#39;s name if necessary</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">Group</span><span class="p">)</span> <span class="ow">or</span>
+                          <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">string_types</span><span class="p">)</span> <span class="ow">and</span>
+                           <span class="n">where</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)))):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">new_h5file</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">File</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">new_h5file</span> <span class="k">else</span> <span class="n">h5file</span>
+
+    <span class="c"># check for already existing filenode</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">new_h5file</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;Specified node already exists in file &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span>
+                          <span class="n">f</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">tables</span><span class="o">.</span><span class="n">NoSuchNodeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="c"># read data from disk</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fd</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">fd</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">string_types</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">nodepath</span> <span class="o">=</span> <span class="n">where</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span>
+        <span class="n">where</span> <span class="o">=</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">nodepath</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">nodepath</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c"># remove existing filenode if present</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">tables</span><span class="o">.</span><span class="n">NoSuchNodeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="c"># write file&#39;s contents to filenode</span>
+    <span class="n">fnode</span> <span class="o">=</span> <span class="n">new_node</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
+    <span class="n">fnode</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">fnode</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c"># cleanup</span>
+    <span class="k">if</span> <span class="n">new_h5file</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="read_from_filenode"><a class="viewcode-back" href="../../../usersguide/libref/filenode_classes.html#tables.nodes.filenode.read_from_filenode">[docs]</a><span class="k">def</span> <span class="nf">read_from_filenode</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                       <span class="n">create_target</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read a filenode from a PyTables file and write its contents to a file.</span>
+
+<span class="sd">    .. versionadded:: 3.2</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h5file</span>
+<span class="sd">      The PyTables file to be read from; can be either a string</span>
+<span class="sd">      giving the file&#39;s location or a :class:`File` object.</span>
+
+<span class="sd">    filename</span>
+<span class="sd">      Path of the file where the contents of the filenode shall be</span>
+<span class="sd">      written to.  If *filename* points to a directory or ends with</span>
+<span class="sd">      ``/`` (``\`` on Windows), the filename will be set to the *name*</span>
+<span class="sd">      attribute of the read filenode.</span>
+
+<span class="sd">    where, name</span>
+<span class="sd">      Location of the filenode where the data shall be read from.</span>
+
+<span class="sd">    overwrite</span>
+<span class="sd">      Whether or not a possibly existing file of the specified</span>
+<span class="sd">      *filename* shall be overwritten.</span>
+
+<span class="sd">    create_target</span>
+<span class="sd">      Whether or not the folder hierarchy needed to accomodate the</span>
+<span class="sd">      given target ``filename`` will be created.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_h5file</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">File</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">new_h5file</span> <span class="k">else</span> <span class="n">h5file</span>
+    <span class="n">fnode</span> <span class="o">=</span> <span class="n">open_node</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">))</span>
+
+    <span class="c"># guess output filename if necessary</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="ow">or</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">):</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">fnode</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">new_h5file</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;The file &#39;</span><span class="si">%s</span><span class="s">&#39; already exists&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="c"># create folder hierarchy if necessary</span>
+    <span class="k">if</span> <span class="n">create_target</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">new_h5file</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;The file &#39;</span><span class="si">%s</span><span class="s">&#39; cannot be written to&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="c"># read data from filenode</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">fnode</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">fnode</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c"># store data to file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fd</span><span class="p">:</span>
+        <span class="n">fd</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c"># cleanup</span>
+    <span class="k">del</span> <span class="n">data</span>
+    <span class="k">if</span> <span class="n">new_h5file</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
 <span class="c">## Local Variables:</span>
 <span class="c">## mode: python</span>
 <span class="c">## py-indent-offset: 4</span>
 <span class="c">## tab-width: 4</span>
-<span class="c">## End:</span>
+<span class="c">## End:</span></div>
 </pre></div>
 
           </div>
@@ -811,7 +973,7 @@
         <li class="right" >
           <a href="../../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../../index.html">PyTables 3.1.0 documentation</a> &raquo;</li>
+    <li><a href="../../../index.html">PyTables 3.1.1 documentation</a> &raquo;</li>
 
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../tables.html" >tables</a> &raquo;</li> 
