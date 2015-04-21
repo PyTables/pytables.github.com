@@ -1,0 +1,1083 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.array &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.array</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: October 10, 2002</span>
+<span class="c"># Author: Francesc Alted - faltet@pytables.com</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Here is defined the Array class.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
+<span class="kn">from</span> <span class="nn">tables.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
+<span class="kn">from</span> <span class="nn">tables.flavor</span> <span class="kn">import</span> <span class="n">flavor_of</span><span class="p">,</span> <span class="n">array_as_internal</span><span class="p">,</span> <span class="n">internal_to_flavor</span>
+
+<span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">is_idx</span><span class="p">,</span> <span class="n">convert_to_np_atom2</span><span class="p">,</span> <span class="n">SizeType</span><span class="p">,</span> <span class="n">lazyattr</span><span class="p">,</span>
+                          <span class="n">byteorders</span><span class="p">,</span> <span class="n">quantize</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">tables.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span>
+
+<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span><span class="p">,</span> <span class="n">previous_api_property</span>
+
+<span class="c"># default version for ARRAY objects</span>
+<span class="c"># obversion = &quot;1.0&quot;    # initial version</span>
+<span class="c"># obversion = &quot;2.0&quot;    # Added an optional EXTDIM attribute</span>
+<span class="c"># obversion = &quot;2.1&quot;    # Added support for complex datatypes</span>
+<span class="c"># obversion = &quot;2.2&quot;    # This adds support for time datatypes.</span>
+<span class="c"># obversion = &quot;2.3&quot;    # This adds support for enumerated datatypes.</span>
+<span class="n">obversion</span> <span class="o">=</span> <span class="s">&quot;2.4&quot;</span>    <span class="c"># Numeric and numarray flavors are gone.</span>
+
+
+<div class="viewcode-block" id="Array"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array">[docs]</a><span class="k">class</span> <span class="nc">Array</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">Leaf</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class represents homogeneous datasets in an HDF5 file.</span>
+
+<span class="sd">    This class provides methods to write or read data to or from array objects</span>
+<span class="sd">    in the file. This class does not allow you neither to enlarge nor compress</span>
+<span class="sd">    the datasets on disk; use the EArray class (see :ref:`EArrayClassDescr`) if</span>
+<span class="sd">    you want enlargeable dataset support or compression features, or CArray</span>
+<span class="sd">    (see :ref:`CArrayClassDescr`) if you just want compression.</span>
+
+<span class="sd">    An interesting property of the Array class is that it remembers the</span>
+<span class="sd">    *flavor* of the object that has been saved so that if you saved, for</span>
+<span class="sd">    example, a list, you will get a list during readings afterwards; if you</span>
+<span class="sd">    saved a NumPy array, you will get a NumPy object, and so forth.</span>
+
+<span class="sd">    Note that this class inherits all the public attributes and methods that</span>
+<span class="sd">    Leaf (see :ref:`LeafClassDescr`) already provides. However, as Array</span>
+<span class="sd">    instances have no internal I/O buffers, it is not necessary to use the</span>
+<span class="sd">    flush() method they inherit from Leaf in order to save their internal state</span>
+<span class="sd">    to disk.  When a writing method call returns, all the data is already on</span>
+<span class="sd">    disk.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parentnode</span>
+<span class="sd">        The parent :class:`Group` object.</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           Renamed from *parentNode* to *parentnode*</span>
+
+<span class="sd">    name : str</span>
+<span class="sd">        The name of this node in its parent group.</span>
+<span class="sd">    obj</span>
+<span class="sd">        The array or scalar to be saved.  Accepted types are NumPy</span>
+<span class="sd">        arrays and scalars as well as native Python sequences and</span>
+<span class="sd">        scalars, provided that values are regular (i.e. they are not</span>
+<span class="sd">        like ``[[1,2],2]``) and homogeneous (i.e. all the elements are</span>
+<span class="sd">        of the same type).</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           Renamed form *object* into *obj*.</span>
+<span class="sd">    title</span>
+<span class="sd">        A description for this node (it sets the ``TITLE`` HDF5 attribute on</span>
+<span class="sd">        disk).</span>
+<span class="sd">    byteorder</span>
+<span class="sd">        The byteorder of the data *on disk*, specified as &#39;little&#39; or &#39;big&#39;.</span>
+<span class="sd">        If this is not specified, the byteorder is that of the given `object`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Class identifier.</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;ARRAY&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+    <span class="n">_v_objectId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_v_objectid&#39;</span><span class="p">)</span>
+
+    <span class="c"># Lazy read-only attributes</span>
+    <span class="c"># `````````````````````````</span>
+    <span class="nd">@lazyattr</span>
+    <span class="k">def</span> <span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The NumPy ``dtype`` that most closely matches this array.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="c"># Properties</span>
+    <span class="c"># ~~~~~~~~~~</span>
+    <span class="k">def</span> <span class="nf">_getnrows</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+            <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c"># scalar case</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maindim</span><span class="p">]</span>
+    <span class="n">nrows</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="n">_getnrows</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="s">&quot;The number of rows in the array.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_getrowsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">maindim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span>
+        <span class="n">rowsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">size</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">maindim</span><span class="p">:</span>
+                <span class="n">rowsize</span> <span class="o">*=</span> <span class="n">dim</span>
+        <span class="k">return</span> <span class="n">rowsize</span>
+    <span class="n">rowsize</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="n">_getrowsize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="s">&quot;The size of the rows in bytes in dimensions orthogonal to *maindim*.&quot;</span><span class="p">)</span>
+
+    <span class="n">size_in_memory</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;The size of this array&#39;s data in bytes when it is fully loaded into</span>
+<span class="sd">        memory.&quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="c"># Other methods</span>
+    <span class="c"># ~~~~~~~~~~~~~</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">byteorder</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">_atom</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The object version of this array.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span> <span class="o">=</span> <span class="n">new</span> <span class="o">=</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Is this the first time the node has been created?&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="sd">&quot;&quot;&quot;New title for this node.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="sd">&quot;&quot;&quot;The object to be stored in the array.  It can be any of numpy,</span>
+<span class="sd">        list, tuple, string, integer of floating point types, provided</span>
+<span class="sd">        that they are regular (i.e. they are not like ``[[1, 2], 2]``).</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           Renamed form *_object* into *_obj*.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="sd">&quot;&quot;&quot;Whether the ``Array`` object must be converted or not.&quot;&quot;&quot;</span>
+
+        <span class="c"># Miscellaneous iteration rubbish.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Starting row for the current iteration.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Stopping row for the current iteration.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Step size for the current iteration.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Number of rows read up to the current state of iteration.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_startb</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Starting row for current buffer.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Stopping row for current buffer. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Current row in iterators (sentinel).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="sd">&quot;&quot;&quot;Whether we are in the middle of an iteration or not (sentinel).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Current buffer in iterators.&quot;&quot;&quot;</span>
+
+        <span class="c"># Documented (*public*) attributes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">_atom</span>
+        <span class="sd">&quot;&quot;&quot;An Atom (see :ref:`AtomClassDescr`) instance representing the *type*</span>
+<span class="sd">        and *shape* of the atomic objects to be saved.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The shape of the stored array.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;On iterators, this is the index of the current row.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extdim</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>   <span class="c"># ordinary arrays are not enlargeable</span>
+        <span class="sd">&quot;&quot;&quot;The index of the enlargeable dimension.&quot;&quot;&quot;</span>
+
+        <span class="c"># Ordinary arrays have no filters: leaf is created with default ones.</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">new</span><span class="p">,</span> <span class="n">Filters</span><span class="p">(),</span>
+                                    <span class="n">byteorder</span><span class="p">,</span> <span class="n">_log</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save a new array in file.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span> <span class="o">=</span> <span class="n">obversion</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># `Leaf._g_post_init_hook()` should be setting the flavor on disk.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span> <span class="o">=</span> <span class="n">flavor</span> <span class="o">=</span> <span class="n">flavor_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">)</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="n">array_as_internal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>  <span class="c"># XXX</span>
+            <span class="c"># Problems converting data. Close the node and re-raise exception.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">flush</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+        <span class="c"># Raise an error in case of unsupported object</span>
+        <span class="k">if</span> <span class="n">nparr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;V&#39;</span><span class="p">,</span> <span class="s">&#39;U&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]:</span>  <span class="c"># in void, unicode, object</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Array objects cannot currently deal with void, &quot;</span>
+                            <span class="s">&quot;unicode or object arrays&quot;</span><span class="p">)</span>
+
+        <span class="c"># Decrease the number of references to the object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># Fix the byteorder of data</span>
+        <span class="n">nparr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_fix_byteorder_data</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="n">nparr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span>
+
+        <span class="c"># Create the array on-disk</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># ``self._v_objectid`` needs to be set because would be</span>
+            <span class="c"># needed for setting attributes in some descendants later</span>
+            <span class="c"># on</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_array</span><span class="p">(</span>
+                <span class="n">nparr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_title</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>  <span class="c"># XXX</span>
+            <span class="c"># Problems creating the Array on disk. Close node and re-raise.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">flush</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+        <span class="c"># Compute the optimal buffer size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_nrowsinbuf</span><span class="p">()</span>
+        <span class="c"># Arrays don&#39;t have chunkshapes (so, set it to None)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_chunkshape</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span>
+
+    <span class="k">def</span> <span class="nf">_g_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the metadata info for an array in file.&quot;&quot;&quot;</span>
+
+        <span class="p">(</span><span class="n">oid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_chunkshape</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_open_array</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_nrowsinbuf</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">oid</span>
+
+<div class="viewcode-block" id="Array.get_enum"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array.get_enum">[docs]</a>    <span class="k">def</span> <span class="nf">get_enum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the enumerated type associated with this array.</span>
+
+<span class="sd">        If this array is of an enumerated type, the corresponding Enum instance</span>
+<span class="sd">        (see :ref:`EnumClassDescr`) is returned. If it is not of an enumerated</span>
+<span class="sd">        type, a TypeError is raised.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s">&#39;enum&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;array ``</span><span class="si">%s</span><span class="s">`` is not of an enumerated type&quot;</span>
+                            <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">enum</span>
+</div>
+    <span class="n">getEnum</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">get_enum</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Array.iterrows"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array.iterrows">[docs]</a>    <span class="k">def</span> <span class="nf">iterrows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over the rows of the array.</span>
+
+<span class="sd">        This method returns an iterator yielding an object of the current</span>
+<span class="sd">        flavor for each selected row in the array.  The returned rows are taken</span>
+<span class="sd">        from the *main dimension*.</span>
+
+<span class="sd">        If a range is not supplied, *all the rows* in the array are iterated</span>
+<span class="sd">        upon - you can also use the :meth:`Array.__iter__` special method for</span>
+<span class="sd">        that purpose.  If you only want to iterate over a given *range of rows*</span>
+<span class="sd">        in the array, you may use the start, stop and step parameters.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            result = [row for row in arrayInstance.iterrows(step=4)]</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           If the *start* parameter is provided and *stop* is None then the</span>
+<span class="sd">           array is iterated from *start* to the last line.</span>
+<span class="sd">           In PyTables &lt; 3.0 only one element was returned.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
+                <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="c"># If problems with indexes, silently return the null tuple</span>
+            <span class="k">return</span> <span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_loop</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span>
+</div>
+<div class="viewcode-block" id="Array.__iter__"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over the rows of the array.</span>
+
+<span class="sd">        This is equivalent to calling :meth:`Array.iterrows` with default</span>
+<span class="sd">        arguments, i.e. it iterates over *all the rows* in the array.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            result = [row[2] for row in array]</span>
+
+<span class="sd">        Which is equivalent to::</span>
+
+<span class="sd">            result = [row[2] for row in array.iterrows()]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init</span><span class="p">:</span>
+            <span class="c"># If the iterator is called directly, assign default variables</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c"># and initialize the loop</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_loop</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span>
+</div>
+    <span class="k">def</span> <span class="nf">_init_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialization for the __iter__ iterator.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_startb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>   <span class="c"># Sentinel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init</span> <span class="o">=</span> <span class="bp">True</span>  <span class="c"># Sentinel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">=</span> <span class="n">SizeType</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">)</span>    <span class="c"># row number</span>
+
+    <span class="n">_initLoop</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_init_loop</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Array.next"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the next element of the array during an iteration.</span>
+
+<span class="sd">        The element is returned as an object of the current flavor.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># this could probably be sped up for long iterations by reusing the</span>
+        <span class="c"># listarr buffer</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span> <span class="o">=</span> <span class="bp">None</span>        <span class="c"># fixes issue #308</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>        <span class="c"># end of iteration</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Read a chunk of rows</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_startb</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span>
+                <span class="c"># Protection for reading more elements than needed</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span>
+                <span class="n">listarr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_startb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">)</span>
+                <span class="c"># Swap the axes to easy the return of elements</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extdim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">listarr</span> <span class="o">=</span> <span class="n">listarr</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extdim</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span> <span class="o">=</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">listarr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_startb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span>
+            <span class="c"># Fixes bug #968132</span>
+            <span class="c"># if self.listarr.shape:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span>    <span class="c"># Scalar case</span>
+</div>
+    <span class="k">def</span> <span class="nf">_interpret_indexing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Internal routine used by __getitem__ and __setitem__&quot;&quot;&quot;</span>
+
+        <span class="n">maxlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">maxlen</span><span class="p">,)</span>
+        <span class="n">startl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="n">stopl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="n">stepl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="n">stop_None</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="p">(</span><span class="n">keys</span><span class="p">,)</span>
+        <span class="n">nkeys</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c"># Here is some problem when dealing with [...,...] params</span>
+        <span class="c"># but this is a bit weird way to pass parameters anyway</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="n">ellipsis</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># Sentinel</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">Ellipsis</span><span class="p">)):</span>
+                <span class="n">ellipsis</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">for</span> <span class="n">diml</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">nkeys</span> <span class="o">-</span> <span class="n">dim</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">startl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">stopl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">diml</span><span class="p">]</span>
+                    <span class="n">stepl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="n">dim</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">dim</span> <span class="o">&gt;=</span> <span class="n">maxlen</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Too many indices for object &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">is_idx</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+                <span class="c"># Protection for index out of range</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Index out of range&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c"># To support negative values (Fixes bug #968149)</span>
+                    <span class="n">key</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+                <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
+                    <span class="n">key</span><span class="p">,</span> <span class="n">key</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+                <span class="n">stop_None</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+                <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
+                    <span class="n">key</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Non-valid index or slice: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ellipsis</span><span class="p">:</span>
+                <span class="n">startl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span>
+                <span class="n">stopl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">stop</span>
+                <span class="n">stepl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
+                <span class="n">dim</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c"># Complete the other dimensions, if needed</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">diml</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+                <span class="n">startl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">stopl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">diml</span><span class="p">]</span>
+                <span class="n">stepl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">dim</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c"># Compute the shape for the container properly. Fixes #1288792</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+            <span class="c"># The negative division operates differently with python scalars</span>
+            <span class="c"># and numpy scalars (which are similar to C conventions). See:</span>
+            <span class="c"># http://www.python.org/doc/faq/programming.html#why-does-22-10-return-3</span>
+            <span class="c"># and</span>
+            <span class="c"># http://www.peterbe.com/Integer-division-in-programming-languages</span>
+            <span class="c"># for more info on this issue.</span>
+            <span class="c"># I&#39;ve finally decided to rely on the len(xrange) function.</span>
+            <span class="c"># F. Alted 2006-09-25</span>
+            <span class="c"># Switch to `lrange` to allow long ranges (see #99).</span>
+            <span class="c"># use xrange, since it supports large integers as of Python 2.6</span>
+            <span class="c"># see github #181</span>
+            <span class="n">new_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="n">startl</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">stopl</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">stepl</span><span class="p">[</span><span class="n">dim</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">new_dim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">stop_None</span><span class="p">[</span><span class="n">dim</span><span class="p">]):</span>
+                <span class="n">shape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_dim</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">shape</span>
+
+    <span class="k">def</span> <span class="nf">_fancy_selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs a NumPy-style fancy selection in `self`.</span>
+
+<span class="sd">        Implements advanced NumPy-style selection operations in</span>
+<span class="sd">        addition to the standard slice-and-int behavior.</span>
+
+<span class="sd">        Indexing arguments may be ints, slices or lists of indices.</span>
+
+<span class="sd">        Note: This is a backport from the h5py project.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Internal functions</span>
+
+        <span class="k">def</span> <span class="nf">validate_number</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Validate a list member for the given axis length.&quot;&quot;&quot;</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Illegal index: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">num</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">num</span> <span class="o">&gt;</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Index out of bounds: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">num</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">expand_ellipsis</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">rank</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Expand ellipsis objects and fill in missing axes.&quot;&quot;&quot;</span>
+
+            <span class="n">n_el</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">is</span> <span class="bp">Ellipsis</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n_el</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Only one ellipsis may be used.&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">n_el</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">!=</span> <span class="n">rank</span><span class="p">:</span>
+                <span class="n">args</span> <span class="o">=</span> <span class="n">args</span> <span class="o">+</span> <span class="p">(</span><span class="bp">Ellipsis</span><span class="p">,)</span>
+
+            <span class="n">final_args</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">n_args</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">arg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">arg</span> <span class="ow">is</span> <span class="bp">Ellipsis</span><span class="p">:</span>
+                    <span class="n">final_args</span><span class="o">.</span><span class="n">extend</span><span class="p">((</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">),)</span> <span class="o">*</span> <span class="p">(</span><span class="n">rank</span> <span class="o">-</span> <span class="n">n_args</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">final_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">rank</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Too many indices.&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">final_args</span>
+
+        <span class="k">def</span> <span class="nf">translate_slice</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Given a slice object, return a 3-tuple (start, count, step)</span>
+
+<span class="sd">            This is for for use with the hyperslab selection routines.</span>
+
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">exp</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">exp</span><span class="o">.</span><span class="n">step</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">stop</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="n">length</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Step must be &gt;= 1 (got </span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">step</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">stop</span> <span class="o">==</span> <span class="n">start</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Zero-length selections are not allowed&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">stop</span> <span class="o">&lt;</span> <span class="n">start</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Reverse-order selections are not allowed&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">length</span> <span class="o">+</span> <span class="n">start</span>
+            <span class="k">if</span> <span class="n">stop</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="n">length</span> <span class="o">+</span> <span class="n">stop</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">start</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                    <span class="s">&quot;Start index </span><span class="si">%s</span><span class="s"> out of range (0-</span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">stop</span> <span class="o">&lt;=</span> <span class="n">length</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                    <span class="s">&quot;Stop index </span><span class="si">%s</span><span class="s"> out of range (1-</span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">stop</span><span class="p">,</span> <span class="n">length</span><span class="p">))</span>
+
+            <span class="n">count</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">//</span> <span class="n">step</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">%</span> <span class="n">step</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">start</span> <span class="o">+</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="n">length</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                    <span class="s">&quot;Selection out of bounds (</span><span class="si">%d</span><span class="s">; axis has </span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">count</span><span class="p">,</span> <span class="n">length</span><span class="p">))</span>
+
+            <span class="k">return</span> <span class="n">start</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">step</span>
+
+        <span class="c"># Main code for _fancy_selection</span>
+        <span class="n">mshape</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">selection</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">args</span><span class="p">,)</span>
+
+        <span class="n">args</span> <span class="o">=</span> <span class="n">expand_ellipsis</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+        <span class="n">list_seen</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">reorder</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+                <span class="n">start</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="n">translate_slice</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+                <span class="n">selection</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="s">&quot;AND&quot;</span><span class="p">))</span>
+                <span class="n">mshape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">exp</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                    <span class="n">exp</span> <span class="o">=</span> <span class="p">[</span><span class="n">exp</span><span class="p">]</span>  <span class="c"># Handle scalar index as a list of length 1</span>
+                    <span class="n">mshape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c"># Keep track of scalar index for NumPy</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mshape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="p">))</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                        <span class="s">&quot;Empty selections are not allowed (axis </span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">idx</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">list_seen</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Only one selection list is allowed&quot;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">list_seen</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">long</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span>
+                        <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span>
+                            <span class="n">numpy</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">))):</span>
+                        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Only integer coordinates allowed.&quot;</span><span class="p">)</span>
+
+                <span class="n">nexp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;i8&quot;</span><span class="p">)</span>
+                <span class="c"># Convert negative values</span>
+                <span class="n">nexp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nexp</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">length</span> <span class="o">+</span> <span class="n">nexp</span><span class="p">,</span> <span class="n">nexp</span><span class="p">)</span>
+                <span class="c"># Check whether the list is ordered or not</span>
+                <span class="c"># (only one unordered list is allowed)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">nexp</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">nexp</span><span class="p">)):</span>
+                    <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                        <span class="s">&quot;Selection lists cannot have repeated values&quot;</span><span class="p">)</span>
+                <span class="n">neworder</span> <span class="o">=</span> <span class="n">nexp</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">neworder</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="p">),)</span> <span class="ow">or</span>
+                        <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                            <span class="n">numpy</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
+                                <span class="n">neworder</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="p">))))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">reorder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                            <span class="s">&quot;Only one selection list can be unordered&quot;</span><span class="p">)</span>
+                    <span class="n">corrected_idx</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mshape</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="n">reorder</span> <span class="o">=</span> <span class="p">(</span><span class="n">corrected_idx</span><span class="p">,</span> <span class="n">neworder</span><span class="p">)</span>
+                    <span class="n">nexp</span> <span class="o">=</span> <span class="n">nexp</span><span class="p">[</span><span class="n">neworder</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">select_idx</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nexp</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="c"># This crazy piece of code performs a list selection</span>
+                    <span class="c"># using HDF5 hyperslabs.</span>
+                    <span class="c"># For each index, perform a &quot;NOTB&quot; selection on every</span>
+                    <span class="c"># portion of *this axis* which falls *outside* the list</span>
+                    <span class="c"># selection.  For this to work, the input array MUST be</span>
+                    <span class="c"># monotonically increasing.</span>
+                    <span class="k">if</span> <span class="n">select_idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">nexp</span><span class="p">):</span>
+                        <span class="n">validate_number</span><span class="p">(</span><span class="n">nexp</span><span class="p">[</span><span class="n">select_idx</span><span class="p">],</span> <span class="n">length</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">select_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="n">count</span> <span class="o">=</span> <span class="n">nexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">select_idx</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">nexp</span><span class="p">):</span>
+                        <span class="n">start</span> <span class="o">=</span> <span class="n">nexp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+                        <span class="n">count</span> <span class="o">=</span> <span class="n">length</span> <span class="o">-</span> <span class="n">start</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">start</span> <span class="o">=</span> <span class="n">nexp</span><span class="p">[</span><span class="n">select_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+                        <span class="n">count</span> <span class="o">=</span> <span class="n">nexp</span><span class="p">[</span><span class="n">select_idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">start</span>
+                    <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">selection</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="s">&quot;NOTB&quot;</span><span class="p">))</span>
+
+        <span class="n">mshape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mshape</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">selection</span><span class="p">,</span> <span class="n">reorder</span><span class="p">,</span> <span class="n">mshape</span>
+
+    <span class="n">_fancySelection</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_fancy_selection</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Array.__getitem__"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a row, a range of rows or a slice from the array.</span>
+
+<span class="sd">        The set of tokens allowed for the key is the same as that for extended</span>
+<span class="sd">        slicing in Python (including the Ellipsis or ... token).  The result is</span>
+<span class="sd">        an object of the current flavor; its shape depends on the kind of slice</span>
+<span class="sd">        used as key and the shape of the array itself.</span>
+
+<span class="sd">        Furthermore, NumPy-style fancy indexing, where a list of indices in a</span>
+<span class="sd">        certain axis is specified, is also supported.  Note that only one list</span>
+<span class="sd">        per selection is supported right now.  Finally, NumPy-style point and</span>
+<span class="sd">        boolean selections are supported as well.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            array1 = array[4]                       # simple selection</span>
+<span class="sd">            array2 = array[4:1000:2]                # slice selection</span>
+<span class="sd">            array3 = array[1, ..., ::2, 1:4, 4:]    # general slice selection</span>
+<span class="sd">            array4 = array[1, [1,5,10], ..., -1]    # fancy selection</span>
+<span class="sd">            array5 = array[np.where(array[:] &gt; 4)]  # point selection</span>
+<span class="sd">            array6 = array[array[:] &gt; 4]            # boolean selection</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># First, try with a regular selection</span>
+            <span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpret_indexing</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_slice</span><span class="p">(</span><span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="c"># Then, try with a point-wise selection</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_point_selection</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_coords</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="c"># Finally, try with a fancy selection</span>
+                <span class="n">selection</span><span class="p">,</span> <span class="n">reorder</span><span class="p">,</span> <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fancy_selection</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_selection</span><span class="p">(</span><span class="n">selection</span><span class="p">,</span> <span class="n">reorder</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span> <span class="o">==</span> <span class="s">&quot;numpy&quot;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_convert</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">arr</span>
+
+        <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Array.__setitem__"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array.__setitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set a row, a range of rows or a slice in the array.</span>
+
+<span class="sd">        It takes different actions depending on the type of the key parameter:</span>
+<span class="sd">        if it is an integer, the corresponding array row is set to value (the</span>
+<span class="sd">        value is broadcast when needed).  If key is a slice, the row slice</span>
+<span class="sd">        determined by it is set to value (as usual, if the slice to be updated</span>
+<span class="sd">        exceeds the actual shape of the array, only the values in the existing</span>
+<span class="sd">        range are updated).</span>
+
+<span class="sd">        If value is a multidimensional object, then its shape must be</span>
+<span class="sd">        compatible with the shape determined by key, otherwise, a ValueError</span>
+<span class="sd">        will be raised.</span>
+
+<span class="sd">        Furthermore, NumPy-style fancy indexing, where a list of indices in a</span>
+<span class="sd">        certain axis is specified, is also supported.  Note that only one list</span>
+<span class="sd">        per selection is supported right now.  Finally, NumPy-style point and</span>
+<span class="sd">        boolean selections are supported as well.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            a1[0] = 333        # assign an integer to a Integer Array row</span>
+<span class="sd">            a2[0] = &#39;b&#39;        # assign a string to a string Array row</span>
+<span class="sd">            a3[1:4] = 5        # broadcast 5 to slice 1:4</span>
+<span class="sd">            a4[1:4:2] = &#39;xXx&#39;  # broadcast &#39;xXx&#39; to slice 1:4:2</span>
+
+<span class="sd">            # General slice update (a5.shape = (4,3,2,8,5,10).</span>
+<span class="sd">            a5[1, ..., ::2, 1:4, 4:] = numpy.arange(1728, shape=(4,3,2,4,3,6))</span>
+<span class="sd">            a6[1, [1,5,10], ..., -1] = arr    # fancy selection</span>
+<span class="sd">            a7[np.where(a6[:] &gt; 4)] = 4       # point selection + broadcast</span>
+<span class="sd">            a8[arr &gt; 4] = arr2                # boolean selection</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+
+        <span class="c"># Create an array compliant with the specified slice</span>
+        <span class="n">nparr</span> <span class="o">=</span> <span class="n">convert_to_np_atom2</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nparr</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c"># truncate data if least_significant_digit filter is set</span>
+        <span class="c"># TODO: add the least_significant_digit attribute to the array on disk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">least_significant_digit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span>
+                <span class="ow">not</span> <span class="n">numpy</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">nparr</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="n">quantize</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">least_significant_digit</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpret_indexing</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_slice</span><span class="p">(</span><span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="c"># Then, try with a point-wise selection</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_point_selection</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_write_coords</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="n">selection</span><span class="p">,</span> <span class="n">reorder</span><span class="p">,</span> <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fancy_selection</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_write_selection</span><span class="p">(</span><span class="n">selection</span><span class="p">,</span> <span class="n">reorder</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_check_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nparr</span><span class="p">,</span> <span class="n">slice_shape</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test that nparr shape is consistent with underlying object.</span>
+
+<span class="sd">        If not, try creating a new nparr object, using broadcasting if</span>
+<span class="sd">        necessary.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">nparr</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="n">slice_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+            <span class="c"># Create an array compliant with the specified shape</span>
+            <span class="n">narr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">slice_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+            <span class="c"># Assign the value to it. It will raise a ValueError exception</span>
+            <span class="c"># if the objects cannot be broadcast to a single shape.</span>
+            <span class="n">narr</span><span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">nparr</span>
+            <span class="k">return</span> <span class="n">narr</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">nparr</span>
+
+    <span class="n">_checkShape</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_check_shape</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read a slice based on `startl`, `stopl` and `stepl`.&quot;&quot;&quot;</span>
+
+        <span class="n">nparr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+        <span class="c"># Protection against reading empty arrays</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">:</span>
+            <span class="c"># Arrays that have non-zero dimensionality</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_read_slice</span><span class="p">(</span><span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
+        <span class="c"># For zero-shaped arrays, return the scalar</span>
+        <span class="k">if</span> <span class="n">nparr</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="n">nparr</span><span class="p">[()]</span>
+        <span class="k">return</span> <span class="n">nparr</span>
+
+    <span class="n">_readSlice</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_read_slice</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read a set of points defined by `coords`.&quot;&quot;&quot;</span>
+
+        <span class="n">nparr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_read_coords</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
+        <span class="c"># For zero-shaped arrays, return the scalar</span>
+        <span class="k">if</span> <span class="n">nparr</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="n">nparr</span><span class="p">[()]</span>
+        <span class="k">return</span> <span class="n">nparr</span>
+
+    <span class="n">_readCoords</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_read_coords</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selection</span><span class="p">,</span> <span class="n">reorder</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read a `selection`.</span>
+
+<span class="sd">        Reorder if necessary.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Create the container for the slice</span>
+        <span class="n">nparr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+        <span class="c"># Arrays that have non-zero dimensionality</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_read_selection</span><span class="p">(</span><span class="n">selection</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
+        <span class="c"># For zero-shaped arrays, return the scalar</span>
+        <span class="k">if</span> <span class="n">nparr</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="n">nparr</span><span class="p">[()]</span>
+        <span class="k">elif</span> <span class="n">reorder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># We need to reorder the array</span>
+            <span class="n">idx</span><span class="p">,</span> <span class="n">neworder</span> <span class="o">=</span> <span class="n">reorder</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">k</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">neworder</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+            <span class="c"># Apparently, a copy is not needed here, but doing it</span>
+            <span class="c"># for symmetry with the `_write_selection()` method.</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="n">nparr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">nparr</span>
+
+    <span class="n">_readSelection</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_read_selection</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_write_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">nparr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write `nparr` in a slice based on `startl`, `stopl` and `stepl`.&quot;&quot;&quot;</span>
+
+        <span class="n">nparr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_shape</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">countl</span> <span class="o">=</span> <span class="p">((</span><span class="n">stopl</span> <span class="o">-</span> <span class="n">startl</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">stepl</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_write_slice</span><span class="p">(</span><span class="n">startl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">countl</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
+
+    <span class="n">_writeSlice</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_write_slice</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_write_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">nparr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write `nparr` values in points defined by `coords` coordinates.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_shape</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">),))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_write_coords</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
+
+    <span class="n">_writeCoords</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_write_coords</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_write_selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selection</span><span class="p">,</span> <span class="n">reorder</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">nparr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write `nparr` in `selection`.</span>
+
+<span class="sd">        Reorder if necessary.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">nparr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_shape</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+        <span class="c"># Check whether we should reorder the array</span>
+        <span class="k">if</span> <span class="n">reorder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">idx</span><span class="p">,</span> <span class="n">neworder</span> <span class="o">=</span> <span class="n">reorder</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">k</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">neworder</span>
+            <span class="c"># For a reason a don&#39;t understand well, we need a copy of</span>
+            <span class="c"># the reordered array</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="n">nparr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_write_selection</span><span class="p">(</span><span class="n">selection</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
+
+    <span class="n">_writeSelection</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_write_selection</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read the array from disk without slice or flavor processing.&quot;&quot;&quot;</span>
+
+        <span class="n">nrowstoread</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">shape</span><span class="p">:</span>
+            <span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="n">nrowstoread</span>
+        <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bytes_required</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span> <span class="o">*</span> <span class="n">nrowstoread</span>
+            <span class="c"># if buffer is too small, it will segfault</span>
+            <span class="k">if</span> <span class="n">bytes_required</span> <span class="o">!=</span> <span class="n">out</span><span class="o">.</span><span class="n">nbytes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span><span class="s">&#39;output array size invalid, got {0} bytes, &#39;</span>
+                                  <span class="s">&#39;need {1} bytes&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">nbytes</span><span class="p">,</span>
+                                                           <span class="n">bytes_required</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">out</span><span class="o">.</span><span class="n">flags</span><span class="p">[</span><span class="s">&#39;C_CONTIGUOUS&#39;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;output array not C contiguous&#39;</span><span class="p">)</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="c"># Protection against reading empty arrays</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">:</span>
+            <span class="c"># Arrays that have non-zero dimensionality</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_read_array</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">arr</span><span class="p">)</span>
+        <span class="c"># data is always read in the system byteorder</span>
+        <span class="c"># if the out array&#39;s byteorder is different, do a byteswap</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span>
+                <span class="n">byteorders</span><span class="p">[</span><span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">byteorder</span><span class="p">]</span> <span class="o">!=</span> <span class="n">sys</span><span class="o">.</span><span class="n">byteorder</span><span class="p">):</span>
+            <span class="n">arr</span><span class="o">.</span><span class="n">byteswap</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">arr</span>
+
+<div class="viewcode-block" id="Array.read"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get data in the array as an object of the current flavor.</span>
+
+<span class="sd">        The start, stop and step parameters can be used to select only a</span>
+<span class="sd">        *range of rows* in the array.  Their meanings are the same as in</span>
+<span class="sd">        the built-in range() Python function, except that negative values</span>
+<span class="sd">        of step are not allowed yet. Moreover, if only start is specified,</span>
+<span class="sd">        then stop will be set to start + 1. If you do not specify neither</span>
+<span class="sd">        start nor stop, then *all the rows* in the array are selected.</span>
+
+<span class="sd">        The out parameter may be used to specify a NumPy array to receive</span>
+<span class="sd">        the output data.  Note that the array must have the same size as</span>
+<span class="sd">        the data selected with the other parameters.  Note that the array&#39;s</span>
+<span class="sd">        datatype is not checked and no type casting is performed, so if it</span>
+<span class="sd">        does not match the datatype on disk, the output will not be correct.</span>
+<span class="sd">        Also, this parameter is only valid when the array&#39;s flavor is set</span>
+<span class="sd">        to &#39;numpy&#39;.  Otherwise, a TypeError will be raised.</span>
+
+<span class="sd">        When data is read from disk in NumPy format, the output will be</span>
+<span class="sd">        in the current system&#39;s byteorder, regardless of how it is stored</span>
+<span class="sd">        on disk.</span>
+<span class="sd">        The exception is when an output buffer is supplied, in which case</span>
+<span class="sd">        the output will be in the byteorder of that output buffer.</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           Added the *out* parameter.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span> <span class="o">!=</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;Optional &#39;out&#39; argument may only be supplied if array &quot;</span>
+                   <span class="s">&quot;flavor is &#39;numpy&#39;, currently is {0}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_g_copy_with_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
+                           <span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">chunkshape</span><span class="p">,</span> <span class="n">_log</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Private part of Leaf.copy() for each kind of leaf.&quot;&quot;&quot;</span>
+
+        <span class="c"># Compute the correct indices.</span>
+        <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="c"># Get the slice of the array</span>
+        <span class="c"># (non-buffered version)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">:</span><span class="n">step</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[()]</span>
+        <span class="c"># Build the new Array object.  Use the _atom reserved keyword</span>
+        <span class="c"># just in case the array is being copied from a native HDF5</span>
+        <span class="c"># with atomic types different from scalars.</span>
+        <span class="c"># For details, see #275 of trac.</span>
+        <span class="n">object_</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="n">_log</span><span class="p">,</span>
+                        <span class="n">_atom</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+        <span class="n">nbytes</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">size</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="n">nbytes</span><span class="p">)</span>
+
+    <span class="n">_g_copyWithStats</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_copy_with_stats</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This provides more metainfo in addition to standard __str__&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="s">&quot;&quot;&quot;</span><span class="si">%s</span><span class="s"></span>
+<span class="s">  atom := </span><span class="si">%r</span><span class="s"></span>
+<span class="s">  maindim := </span><span class="si">%r</span><span class="s"></span>
+<span class="s">  flavor := </span><span class="si">%r</span><span class="s"></span>
+<span class="s">  byteorder := </span><span class="si">%r</span><span class="s"></span>
+<span class="s">  chunkshape := </span><span class="si">%r</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">)</span>
+
+</div>
+<span class="k">class</span> <span class="nc">ImageArray</span><span class="p">(</span><span class="n">Array</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Array containing an image.</span>
+
+<span class="sd">    This class has no additional behaviour or functionality compared to</span>
+<span class="sd">    that of an ordinary array.  It simply enables the user to open an</span>
+<span class="sd">    ``IMAGE`` HDF5 node as a normal `Array` node in PyTables.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Class identifier.</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;IMAGE&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

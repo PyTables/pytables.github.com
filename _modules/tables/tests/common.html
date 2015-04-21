@@ -1,0 +1,600 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.tests.common &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.tests.common</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: 2005-05-24</span>
+<span class="c"># Author: Ivan Vilata i Balaguer - ivan@selidor.net</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Utilities for PyTables&#39; test suites.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">locale</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">unittest2</span> <span class="kn">as</span> <span class="nn">unittest</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+        <span class="k">raise</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">numexpr</span>
+
+<span class="kn">import</span> <span class="nn">tables</span>
+<span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="n">detect_number_of_cores</span>
+
+<span class="n">verbose</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="sd">&quot;&quot;&quot;Show detailed output of the testing process.&quot;&quot;&quot;</span>
+
+<span class="n">heavy</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="sd">&quot;&quot;&quot;Run all tests even when they take long to complete.&quot;&quot;&quot;</span>
+
+<span class="n">show_memory</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="sd">&quot;&quot;&quot;Show the progress of memory consumption.&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">parse_argv</span><span class="p">(</span><span class="n">argv</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">heavy</span>
+
+    <span class="k">if</span> <span class="s">&#39;verbose&#39;</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>
+        <span class="n">verbose</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&#39;verbose&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s">&#39;silent&#39;</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>  <span class="c"># take care of old flag, just in case</span>
+        <span class="n">verbose</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&#39;silent&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s">&#39;--heavy&#39;</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>
+        <span class="n">heavy</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&#39;--heavy&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">argv</span>
+
+
+<span class="n">zlib_avail</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s">&quot;zlib&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+<span class="n">lzo_avail</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s">&quot;lzo&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+<span class="n">bzip2_avail</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s">&quot;bzip2&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+<span class="n">blosc_avail</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s">&quot;blosc&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+
+
+<span class="k">def</span> <span class="nf">print_heavy</span><span class="p">(</span><span class="n">heavy</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">heavy</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;&quot;&quot;Performing the complete test suite!&quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">Performing only a light (yet comprehensive) subset of the test suite.</span>
+<span class="s">If you want a more complete test, try passing the --heavy flag to this script</span>
+<span class="s">(or set the &#39;heavy&#39; parameter in case you are using tables.test() call).</span>
+<span class="s">The whole suite will take more than 4 hours to complete on a relatively</span>
+<span class="s">modern CPU and around 512 MB of main memory.&quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;-=&#39;</span> <span class="o">*</span> <span class="mi">38</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="print_versions"><a class="viewcode-back" href="../../../usersguide/libref/top_level.html#tables.print_versions">[docs]</a><span class="k">def</span> <span class="nf">print_versions</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Print all the versions of software that PyTables relies on.&quot;&quot;&quot;</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;-=&#39;</span> <span class="o">*</span> <span class="mi">38</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;PyTables version:    </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tables</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;HDF5 version:        </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s">&quot;hdf5&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;NumPy version:       </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">numpy</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s">&quot;zlib&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">numexpr</span><span class="o">.</span><span class="n">use_vml</span><span class="p">:</span>
+        <span class="c"># Get only the main version number and strip out all the rest</span>
+        <span class="n">vml_version</span> <span class="o">=</span> <span class="n">numexpr</span><span class="o">.</span><span class="n">get_vml_version</span><span class="p">()</span>
+        <span class="n">vml_version</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&quot;[0-9.]+&quot;</span><span class="p">,</span> <span class="n">vml_version</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">vml_avail</span> <span class="o">=</span> <span class="s">&quot;using VML/MKL </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">vml_version</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vml_avail</span> <span class="o">=</span> <span class="s">&quot;not using Intel&#39;s VML/MKL&quot;</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Numexpr version:     </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">numexpr</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span> <span class="n">vml_avail</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">tinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Zlib version:        </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                                <span class="s">&quot;in Python interpreter&quot;</span><span class="p">))</span>
+    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s">&quot;lzo&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;LZO version:         </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">tinfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s">&quot;bzip2&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;BZIP2 version:       </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">tinfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s">&quot;blosc&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">blosc_date</span> <span class="o">=</span> <span class="n">tinfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Blosc version:       </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">blosc_date</span><span class="p">))</span>
+        <span class="n">blosc_cinfo</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">blosc_get_complib_info</span><span class="p">()</span>
+        <span class="n">blosc_cinfo</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s">&quot;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">blosc_cinfo</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="p">]</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Blosc compressors:   </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc_cinfo</span><span class="p">))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">Cython</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">cython_version</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;Cython version:      </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">cython_version</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Python version:      </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Platform:            </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">platform</span><span class="o">.</span><span class="n">platform</span><span class="p">())</span>
+    <span class="c">#if os.name == &#39;posix&#39;:</span>
+    <span class="c">#    (sysname, nodename, release, version, machine) = os.uname()</span>
+    <span class="c">#    print(&#39;Platform:          %s-%s&#39; % (sys.platform, machine))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Byte-ordering:       </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Detected cores:      </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">detect_number_of_cores</span><span class="p">())</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Default encoding:    </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">getdefaultencoding</span><span class="p">())</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Default FS encoding: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">getfilesystemencoding</span><span class="p">())</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Default locale:      (</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="n">locale</span><span class="o">.</span><span class="n">getdefaultlocale</span><span class="p">())</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;-=&#39;</span> <span class="o">*</span> <span class="mi">38</span><span class="p">)</span>
+
+    <span class="c"># This should improve readability whan tests are run by CI tools</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+</div>
+<span class="k">def</span> <span class="nf">verbosePrint</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">nonl</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Print out the `string` if verbose output is enabled.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">nonl</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">allequal</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s">&quot;numpy&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks if two numerical objects are equal.&quot;&quot;&quot;</span>
+
+    <span class="c"># print(&quot;a--&gt;&quot;, repr(a))</span>
+    <span class="c"># print(&quot;b--&gt;&quot;, repr(b))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s">&quot;shape&quot;</span><span class="p">):</span>
+        <span class="c"># Scalar case</span>
+        <span class="k">return</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span>
+
+    <span class="k">if</span> <span class="p">((</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s">&quot;shape&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">())</span> <span class="ow">and</span>
+            <span class="p">(</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s">&quot;shape&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">())):</span>
+        <span class="k">return</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span>
+
+    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Shape is not equal:&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s">&quot;!=&quot;</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="c"># Way to check the type equality without byteorder considerations</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s">&quot;dtype&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">a</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">b</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;dtype is not equal:&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="s">&quot;!=&quot;</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="c"># Rank-0 case</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">a</span><span class="p">[()]</span> <span class="o">==</span> <span class="n">b</span><span class="p">[()]:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Shape is not equal:&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s">&quot;!=&quot;</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="c"># null arrays</span>
+    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c"># len(a) is not correct for generic shapes</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;length is not equal&quot;</span><span class="p">)</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;len(a.data) ==&gt;&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;len(b.data) ==&gt;&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="c"># Multidimensional case</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Some of the elements in arrays are not equal&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span> <span class="nf">areArraysEqual</span><span class="p">(</span><span class="n">arr1</span><span class="p">,</span> <span class="n">arr2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Are both `arr1` and `arr2` equal arrays?</span>
+
+<span class="sd">    Arguments can be regular NumPy arrays, chararray arrays or</span>
+<span class="sd">    structured arrays (including structured record arrays). They are</span>
+<span class="sd">    checked for type and value equality.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">t1</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">arr1</span><span class="p">)</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">arr2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">arr1</span><span class="p">,</span> <span class="s">&#39;dtype&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">arr1</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">arr2</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="ow">or</span>
+            <span class="nb">issubclass</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span> <span class="n">t1</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">arr1</span> <span class="o">==</span> <span class="n">arr2</span><span class="p">)</span>
+
+
+<span class="c"># COMPATIBILITY: assertWarns is new in Python 3.2</span>
+<span class="c"># Code copied from the standard unittest.case module (Python 3.4)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">,</span> <span class="s">&#39;assertWarns&#39;</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">_BaseTestCaseContext</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_case</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test_case</span> <span class="o">=</span> <span class="n">test_case</span>
+
+        <span class="k">def</span> <span class="nf">_raiseFailure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">standardMsg</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_case</span><span class="o">.</span><span class="n">_formatMessage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">,</span> <span class="n">standardMsg</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_case</span><span class="o">.</span><span class="n">failureException</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">_AssertRaisesBaseContext</span><span class="p">(</span><span class="n">_BaseTestCaseContext</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="n">test_case</span><span class="p">,</span> <span class="n">callable_obj</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                     <span class="n">expected_regex</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+            <span class="n">_BaseTestCaseContext</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_case</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expected</span> <span class="o">=</span> <span class="n">expected</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test_case</span> <span class="o">=</span> <span class="n">test_case</span>
+            <span class="k">if</span> <span class="n">callable_obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">obj_name</span> <span class="o">=</span> <span class="n">callable_obj</span><span class="o">.</span><span class="n">__name__</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">obj_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">callable_obj</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">obj_name</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">if</span> <span class="n">expected_regex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">expected_regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">expected_regex</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expected_regex</span> <span class="o">=</span> <span class="n">expected_regex</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">callable_obj</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            If callable_obj is None, assertRaises/Warns is being used as a</span>
+<span class="sd">            context manager, so check for a &#39;msg&#39; kwarg and return self.</span>
+<span class="sd">            If callable_obj is not None, call it passing args and kwargs.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">callable_obj</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;msg&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="n">callable_obj</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">_AssertWarnsContext</span><span class="p">(</span><span class="n">_AssertRaisesBaseContext</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s">&#39;__warningregistry__&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">):</span>
+                    <span class="n">v</span><span class="o">.</span><span class="n">__warningregistry__</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">warnings_manager</span> <span class="o">=</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">warnings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">warnings_manager</span><span class="o">.</span><span class="n">__enter__</span><span class="p">()</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s">&quot;always&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">warnings_manager</span><span class="o">.</span><span class="n">__exit__</span><span class="p">(</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="c"># let unexpected exceptions pass through</span>
+                <span class="k">return</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">exc_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected</span><span class="o">.</span><span class="n">__name__</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">exc_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected</span><span class="p">)</span>
+            <span class="n">first_matching</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="p">:</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">message</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">first_matching</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">first_matching</span> <span class="o">=</span> <span class="n">w</span>
+                <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_regex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span>
+                        <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_regex</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">w</span><span class="p">))):</span>
+                    <span class="k">continue</span>
+                <span class="c"># store warning for later retrieval</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">warning</span> <span class="o">=</span> <span class="n">w</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">filename</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lineno</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">lineno</span>
+                <span class="k">return</span>
+            <span class="c"># Now we simply try to choose a helpful failure message</span>
+            <span class="k">if</span> <span class="n">first_matching</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_raiseFailure</span><span class="p">(</span>
+                    <span class="s">&#39;&quot;{0}&quot; does not match &quot;{1}&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">expected_regex</span><span class="o">.</span><span class="n">pattern</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">first_matching</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj_name</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_raiseFailure</span><span class="p">(</span><span class="s">&quot;{0} not triggered by {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                   <span class="n">exc_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj_name</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_raiseFailure</span><span class="p">(</span><span class="s">&quot;{0} not triggered&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exc_name</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">PyTablesTestCase</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PyTablesTestCase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">tearDown</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;instancemethod&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">_getName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the name of this test case.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_getMethodName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the name of the method currently running in the test case.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_verboseHeader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print a nice header for the current test method if verbose.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">()</span>
+            <span class="n">methodName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getMethodName</span><span class="p">()</span>
+
+            <span class="n">title</span> <span class="o">=</span> <span class="s">&quot;Running </span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">methodName</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="se">\n</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="s">&#39;-&#39;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">title</span><span class="p">)))</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_testFilename</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an absolute version of the `filename`, taking care of the</span>
+<span class="sd">        location of the calling test case class.&quot;&quot;&quot;</span>
+        <span class="n">modname</span> <span class="o">=</span> <span class="n">class_</span><span class="o">.</span><span class="n">__module__</span>
+        <span class="c"># When the definitive switch to ``setuptools`` is made,</span>
+        <span class="c"># this should definitely use the ``pkg_resouces`` API::</span>
+        <span class="c">#</span>
+        <span class="c">#   return pkg_resources.resource_filename(modname, filename)</span>
+        <span class="c">#</span>
+        <span class="n">modfile</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">modname</span><span class="p">]</span><span class="o">.</span><span class="n">__file__</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">modfile</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="c"># COMPATIBILITY: assertWarns is new in Python 3.2</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">,</span> <span class="s">&#39;assertWarns&#39;</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">assertWarns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_warning</span><span class="p">,</span> <span class="n">callable_obj</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                        <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="n">_AssertWarnsContext</span><span class="p">(</span><span class="n">expected_warning</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">callable_obj</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">context</span><span class="o">.</span><span class="n">handle</span><span class="p">(</span><span class="s">&#39;assertWarns&#39;</span><span class="p">,</span> <span class="n">callable_obj</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_checkEqualityGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node1</span><span class="p">,</span> <span class="n">node2</span><span class="p">,</span> <span class="n">hardlink</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Group 1:&quot;</span><span class="p">,</span> <span class="n">node1</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Group 2:&quot;</span><span class="p">,</span> <span class="n">node2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hardlink</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+                <span class="n">node1</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">!=</span> <span class="n">node2</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span>
+                <span class="s">&quot;node1 and node2 have the same pathnames.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+                <span class="n">node1</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">==</span> <span class="n">node2</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span>
+                <span class="s">&quot;node1 and node2 does not have the same pathnames.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+            <span class="n">node1</span><span class="o">.</span><span class="n">_v_children</span> <span class="o">==</span> <span class="n">node2</span><span class="o">.</span><span class="n">_v_children</span><span class="p">,</span>
+            <span class="s">&quot;node1 and node2 does not have the same children.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_checkEqualityLeaf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node1</span><span class="p">,</span> <span class="n">node2</span><span class="p">,</span> <span class="n">hardlink</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Leaf 1:&quot;</span><span class="p">,</span> <span class="n">node1</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Leaf 2:&quot;</span><span class="p">,</span> <span class="n">node2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hardlink</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+                <span class="n">node1</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">!=</span> <span class="n">node2</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span>
+                <span class="s">&quot;node1 and node2 have the same pathnames.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+                <span class="n">node1</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">==</span> <span class="n">node2</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span>
+                <span class="s">&quot;node1 and node2 does not have the same pathnames.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+            <span class="n">areArraysEqual</span><span class="p">(</span><span class="n">node1</span><span class="p">[:],</span> <span class="n">node2</span><span class="p">[:]),</span>
+            <span class="s">&quot;node1 and node2 does not have the same values.&quot;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">TestFileMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">h5fname</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">open_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TestFileMixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="c">#self.h5fname = self._testFilename(self.testfname)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(),</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close ``h5file``.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TestFileMixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">tearDown</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">TempFileMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">open_mode</span> <span class="o">=</span> <span class="s">&#39;w&#39;</span>
+    <span class="n">open_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_getTempFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(),</span> <span class="n">suffix</span><span class="o">=</span><span class="s">&#39;.h5&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set ``h5file`` and ``h5fname`` instance attributes.</span>
+
+<span class="sd">        * ``h5fname``: the name of the temporary HDF5 file.</span>
+<span class="sd">        * ``h5file``: the writable, empty, temporary HDF5 file.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">TempFileMixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getTempFileName</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(),</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close ``h5file`` and remove ``h5fname``.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">)</span>   <span class="c"># comment this for debugging purposes only</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TempFileMixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">tearDown</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_reopen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reopen ``h5file`` in the specified ``mode``.</span>
+
+<span class="sd">        Returns a true or false value depending on whether the file was</span>
+<span class="sd">        reopenend or not.  If not, nothing is changed.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+
+<span class="k">class</span> <span class="nc">ShowMemTime</span><span class="p">(</span><span class="n">PyTablesTestCase</span><span class="p">):</span>
+    <span class="n">tref</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;Test for showing memory and time consumption.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">test00</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Showing memory and time consumption.&quot;&quot;&quot;</span>
+
+        <span class="c"># Obtain memory info (only for Linux 2.6.x)</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;/proc/self/status&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;VmSize:&quot;</span><span class="p">):</span>
+                <span class="n">vmsize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;VmRSS:&quot;</span><span class="p">):</span>
+                <span class="n">vmrss</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;VmData:&quot;</span><span class="p">):</span>
+                <span class="n">vmdata</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;VmStk:&quot;</span><span class="p">):</span>
+                <span class="n">vmstk</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;VmExe:&quot;</span><span class="p">):</span>
+                <span class="n">vmexe</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;VmLib:&quot;</span><span class="p">):</span>
+                <span class="n">vmlib</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">WallClock time:&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">tref</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Memory usage: ******* </span><span class="si">%s</span><span class="s"> *******&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">())</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;VmSize: </span><span class="si">%7s</span><span class="s"> kB</span><span class="se">\t</span><span class="s">VmRSS: </span><span class="si">%7s</span><span class="s"> kB&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">vmsize</span><span class="p">,</span> <span class="n">vmrss</span><span class="p">))</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;VmData: </span><span class="si">%7s</span><span class="s"> kB</span><span class="se">\t</span><span class="s">VmStk: </span><span class="si">%7s</span><span class="s"> kB&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">vmdata</span><span class="p">,</span> <span class="n">vmstk</span><span class="p">))</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;VmExe:  </span><span class="si">%7s</span><span class="s"> kB</span><span class="se">\t</span><span class="s">VmLib: </span><span class="si">%7s</span><span class="s"> kB&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">vmexe</span><span class="p">,</span> <span class="n">vmlib</span><span class="p">))</span>
+
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## fill-column: 72</span>
+<span class="c">## End:</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../../index.html">
+          <img class="logo" src="../../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

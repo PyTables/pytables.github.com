@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Threading &mdash; PyTables 3.2.0-rc1 documentation</title>
+    <title>Threading &mdash; PyTables 3.2.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '3.2.0-rc1',
+        VERSION:     '3.2.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,25 +30,25 @@
     <script type="text/javascript" src="../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.2.0-rc1 documentation" href="../index.html" />
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../index.html" />
     <link rel="up" title="PyTables Cookbook" href="index.html" />
     <link rel="next" title="FAQ" href="../FAQ.html" />
     <link rel="prev" title="In-memory HDF5 files" href="inmemory_hdf5_files.html" /> 
   </head>
-  <body>
+  <body role="document">
     <div class="relbar-top">
         
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
+          <a href="../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
         <li class="right" >
-          <a href="../np-modindex.html" title="Python Module Index"
+          <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
         <li class="right" >
           <a href="../FAQ.html" title="FAQ"
@@ -56,9 +56,9 @@
         <li class="right" >
           <a href="inmemory_hdf5_files.html" title="In-memory HDF5 files"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.2.0-rc1 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
 
-          <li><a href="index.html" accesskey="U">PyTables Cookbook</a> &raquo;</li> 
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">PyTables Cookbook</a> &raquo;</li> 
       </ul>
     </div>
     </div>
@@ -67,7 +67,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="threading">
 <h1>Threading<a class="headerlink" href="#threading" title="Permalink to this headline">¶</a></h1>
@@ -112,8 +112,8 @@ correct behaviour of the internal machinery used to manage HDF5 file handles.</p
 <div class="section" id="very-simple-solution">
 <h2>Very simple solution<a class="headerlink" href="#very-simple-solution" title="Permalink to this headline">¶</a></h2>
 <p>A very simple solution for this kind of scenario is to use a
-<tt class="xref py py-class docutils literal"><span class="pre">threading.Lock</span></tt> around part of the code that are considered critical
-e.g. the <a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><tt class="xref py py-func docutils literal"><span class="pre">open_file()</span></tt></a> function and the <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.close" title="tables.File.close"><tt class="xref py py-meth docutils literal"><span class="pre">File.close()</span></tt></a> method:</p>
+<code class="xref py py-class docutils literal"><span class="pre">threading.Lock</span></code> around part of the code that are considered critical
+e.g. the <a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><code class="xref py py-func docutils literal"><span class="pre">open_file()</span></code></a> function and the <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.close" title="tables.File.close"><code class="xref py py-meth docutils literal"><span class="pre">File.close()</span></code></a> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">threading</span>
 
 <span class="n">lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
@@ -127,7 +127,7 @@ e.g. the <a class="reference internal" href="../usersguide/libref/top_level.html
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The <tt class="xref py py-func docutils literal"><span class="pre">synchronized_open_file()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">synchronized_close_file()</span></tt> can
+<p>The <code class="xref py py-func docutils literal"><span class="pre">synchronized_open_file()</span></code> and <code class="xref py py-func docutils literal"><span class="pre">synchronized_close_file()</span></code> can
 be used in the <em>thread function</em> to open and close the HDF5 file:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tables</span> <span class="kn">as</span> <span class="nn">tb</span>
@@ -149,11 +149,11 @@ be used in the <em>thread function</em> to open and close the HDF5 file:</p>
 </div>
 <p>Finally the main function of the program:</p>
 <ul class="simple">
-<li>instantiates the input and output <tt class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></tt>,</li>
+<li>instantiates the input and output <code class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></code>,</li>
 <li>starts all threads,</li>
-<li>sends the processing requests on the input <tt class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></tt></li>
-<li>collects results reading from the output <tt class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></tt></li>
-<li>performs finalization actions (<tt class="xref py py-meth docutils literal"><span class="pre">threading.Thread.join()</span></tt>)</li>
+<li>sends the processing requests on the input <code class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></code></li>
+<li>collects results reading from the output <code class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></code></li>
+<li>performs finalization actions (<code class="xref py py-meth docutils literal"><span class="pre">threading.Thread.join()</span></code>)</li>
 </ul>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">queue</span>
@@ -223,18 +223,18 @@ be used in the <em>thread function</em> to open and close the HDF5 file:</p>
 </pre></div>
 </div>
 <p>The program in the example computes the mean value of a potentially huge
-dataset splinting the computation across <tt class="xref py py-data docutils literal"><span class="pre">NTHREADS</span></tt> (5 in this case)
+dataset splinting the computation across <code class="xref py py-data docutils literal"><span class="pre">NTHREADS</span></code> (5 in this case)
 threads.</p>
 <p>The complete and working code of this example (Python 3 is required) can be
-found in the <tt class="file docutils literal"><span class="pre">examples</span></tt> directory:
-<a class="reference download internal" href="../_downloads/simple_threading.py"><tt class="xref download docutils literal"><span class="pre">simple_threading.py</span></tt></a>.</p>
+found in the <code class="file docutils literal"><span class="pre">examples</span></code> directory:
+<a class="reference download internal" href="../_downloads/simple_threading.py"><code class="xref download docutils literal"><span class="pre">simple_threading.py</span></code></a>.</p>
 <p>The approach presented in this section is very simple and readable but has
 the <strong>drawback</strong> that the user code have to be modified to replace
-<a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><tt class="xref py py-func docutils literal"><span class="pre">open_file()</span></tt></a> and <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.close" title="tables.File.close"><tt class="xref py py-meth docutils literal"><span class="pre">File.close()</span></tt></a> calls with their safe version
-(<tt class="xref py py-func docutils literal"><span class="pre">synchronized_open_file()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">synchronized_close_file()</span></tt>).</p>
+<a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><code class="xref py py-func docutils literal"><span class="pre">open_file()</span></code></a> and <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.close" title="tables.File.close"><code class="xref py py-meth docutils literal"><span class="pre">File.close()</span></code></a> calls with their safe version
+(<code class="xref py py-func docutils literal"><span class="pre">synchronized_open_file()</span></code> and <code class="xref py py-func docutils literal"><span class="pre">synchronized_close_file()</span></code>).</p>
 <p>Also, the solution showed in the example does not cover the entire PyTables
 API (e.g. although not recommended HDF5 files can be opened using the
-<a class="reference internal" href="../usersguide/libref/file_class.html#tables.File" title="tables.File"><tt class="xref py py-class docutils literal"><span class="pre">File</span></tt></a> constructor) and makes it impossible to use <em>pythonic</em>
+<a class="reference internal" href="../usersguide/libref/file_class.html#tables.File" title="tables.File"><code class="xref py py-class docutils literal"><span class="pre">File</span></code></a> constructor) and makes it impossible to use <em>pythonic</em>
 constructs like the <em>with</em> statement:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
     <span class="n">do_something</span><span class="p">(</span><span class="n">h5file</span><span class="p">)</span>
@@ -315,8 +315,8 @@ used in the <em>thread function</em>:</p>
 </pre></div>
 </div>
 <p>The complete code of this version of the example can be found in the
-<tt class="file docutils literal"><span class="pre">examples</span></tt> folder:
-<a class="reference download internal" href="../_downloads/threading_monkeypatch.py"><tt class="xref download docutils literal"><span class="pre">simple_threading.py</span></tt></a>.
+<code class="file docutils literal"><span class="pre">examples</span></code> folder:
+<a class="reference download internal" href="../_downloads/threading_monkeypatch.py"><code class="xref download docutils literal"><span class="pre">simple_threading.py</span></code></a>.
 Python 3 is required.</p>
 </div>
 </div>
@@ -325,7 +325,7 @@ Python 3 is required.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
         <p class="logo"><a href="../index.html">
           <img class="logo" src="../_static/logo-pytables-small.png" alt="Logo"/>
@@ -347,12 +347,14 @@ Python 3 is required.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="../FAQ.html"
                         title="next chapter">FAQ</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="../_sources/cookbook/threading.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cookbook/threading.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -371,17 +373,17 @@ Python 3 is required.</p>
     </div>
     <div class="relbar-bottom">
         
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
+          <a href="../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
         <li class="right" >
-          <a href="../np-modindex.html" title="Python Module Index"
+          <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
         <li class="right" >
           <a href="../FAQ.html" title="FAQ"
@@ -389,16 +391,16 @@ Python 3 is required.</p>
         <li class="right" >
           <a href="inmemory_hdf5_files.html" title="In-memory HDF5 files"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.2.0-rc1 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
 
-          <li><a href="index.html" >PyTables Cookbook</a> &raquo;</li> 
+          <li class="nav-item nav-item-1"><a href="index.html" >PyTables Cookbook</a> &raquo;</li> 
       </ul>
     </div>
     </div>
 
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>

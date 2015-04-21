@@ -1,0 +1,1426 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.group &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.group</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: September 4, 2002</span>
+<span class="c"># Author: Francesc Alted - faltet@pytables.com</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Here is defined the Group class.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">weakref</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">tables.misc.proxydict</span>
+<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
+<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">utilsextension</span>
+<span class="kn">from</span> <span class="nn">tables.registry</span> <span class="kn">import</span> <span class="n">class_id_dict</span>
+<span class="kn">from</span> <span class="nn">tables.exceptions</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">NodeError</span><span class="p">,</span> <span class="n">NoSuchNodeError</span><span class="p">,</span> <span class="n">NaturalNameWarning</span><span class="p">,</span> <span class="n">PerformanceWarning</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">tables.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
+<span class="kn">from</span> <span class="nn">tables.registry</span> <span class="kn">import</span> <span class="n">get_class_by_name</span>
+<span class="kn">from</span> <span class="nn">tables.path</span> <span class="kn">import</span> <span class="n">check_name_validity</span><span class="p">,</span> <span class="n">join_path</span><span class="p">,</span> <span class="n">isvisiblename</span>
+<span class="kn">from</span> <span class="nn">tables.node</span> <span class="kn">import</span> <span class="n">Node</span><span class="p">,</span> <span class="n">NotLoggedMixin</span>
+<span class="kn">from</span> <span class="nn">tables.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span>
+<span class="kn">from</span> <span class="nn">tables.unimplemented</span> <span class="kn">import</span> <span class="n">UnImplemented</span><span class="p">,</span> <span class="n">Unknown</span>
+
+<span class="kn">from</span> <span class="nn">tables.link</span> <span class="kn">import</span> <span class="n">Link</span><span class="p">,</span> <span class="n">SoftLink</span><span class="p">,</span> <span class="n">ExternalLink</span>
+
+<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span><span class="p">,</span> <span class="n">previous_api_property</span>
+
+<span class="n">obversion</span> <span class="o">=</span> <span class="s">&quot;1.0&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">_ChildrenDict</span><span class="p">(</span><span class="n">tables</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">proxydict</span><span class="o">.</span><span class="n">ProxyDict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_value_from_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">container</span><span class="o">.</span><span class="n">_f_get_child</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="n">_getValueFromContainer</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_get_value_from_container</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Group"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group">[docs]</a><span class="k">class</span> <span class="nc">Group</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">Group</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Basic PyTables grouping structure.</span>
+
+<span class="sd">    Instances of this class are grouping structures containing *child*</span>
+<span class="sd">    instances of zero or more groups or leaves, together with</span>
+<span class="sd">    supporting metadata. Each group has exactly one *parent* group.</span>
+
+<span class="sd">    Working with groups and leaves is similar in many ways to working</span>
+<span class="sd">    with directories and files, respectively, in a Unix filesystem.</span>
+<span class="sd">    As with Unix directories and files, objects in the object tree are</span>
+<span class="sd">    often described by giving their full (or absolute) path names.</span>
+<span class="sd">    This full path can be specified either as a string (like in</span>
+<span class="sd">    &#39;/group1/group2&#39;) or as a complete object path written in *natural</span>
+<span class="sd">    naming* schema (like in file.root.group1.group2).</span>
+
+<span class="sd">    A collateral effect of the *natural naming* schema is that the</span>
+<span class="sd">    names of members in the Group class and its instances must be</span>
+<span class="sd">    carefully chosen to avoid colliding with existing children node</span>
+<span class="sd">    names.  For this reason and to avoid polluting the children</span>
+<span class="sd">    namespace all members in a Group start with some reserved prefix,</span>
+<span class="sd">    like _f_ (for public methods), _g_ (for private ones), _v_ (for</span>
+<span class="sd">    instance variables) or _c_ (for class variables). Any attempt to</span>
+<span class="sd">    create a new child node whose name starts with one of these</span>
+<span class="sd">    prefixes will raise a ValueError exception.</span>
+
+<span class="sd">    Another effect of natural naming is that children named after</span>
+<span class="sd">    Python keywords or having names not valid as Python identifiers</span>
+<span class="sd">    (e.g.  class, $a or 44) can not be accessed using the node.child</span>
+<span class="sd">    syntax. You will be forced to use node._f_get_child(child) to</span>
+<span class="sd">    access them (which is recommended for programmatic accesses).</span>
+
+<span class="sd">    You will also need to use _f_get_child() to access an existing</span>
+<span class="sd">    child node if you set a Python attribute in the Group with the</span>
+<span class="sd">    same name as that node (you will get a NaturalNameWarning when</span>
+<span class="sd">    doing this).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parentnode</span>
+<span class="sd">        The parent :class:`Group` object.</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           Renamed from *parentNode* to *parentnode*</span>
+
+<span class="sd">    name : str</span>
+<span class="sd">        The name of this node in its parent group.</span>
+<span class="sd">    title</span>
+<span class="sd">        The title for this group</span>
+<span class="sd">    new</span>
+<span class="sd">        If this group is new or has to be read from disk</span>
+<span class="sd">    filters : Filters</span>
+<span class="sd">        A Filters instance</span>
+
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The following documentation includes methods that are automatically</span>
+<span class="sd">    called when a Group instance is accessed in a special way.</span>
+
+<span class="sd">    For instance, this class defines the __setattr__, __getattr__, and</span>
+<span class="sd">    __delattr__ methods, and they set, get and delete *ordinary Python</span>
+<span class="sd">    attributes* as normally intended. In addition to that, __getattr__</span>
+<span class="sd">    allows getting *child nodes* by their name for the sake of easy</span>
+<span class="sd">    interaction on the command line, as long as there is no Python</span>
+<span class="sd">    attribute with the same name. Groups also allow the interactive</span>
+<span class="sd">    completion (when using readline) of the names of child nodes.</span>
+<span class="sd">    For instance::</span>
+
+<span class="sd">        # get a Python attribute</span>
+<span class="sd">        nchild = group._v_nchildren</span>
+
+<span class="sd">        # Add a Table child called &#39;table&#39; under &#39;group&#39;.</span>
+<span class="sd">        h5file.create_table(group, &#39;table&#39;, myDescription)</span>
+<span class="sd">        table = group.table          # get the table child instance</span>
+<span class="sd">        group.table = &#39;foo&#39;          # set a Python attribute</span>
+
+<span class="sd">        # (PyTables warns you here about using the name of a child node.)</span>
+<span class="sd">        foo = group.table            # get a Python attribute</span>
+<span class="sd">        del group.table              # delete a Python attribute</span>
+<span class="sd">        table = group.table          # get the table child instance again</span>
+
+
+<span class="sd">    .. rubric:: Group attributes</span>
+
+<span class="sd">    The following instance variables are provided in addition to those</span>
+<span class="sd">    in Node (see :ref:`NodeClassDescr`):</span>
+
+<span class="sd">    .. attribute:: _v_children</span>
+
+<span class="sd">        Dictionary with all nodes hanging from this group.</span>
+
+<span class="sd">    .. attribute:: _v_groups</span>
+
+<span class="sd">        Dictionary with all groups hanging from this group.</span>
+
+<span class="sd">    .. attribute:: _v_hidden</span>
+
+<span class="sd">        Dictionary with all hidden nodes hanging from this group.</span>
+
+<span class="sd">    .. attribute:: _v_leaves</span>
+
+<span class="sd">        Dictionary with all leaves hanging from this group.</span>
+
+<span class="sd">    .. attribute:: _v_links</span>
+
+<span class="sd">        Dictionary with all links hanging from this group.</span>
+
+<span class="sd">    .. attribute:: _v_unknown</span>
+
+<span class="sd">        Dictionary with all unknown nodes hanging from this group.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Class identifier.</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;GROUP&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+
+    <span class="c"># Children containers that should be loaded only in a lazy way.</span>
+    <span class="c"># These are documented in the ``Group._g_add_children_names`` method.</span>
+    <span class="n">_c_lazy_children_attrs</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s">&#39;__members__&#39;</span><span class="p">,</span> <span class="s">&#39;_v_children&#39;</span><span class="p">,</span> <span class="s">&#39;_v_groups&#39;</span><span class="p">,</span> <span class="s">&#39;_v_leaves&#39;</span><span class="p">,</span>
+        <span class="s">&#39;_v_links&#39;</span><span class="p">,</span> <span class="s">&#39;_v_unknown&#39;</span><span class="p">,</span> <span class="s">&#39;_v_hidden&#39;</span><span class="p">)</span>
+
+    <span class="c"># `_v_nchildren` is a direct read-only shorthand</span>
+    <span class="c"># for the number of *visible* children in a group.</span>
+    <span class="k">def</span> <span class="nf">_g_getnchildren</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="p">)</span>
+
+    <span class="n">_v_nchildren</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_g_getnchildren</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+                            <span class="s">&quot;The number of children hanging from this group.&quot;</span><span class="p">)</span>
+
+    <span class="c"># `_v_filters` is a direct read-write shorthand for the ``FILTERS``</span>
+    <span class="c"># attribute with the default `Filters` instance as a default value.</span>
+    <span class="k">def</span> <span class="nf">_g_getfilters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="s">&#39;FILTERS&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">filters</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">filters</span> <span class="o">=</span> <span class="n">Filters</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">filters</span>
+
+    <span class="k">def</span> <span class="nf">_g_setfilters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Filters</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;value is not an instance of `Filters`: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">value</span><span class="p">,))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">FILTERS</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">_g_delfilters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">FILTERS</span>
+
+    <span class="n">_v_filters</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="n">_g_getfilters</span><span class="p">,</span> <span class="n">_g_setfilters</span><span class="p">,</span> <span class="n">_g_delfilters</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;Default filter properties for child nodes.</span>
+
+<span class="sd">        You can (and are encouraged to) use this property to get, set and</span>
+<span class="sd">        delete the FILTERS HDF5 attribute of the group, which stores a Filters</span>
+<span class="sd">        instance (see :ref:`FiltersClassDescr`). When the group has no such</span>
+<span class="sd">        attribute, a default Filters instance is used.</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">_v_maxGroupWidth</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_v_max_group_width&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">title</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+
+        <span class="c"># Remember to assign these values in the root group constructor</span>
+        <span class="c"># if it does not use this one!</span>
+
+        <span class="c"># First, set attributes belonging to group objects.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span> <span class="o">=</span> <span class="n">obversion</span>
+        <span class="sd">&quot;&quot;&quot;The object version of this group.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span> <span class="o">=</span> <span class="n">new</span>
+        <span class="sd">&quot;&quot;&quot;Is this the first time the node has been created?&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="sd">&quot;&quot;&quot;New title for this node.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_filters</span> <span class="o">=</span> <span class="n">filters</span>
+        <span class="sd">&quot;&quot;&quot;New default filter properties for child nodes.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_max_group_width</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;MAX_GROUP_WIDTH&#39;</span><span class="p">]</span>
+        <span class="sd">&quot;&quot;&quot;Maximum number of children on each group before warning the user.</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           The *_v_maxGroupWidth* attribute has been renamed into</span>
+<span class="sd">           *_v_max_group_width*.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Finally, set up this object as a node.</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">_log</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;PYTABLES_SYS_ATTRS&#39;</span><span class="p">]:</span>
+                <span class="c"># Save some attributes for the new group on disk.</span>
+                <span class="n">set_attr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_g__setattr</span>
+                <span class="c"># Set the title, class and version attributes.</span>
+                <span class="n">set_attr</span><span class="p">(</span><span class="s">&#39;TITLE&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_title</span><span class="p">)</span>
+                <span class="n">set_attr</span><span class="p">(</span><span class="s">&#39;CLASS&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_classid</span><span class="p">)</span>
+                <span class="n">set_attr</span><span class="p">(</span><span class="s">&#39;VERSION&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span><span class="p">)</span>
+
+                <span class="c"># Set the default filter properties.</span>
+                <span class="n">newfilters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_filters</span>
+                <span class="k">if</span> <span class="n">newfilters</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="c"># If no filters have been passed in the constructor,</span>
+                    <span class="c"># inherit them from the parent group, but only if they</span>
+                    <span class="c"># have been inherited or explicitly set.</span>
+                    <span class="n">newfilters</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="s">&#39;FILTERS&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">newfilters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">set_attr</span><span class="p">(</span><span class="s">&#39;FILTERS&#39;</span><span class="p">,</span> <span class="n">newfilters</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># If the file has PyTables format, get the VERSION attr</span>
+            <span class="k">if</span> <span class="s">&#39;VERSION&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">VERSION</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span> <span class="o">=</span> <span class="s">&quot;0.0 (unknown)&quot;</span>
+            <span class="c"># We don&#39;t need to get more attributes from disk,</span>
+            <span class="c"># since the most important ones are defined as properties.</span>
+
+    <span class="n">_g_postInitHook</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_post_init_hook</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span> <span class="ow">and</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_node_manager</span><span class="o">.</span><span class="n">registry</span> <span class="ow">and</span>
+                <span class="s">&#39;_v_children&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">):</span>
+            <span class="c"># The group is going to be killed.  Rebuild weak references</span>
+            <span class="c"># (that Python cancelled just before calling this method) so</span>
+            <span class="c"># that they are still usable if the object is revived later.</span>
+            <span class="n">selfref</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="o">.</span><span class="n">containerref</span> <span class="o">=</span> <span class="n">selfref</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_groups</span><span class="o">.</span><span class="n">containerref</span> <span class="o">=</span> <span class="n">selfref</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_leaves</span><span class="o">.</span><span class="n">containerref</span> <span class="o">=</span> <span class="n">selfref</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_links</span><span class="o">.</span><span class="n">containerref</span> <span class="o">=</span> <span class="n">selfref</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_unknown</span><span class="o">.</span><span class="n">containerref</span> <span class="o">=</span> <span class="n">selfref</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_hidden</span><span class="o">.</span><span class="n">containerref</span> <span class="o">=</span> <span class="n">selfref</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__del__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_g_get_child_group_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the class of a not-yet-loaded group child.</span>
+
+<span class="sd">        `childname` must be the name of a *group* child.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">childCID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_get_gchild_attr</span><span class="p">(</span><span class="n">childname</span><span class="p">,</span> <span class="s">&#39;CLASS&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">childCID</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">childCID</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">childCID</span> <span class="o">=</span> <span class="n">childCID</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">childCID</span> <span class="ow">in</span> <span class="n">class_id_dict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">class_id_dict</span><span class="p">[</span><span class="n">childCID</span><span class="p">]</span>  <span class="c"># look up group class</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Group</span>  <span class="c"># default group class</span>
+
+    <span class="n">_g_getChildGroupClass</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_get_child_group_class</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_get_child_leaf_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the class of a not-yet-loaded leaf child.</span>
+
+<span class="sd">        `childname` must be the name of a *leaf* child.  If the child</span>
+<span class="sd">        belongs to an unknown kind of leaf, or if its kind can not be</span>
+<span class="sd">        guessed, `UnImplemented` will be returned and a warning will be</span>
+<span class="sd">        issued if `warn` is true.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;PYTABLES_SYS_ATTRS&#39;</span><span class="p">]:</span>
+            <span class="n">childCID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_get_lchild_attr</span><span class="p">(</span><span class="n">childname</span><span class="p">,</span> <span class="s">&#39;CLASS&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">childCID</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">childCID</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">childCID</span> <span class="o">=</span> <span class="n">childCID</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">childCID</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="n">childCID</span> <span class="ow">in</span> <span class="n">class_id_dict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">class_id_dict</span><span class="p">[</span><span class="n">childCID</span><span class="p">]</span>  <span class="c"># look up leaf class</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Unknown or no ``CLASS`` attribute, try a guess.</span>
+            <span class="n">childCID2</span> <span class="o">=</span> <span class="n">utilsextension</span><span class="o">.</span><span class="n">which_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">childCID2</span> <span class="o">==</span> <span class="s">&#39;UNSUPPORTED&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">warn</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">childCID</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                            <span class="s">&quot;leaf ``</span><span class="si">%s</span><span class="s">`` is of an unsupported type; &quot;</span>
+                            <span class="s">&quot;it will become an ``UnImplemented`` node&quot;</span>
+                            <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_join</span><span class="p">(</span><span class="n">childname</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                            <span class="p">(</span><span class="s">&quot;leaf ``</span><span class="si">%s</span><span class="s">`` has an unknown class ID ``</span><span class="si">%s</span><span class="s">``; &quot;</span>
+                             <span class="s">&quot;it will become an ``UnImplemented`` node&quot;</span><span class="p">)</span>
+                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_g_join</span><span class="p">(</span><span class="n">childname</span><span class="p">),</span> <span class="n">childCID</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">UnImplemented</span>
+            <span class="k">assert</span> <span class="n">childCID2</span> <span class="ow">in</span> <span class="n">class_id_dict</span>
+            <span class="k">return</span> <span class="n">class_id_dict</span><span class="p">[</span><span class="n">childCID2</span><span class="p">]</span>  <span class="c"># look up leaf class</span>
+
+    <span class="n">_g_getChildLeafClass</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_get_child_leaf_class</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_add_children_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add children names to this group taking into account their</span>
+<span class="sd">        visibility and kind.&quot;&quot;&quot;</span>
+
+        <span class="n">mydict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
+
+        <span class="c"># The names of the lazy attributes</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&#39;__members__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">members</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="sd">&quot;&quot;&quot;The names of visible children nodes for readline-style completion.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&#39;_v_children&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">children</span> <span class="o">=</span> <span class="n">_ChildrenDict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;The number of children hanging from this group.&quot;&quot;&quot;</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&#39;_v_groups&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">groups</span> <span class="o">=</span> <span class="n">_ChildrenDict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Dictionary with all groups hanging from this group.&quot;&quot;&quot;</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&#39;_v_leaves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">leaves</span> <span class="o">=</span> <span class="n">_ChildrenDict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Dictionary with all leaves hanging from this group.&quot;&quot;&quot;</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&#39;_v_links&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">links</span> <span class="o">=</span> <span class="n">_ChildrenDict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Dictionary with all links hanging from this group.&quot;&quot;&quot;</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&#39;_v_unknown&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">unknown</span> <span class="o">=</span> <span class="n">_ChildrenDict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Dictionary with all unknown nodes hanging from this group.&quot;&quot;&quot;</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&#39;_v_hidden&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hidden</span> <span class="o">=</span> <span class="n">_ChildrenDict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Dictionary with all hidden nodes hanging from this group.&quot;&quot;&quot;</span>
+
+        <span class="c"># Get the names of *all* child groups and leaves.</span>
+        <span class="p">(</span><span class="n">group_names</span><span class="p">,</span> <span class="n">leaf_names</span><span class="p">,</span> <span class="n">link_names</span><span class="p">,</span> <span class="n">unknown_names</span><span class="p">)</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_list_group</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span><span class="p">)</span>
+
+        <span class="c"># Separate groups into visible groups and hidden nodes,</span>
+        <span class="c"># and leaves into visible leaves and hidden nodes.</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">childnames</span><span class="p">,</span> <span class="n">childdict</span><span class="p">)</span> <span class="ow">in</span> <span class="p">((</span><span class="n">group_names</span><span class="p">,</span> <span class="n">groups</span><span class="p">),</span>
+                                        <span class="p">(</span><span class="n">leaf_names</span><span class="p">,</span> <span class="n">leaves</span><span class="p">),</span>
+                                        <span class="p">(</span><span class="n">link_names</span><span class="p">,</span> <span class="n">links</span><span class="p">),</span>
+                                        <span class="p">(</span><span class="n">unknown_names</span><span class="p">,</span> <span class="n">unknown</span><span class="p">)):</span>
+
+            <span class="k">for</span> <span class="n">childname</span> <span class="ow">in</span> <span class="n">childnames</span><span class="p">:</span>
+                <span class="c"># See whether the name implies that the node is hidden.</span>
+                <span class="c"># (Assigned values are entirely irrelevant.)</span>
+                <span class="k">if</span> <span class="n">isvisiblename</span><span class="p">(</span><span class="n">childname</span><span class="p">):</span>
+                    <span class="c"># Visible node.</span>
+                    <span class="n">members</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>
+                    <span class="n">children</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+                    <span class="n">childdict</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># Hidden node.</span>
+                    <span class="n">hidden</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="n">_g_addChildrenNames</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_add_children_names</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_check_has_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check whether &#39;name&#39; is a children of &#39;self&#39; and return its type.&quot;&quot;&quot;</span>
+
+        <span class="c"># Get the HDF5 name matching the PyTables name.</span>
+        <span class="n">node_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_get_objinfo</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">node_type</span> <span class="o">==</span> <span class="s">&quot;NoSuchNode&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NoSuchNodeError</span><span class="p">(</span>
+                <span class="s">&quot;group ``</span><span class="si">%s</span><span class="s">`` does not have a child named ``</span><span class="si">%s</span><span class="s">``&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">node_type</span>
+
+    <span class="n">_g_checkHasChild</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_check_has_child</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Group.__iter__"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over the child nodes hanging directly from the group.</span>
+
+<span class="sd">        This iterator is *not* recursive.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            # Non-recursively list all the nodes hanging from &#39;/detector&#39;</span>
+<span class="sd">            print(&quot;Nodes in &#39;/detector&#39; group:&quot;)</span>
+<span class="sd">            for node in h5file.root.detector:</span>
+<span class="sd">                print(node)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_iter_nodes</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Group.__contains__"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group.__contains__">[docs]</a>    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Is there a child with that `name`?</span>
+
+<span class="sd">        Returns a true value if the group has a child node (visible or</span>
+<span class="sd">        hidden) with the given `name` (a string), false otherwise.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_has_child</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NoSuchNodeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="Group._f_walknodes"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group._f_walknodes">[docs]</a>    <span class="k">def</span> <span class="nf">_f_walknodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classname</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over descendant nodes.</span>
+
+<span class="sd">        This method recursively walks *self* top to bottom (preorder),</span>
+<span class="sd">        iterating over child groups in alphanumerical order, and yielding</span>
+<span class="sd">        nodes.  If classname is supplied, only instances of the named class are</span>
+<span class="sd">        yielded.</span>
+
+<span class="sd">        If *classname* is Group, it behaves like :meth:`Group._f_walk_groups`,</span>
+<span class="sd">        yielding only groups.  If you don&#39;t want a recursive behavior,</span>
+<span class="sd">        use :meth:`Group._f_iter_nodes` instead.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            # Recursively print all the arrays hanging from &#39;/&#39;</span>
+<span class="sd">            print(&quot;Arrays in the object tree &#39;/&#39;:&quot;)</span>
+<span class="sd">            for array in h5file.root._f_walknodes(&#39;Array&#39;, recursive=True):</span>
+<span class="sd">                print(array)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+
+        <span class="c"># For compatibility with old default arguments.</span>
+        <span class="k">if</span> <span class="n">classname</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">classname</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="n">classname</span> <span class="o">==</span> <span class="s">&quot;Group&quot;</span><span class="p">:</span>
+            <span class="c"># Recursive algorithm</span>
+            <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_walk_groups</span><span class="p">():</span>
+                <span class="k">yield</span> <span class="n">group</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_walk_groups</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">leaf</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">_f_iter_nodes</span><span class="p">(</span><span class="n">classname</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">leaf</span>
+</div>
+    <span class="n">_f_walkNodes</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_f_walknodes</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_join</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper method to correctly concatenate a name child object with the</span>
+<span class="sd">        pathname of this group.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&quot;/&quot;</span><span class="p">:</span>
+            <span class="c"># This case can happen when doing copies</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="k">return</span> <span class="n">join_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_width_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Issue a :exc:`PerformanceWarning` on too many children.&quot;&quot;&quot;</span>
+
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">group ``</span><span class="si">%s</span><span class="s">`` is exceeding the recommended maximum number of children (</span><span class="si">%d</span><span class="s">); </span><span class="se">\</span>
+<span class="s">be ready to see PyTables asking for *lots* of memory and possibly slow I/O.&quot;&quot;&quot;</span>
+                      <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_max_group_width</span><span class="p">),</span>
+                      <span class="n">PerformanceWarning</span><span class="p">)</span>
+
+    <span class="n">_g_widthWarning</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_width_warning</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_refnode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childnode</span><span class="p">,</span> <span class="n">childname</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Insert references to a `childnode` via a `childname`.</span>
+
+<span class="sd">        Checks that the `childname` is valid and does not exist, then</span>
+<span class="sd">        creates references to the given `childnode` by that `childname`.</span>
+<span class="sd">        The validation of the name can be omitted by setting `validate`</span>
+<span class="sd">        to a false value (this may be useful for adding already existing</span>
+<span class="sd">        nodes to the tree).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Check for name validity.</span>
+        <span class="k">if</span> <span class="n">validate</span><span class="p">:</span>
+            <span class="n">check_name_validity</span><span class="p">(</span><span class="n">childname</span><span class="p">)</span>
+            <span class="n">childnode</span><span class="o">.</span><span class="n">_g_check_name</span><span class="p">(</span><span class="n">childname</span><span class="p">)</span>
+
+        <span class="c"># Check if there is already a child with the same name.</span>
+        <span class="c"># This can be triggered because of the user</span>
+        <span class="c"># (via node construction or renaming/movement).</span>
+        <span class="c"># Links are not checked here because they are copied and referenced</span>
+        <span class="c"># using ``File.get_node`` so they already exist in `self`.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">childnode</span><span class="p">,</span> <span class="n">Link</span><span class="p">))</span> <span class="ow">and</span> <span class="n">childname</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span>
+                <span class="s">&quot;group ``</span><span class="si">%s</span><span class="s">`` already has a child node named ``</span><span class="si">%s</span><span class="s">``&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">childname</span><span class="p">))</span>
+
+        <span class="c"># Show a warning if there is an object attribute with that name.</span>
+        <span class="k">if</span> <span class="n">childname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s">&quot;group ``</span><span class="si">%s</span><span class="s">`` already has an attribute named ``</span><span class="si">%s</span><span class="s">``; &quot;</span>
+                <span class="s">&quot;you will not be able to use natural naming &quot;</span>
+                <span class="s">&quot;to access the child node&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">childname</span><span class="p">),</span> <span class="n">NaturalNameWarning</span><span class="p">)</span>
+
+        <span class="c"># Check group width limits.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_hidden</span><span class="p">)</span> <span class="o">&gt;=</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_max_group_width</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_width_warning</span><span class="p">()</span>
+
+        <span class="c"># Update members information.</span>
+        <span class="c"># Insert references to the new child.</span>
+        <span class="c"># (Assigned values are entirely irrelevant.)</span>
+        <span class="k">if</span> <span class="n">isvisiblename</span><span class="p">(</span><span class="n">childname</span><span class="p">):</span>
+            <span class="c"># Visible node.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__members__</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>  <span class="c"># enable completion</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c"># insert node</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">childnode</span><span class="p">,</span> <span class="n">Unknown</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_unknown</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">childnode</span><span class="p">,</span> <span class="n">Link</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_links</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">childnode</span><span class="p">,</span> <span class="n">Leaf</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_leaves</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">childnode</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_groups</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Hidden node.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_hidden</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c"># insert node</span>
+
+    <span class="n">_g_refNode</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_refnode</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_unrefnode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove references to a node.</span>
+
+<span class="sd">        Removes all references to the named node.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># This can *not* be triggered because of the user.</span>
+        <span class="k">assert</span> <span class="n">childname</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">,</span> \
+            <span class="p">(</span><span class="s">&quot;group ``</span><span class="si">%s</span><span class="s">`` does not have a child node named ``</span><span class="si">%s</span><span class="s">``&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">childname</span><span class="p">))</span>
+
+        <span class="c"># Update members information, if needed</span>
+        <span class="k">if</span> <span class="s">&#39;_v_children&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">childname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="p">:</span>
+                <span class="c"># Visible node.</span>
+                <span class="n">members</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__members__</span>
+                <span class="n">member_index</span> <span class="o">=</span> <span class="n">members</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">childname</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">members</span><span class="p">[</span><span class="n">member_index</span><span class="p">]</span>  <span class="c"># disables completion</span>
+
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span>  <span class="c"># remove node</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_unknown</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">childname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_links</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">childname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_leaves</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">childname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_groups</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">childname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Hidden node.</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_hidden</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span>  <span class="c"># remove node</span>
+
+    <span class="n">_g_unrefNode</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_unrefnode</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">):</span>
+        <span class="c"># Move the node to the new location.</span>
+        <span class="n">oldpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_g_move</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">)</span>
+        <span class="n">newpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+
+        <span class="c"># Update location information in children.  This node shouldn&#39;t</span>
+        <span class="c"># be affected since it has already been relocated.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_update_node_locations</span><span class="p">(</span><span class="n">oldpath</span><span class="p">,</span> <span class="n">newpath</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c"># Compute default arguments.</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;title&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_title</span><span class="p">)</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;filters&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;stats&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+        <span class="c"># Fix arguments with explicit None values for backwards compatibility.</span>
+        <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_title</span>
+        <span class="c"># If no filters have been passed to the call, copy them from the</span>
+        <span class="c"># source group, but only if inherited or explicitly set.</span>
+        <span class="k">if</span> <span class="n">filters</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">filters</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="s">&#39;FILTERS&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+        <span class="c"># Create a copy of the object.</span>
+        <span class="n">new_node</span> <span class="o">=</span> <span class="n">Group</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span>
+                         <span class="n">title</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="n">_log</span><span class="p">)</span>
+
+        <span class="c"># Copy user attributes if needed.</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;copyuserattrs&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">new_node</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">copyclass</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="c"># Update statistics if needed.</span>
+        <span class="k">if</span> <span class="n">stats</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s">&#39;groups&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="c"># Copy child nodes if a recursive copy was requested.</span>
+            <span class="c"># Some arguments should *not* be passed to children copy ops.</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;title&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy_children</span><span class="p">(</span><span class="n">new_node</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_node</span>
+
+    <span class="k">def</span> <span class="nf">_g_copy_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy child nodes.</span>
+
+<span class="sd">        Copies all nodes descending from this one into the specified</span>
+<span class="sd">        `newparent`.  If the new parent has a child node with the same</span>
+<span class="sd">        name as one of the nodes in this group, the copy fails with a</span>
+<span class="sd">        `NodeError`, maybe resulting in a partial copy.  Nothing is</span>
+<span class="sd">        logged.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Recursive version of children copy.</span>
+        <span class="c"># for srcchild in self._v_children.itervalues():</span>
+        <span class="c">##    srcchild._g_copy_as_child(newparent, **kwargs)</span>
+
+        <span class="c"># Non-recursive version of children copy.</span>
+        <span class="n">use_hardlinks</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;use_hardlinks&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_hardlinks</span><span class="p">:</span>
+            <span class="n">address_map</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;address_map&#39;</span><span class="p">,</span> <span class="p">{})</span>
+
+        <span class="n">parentstack</span> <span class="o">=</span> <span class="p">[(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">)]</span>  <span class="c"># [(source, destination), ...]</span>
+        <span class="k">while</span> <span class="n">parentstack</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">srcparent</span><span class="p">,</span> <span class="n">dstparent</span><span class="p">)</span> <span class="o">=</span> <span class="n">parentstack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">use_hardlinks</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">srcchild</span> <span class="ow">in</span> <span class="n">srcparent</span><span class="o">.</span><span class="n">_v_children</span><span class="o">.</span><span class="n">itervalues</span><span class="p">():</span>
+                    <span class="n">addr</span><span class="p">,</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">srcchild</span><span class="o">.</span><span class="n">_get_obj_info</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">rc</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">addr</span> <span class="ow">in</span> <span class="n">address_map</span><span class="p">:</span>
+                        <span class="n">where</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">address_map</span><span class="p">[</span><span class="n">addr</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">localsrc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                        <span class="n">dstparent</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">create_hard_link</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span>
+                                                           <span class="n">srcchild</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                                           <span class="n">localsrc</span><span class="p">)</span>
+                        <span class="n">address_map</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="p">(</span><span class="n">dstparent</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">srcchild</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                        <span class="p">)</span>
+
+                        <span class="c"># Update statistics if needed.</span>
+                        <span class="n">stats</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;stats&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">stats</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                            <span class="n">stats</span><span class="p">[</span><span class="s">&#39;hardlinks&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">dstchild</span> <span class="o">=</span> <span class="n">srcchild</span><span class="o">.</span><span class="n">_g_copy_as_child</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span>
+                                                             <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">srcchild</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
+                            <span class="n">parentstack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">srcchild</span><span class="p">,</span> <span class="n">dstchild</span><span class="p">))</span>
+
+                        <span class="k">if</span> <span class="n">rc</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="n">address_map</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                                <span class="p">(</span><span class="n">dstparent</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">srcchild</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                            <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">srcchild</span> <span class="ow">in</span> <span class="n">srcparent</span><span class="o">.</span><span class="n">_v_children</span><span class="o">.</span><span class="n">itervalues</span><span class="p">():</span>
+                    <span class="n">dstchild</span> <span class="o">=</span> <span class="n">srcchild</span><span class="o">.</span><span class="n">_g_copy_as_child</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">srcchild</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
+                        <span class="n">parentstack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">srcchild</span><span class="p">,</span> <span class="n">dstchild</span><span class="p">))</span>
+
+    <span class="n">_g_copyChildren</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_copy_children</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Group._f_get_child"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group._f_get_child">[docs]</a>    <span class="k">def</span> <span class="nf">_f_get_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the child called childname of this group.</span>
+
+<span class="sd">        If the child exists (be it visible or not), it is returned.  Else, a</span>
+<span class="sd">        NoSuchNodeError is raised.</span>
+
+<span class="sd">        Using this method is recommended over getattr() when doing programmatic</span>
+<span class="sd">        accesses to children if childname is unknown beforehand or when its</span>
+<span class="sd">        name is not a valid Python identifier.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_has_child</span><span class="p">(</span><span class="n">childname</span><span class="p">)</span>
+
+        <span class="n">childpath</span> <span class="o">=</span> <span class="n">join_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">childpath</span><span class="p">)</span>
+</div>
+    <span class="n">_f_getChild</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_f_get_child</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Group._f_list_nodes"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group._f_list_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">_f_list_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classname</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a *list* with children nodes.</span>
+
+<span class="sd">        This is a list-returning version of :meth:`Group._f_iter_nodes()`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_f_iter_nodes</span><span class="p">(</span><span class="n">classname</span><span class="p">))</span>
+</div>
+    <span class="n">_f_listNodes</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_f_list_nodes</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Group._f_iter_nodes"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group._f_iter_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">_f_iter_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classname</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over children nodes.</span>
+
+<span class="sd">        Child nodes are yielded alphanumerically sorted by node name.  If the</span>
+<span class="sd">        name of a class derived from Node (see :ref:`NodeClassDescr`) is</span>
+<span class="sd">        supplied in the classname parameter, only instances of that class (or</span>
+<span class="sd">        subclasses of it) will be returned.</span>
+
+<span class="sd">        This is an iterator version of :meth:`Group._f_list_nodes`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">classname</span><span class="p">:</span>
+            <span class="c"># Returns all the children alphanumerically sorted</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">classname</span> <span class="o">==</span> <span class="s">&#39;Group&#39;</span><span class="p">:</span>
+            <span class="c"># Returns all the groups alphanumerically sorted</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_groups</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_groups</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">classname</span> <span class="o">==</span> <span class="s">&#39;Leaf&#39;</span><span class="p">:</span>
+            <span class="c"># Returns all the leaves alphanumerically sorted</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_leaves</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_leaves</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">classname</span> <span class="o">==</span> <span class="s">&#39;Link&#39;</span><span class="p">:</span>
+            <span class="c"># Returns all the links alphanumerically sorted</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_links</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_links</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">classname</span> <span class="o">==</span> <span class="s">&#39;IndexArray&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s">&quot;listing ``IndexArray`` nodes is not allowed&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">class_</span> <span class="o">=</span> <span class="n">get_class_by_name</span><span class="p">(</span><span class="n">classname</span><span class="p">)</span>
+
+            <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span>
+            <span class="n">childnames</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">children</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">())</span>
+
+            <span class="k">for</span> <span class="n">childname</span> <span class="ow">in</span> <span class="n">childnames</span><span class="p">:</span>
+                <span class="n">childnode</span> <span class="o">=</span> <span class="n">children</span><span class="p">[</span><span class="n">childname</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">childnode</span><span class="p">,</span> <span class="n">class_</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">childnode</span>
+</div>
+    <span class="n">_f_iterNodes</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_f_iter_nodes</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Group._f_walk_groups"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group._f_walk_groups">[docs]</a>    <span class="k">def</span> <span class="nf">_f_walk_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Recursively iterate over descendent groups (not leaves).</span>
+
+<span class="sd">        This method starts by yielding *self*, and then it goes on to</span>
+<span class="sd">        recursively iterate over all child groups in alphanumerical order, top</span>
+<span class="sd">        to bottom (preorder), following the same procedure.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+
+        <span class="n">stack</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span>
+        <span class="k">yield</span> <span class="bp">self</span>
+        <span class="c"># Iterate over the descendants</span>
+        <span class="k">while</span> <span class="n">stack</span><span class="p">:</span>
+            <span class="n">objgroup</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">groupnames</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">objgroup</span><span class="o">.</span><span class="n">_v_groups</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">())</span>
+            <span class="c"># Sort the groups before delivering. This uses the groups names</span>
+            <span class="c"># for groups in tree (in order to sort() can classify them).</span>
+            <span class="k">for</span> <span class="n">groupname</span> <span class="ow">in</span> <span class="n">groupnames</span><span class="p">:</span>
+                <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">objgroup</span><span class="o">.</span><span class="n">_v_groups</span><span class="p">[</span><span class="n">groupname</span><span class="p">])</span>
+                <span class="k">yield</span> <span class="n">objgroup</span><span class="o">.</span><span class="n">_v_groups</span><span class="p">[</span><span class="n">groupname</span><span class="p">]</span>
+</div>
+    <span class="n">_f_walkGroups</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_f_walk_groups</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Group.__delattr__"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group.__delattr__">[docs]</a>    <span class="k">def</span> <span class="nf">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Delete a Python attribute called name.</span>
+
+<span class="sd">        This method deletes an *ordinary Python attribute* from the object.</span>
+<span class="sd">        It does *not* remove children nodes from this group; for that,</span>
+<span class="sd">        use :meth:`File.remove_node` or :meth:`Node._f_remove`.</span>
+<span class="sd">        It does *neither* delete a PyTables node attribute; for that,</span>
+<span class="sd">        use :meth:`File.del_node_attr`, :meth:`Node._f_delattr` or</span>
+<span class="sd">        :attr:`Node._v_attrs``.</span>
+
+<span class="sd">        If there is an attribute and a child node with the same name,</span>
+<span class="sd">        the child node will be made accessible again via natural naming.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__delattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>  <span class="c"># nothing particular</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">ae</span><span class="p">:</span>
+            <span class="n">hint</span> <span class="o">=</span> <span class="s">&quot; (use ``node._f_remove()`` if you want to remove a node)&quot;</span>
+            <span class="k">raise</span> <span class="n">ae</span><span class="o">.</span><span class="n">__class__</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ae</span><span class="p">)</span> <span class="o">+</span> <span class="n">hint</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Group.__getattr__"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group.__getattr__">[docs]</a>    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a Python attribute or child node called name.</span>
+
+<span class="sd">        If the object has a Python attribute called name, its value is</span>
+<span class="sd">        returned. Else, if the node has a child node called name, it is</span>
+<span class="sd">        returned.  Else, an AttributeError is raised.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># That is true since a `NoSuchNodeError` is an `AttributeError`.</span>
+        <span class="n">mydict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">mydict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mydict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_lazy_children_attrs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_add_children_names</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">mydict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_get_child</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Group.__setattr__"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group.__setattr__">[docs]</a>    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set a Python attribute called name with the given value.</span>
+
+<span class="sd">        This method stores an *ordinary Python attribute* in the object. It</span>
+<span class="sd">        does *not* store new children nodes under this group; for that, use the</span>
+<span class="sd">        File.create*() methods (see the File class</span>
+<span class="sd">        in :ref:`FileClassDescr`). It does *neither* store a PyTables node</span>
+<span class="sd">        attribute; for that,</span>
+<span class="sd">        use :meth:`File.set_node_attr`, :meth`:Node._f_setattr`</span>
+<span class="sd">        or :attr:`Node._v_attrs`.</span>
+
+<span class="sd">        If there is already a child node with the same name, a</span>
+<span class="sd">        NaturalNameWarning will be issued and the child node will not be</span>
+<span class="sd">        accessible via natural naming nor getattr(). It will still be available</span>
+<span class="sd">        via :meth:`File.get_node`, :meth:`Group._f_get_child` and children</span>
+<span class="sd">        dictionaries in the group (if visible).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Show a warning if there is an child node with that name.</span>
+        <span class="c">#</span>
+        <span class="c"># ..note::</span>
+        <span class="c">#</span>
+        <span class="c">#   Using ``if name in self:`` is not right since that would</span>
+        <span class="c">#   require ``_v_children`` and ``_v_hidden`` to be already set</span>
+        <span class="c">#   when the very first attribute assignments are made.</span>
+        <span class="c">#   Moreover, this warning is only concerned about clashes with</span>
+        <span class="c">#   names used in natural naming, i.e. those in ``__members__``.</span>
+        <span class="c">#</span>
+        <span class="c"># ..note::</span>
+        <span class="c">#</span>
+        <span class="c">#   The check ``&#39;__members__&#39; in myDict`` allows attribute</span>
+        <span class="c">#   assignment to happen before calling `Group.__init__()`, by</span>
+        <span class="c">#   avoiding to look into the still not assigned ``__members__``</span>
+        <span class="c">#   attribute.  This allows subclasses to set up some attributes</span>
+        <span class="c">#   and then call the constructor of the superclass.  If the</span>
+        <span class="c">#   check above is disabled, that results in Python entering an</span>
+        <span class="c">#   endless loop on exit!</span>
+
+        <span class="n">mydict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
+        <span class="k">if</span> <span class="s">&#39;__members__&#39;</span> <span class="ow">in</span> <span class="n">mydict</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__members__</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s">&quot;group ``</span><span class="si">%s</span><span class="s">`` already has a child node named ``</span><span class="si">%s</span><span class="s">``; &quot;</span>
+                <span class="s">&quot;you will not be able to use natural naming &quot;</span>
+                <span class="s">&quot;to access the child node&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span> <span class="n">NaturalNameWarning</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_f_flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flush this Group.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_flush_group</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_g_close_descendents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close all the *loaded* descendent nodes of this group.&quot;&quot;&quot;</span>
+
+        <span class="n">node_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_node_manager</span>
+        <span class="n">node_manager</span><span class="o">.</span><span class="n">close_subtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+
+    <span class="n">_g_closeDescendents</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_close_descendents</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close this (open) group.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="c"># hdf5extension operations:</span>
+            <span class="c">#   Close HDF5 group.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_close_group</span><span class="p">()</span>
+
+        <span class="c"># Close myself as a node.</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_f_close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Group._f_close"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group._f_close">[docs]</a>    <span class="k">def</span> <span class="nf">_f_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close this group and all its descendents.</span>
+
+<span class="sd">        This method has the behavior described in :meth:`Node._f_close`.</span>
+<span class="sd">        It should be noted that this operation closes all the nodes</span>
+<span class="sd">        descending from this group.</span>
+
+<span class="sd">        You should not need to close nodes manually because they are</span>
+<span class="sd">        automatically opened/closed when they are loaded/evicted from</span>
+<span class="sd">        the integrated LRU cache.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># If the group is already closed, return immediately</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c"># First, close all the descendents of this group, unless a) the</span>
+        <span class="c"># group is being deleted (evicted from LRU cache) or b) the node</span>
+        <span class="c"># is being closed during an aborted creation, in which cases</span>
+        <span class="c"># this is not an explicit close issued by the user.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__deleting</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_close_descendents</span><span class="p">()</span>
+
+        <span class="c"># When all the descendents have been closed, close this group.</span>
+        <span class="c"># This is done at the end because some nodes may still need to</span>
+        <span class="c"># be loaded during the closing process; thus this node must be</span>
+        <span class="c"># open until the very end.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_close</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">_g_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove (recursively if needed) the Group.</span>
+
+<span class="sd">        This version correctly handles both visible and hidden nodes.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_nchildren</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">recursive</span> <span class="ow">or</span> <span class="n">force</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span><span class="s">&quot;group ``</span><span class="si">%s</span><span class="s">`` has child nodes; &quot;</span>
+                                <span class="s">&quot;please set `recursive` or `force` to true &quot;</span>
+                                <span class="s">&quot;to remove it&quot;</span>
+                                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,))</span>
+
+            <span class="c"># First close all the descendents hanging from this group,</span>
+            <span class="c"># so that it is not possible to use a node that no longer exists.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_close_descendents</span><span class="p">()</span>
+
+        <span class="c"># Remove the node itself from the hierarchy.</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_g_remove</span><span class="p">(</span><span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Group._f_copy"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group._f_copy">[docs]</a>    <span class="k">def</span> <span class="nf">_f_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy this node and return the new one.</span>
+
+<span class="sd">        This method has the behavior described in :meth:`Node._f_copy`.</span>
+<span class="sd">        In addition, it recognizes the following keyword arguments:</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        title</span>
+<span class="sd">            The new title for the destination. If omitted or None, the</span>
+<span class="sd">            original title is used. This only applies to the topmost</span>
+<span class="sd">            node in recursive copies.</span>
+<span class="sd">        filters : Filters</span>
+<span class="sd">            Specifying this parameter overrides the original filter</span>
+<span class="sd">            properties in the source node. If specified, it must be an</span>
+<span class="sd">            instance of the Filters class (see :ref:`FiltersClassDescr`).</span>
+<span class="sd">            The default is to copy the filter properties from the source</span>
+<span class="sd">            node.</span>
+<span class="sd">        copyuserattrs</span>
+<span class="sd">            You can prevent the user attributes from being copied by setting</span>
+<span class="sd">            thisparameter to False. The default is to copy them.</span>
+<span class="sd">        stats</span>
+<span class="sd">            This argument may be used to collect statistics on the copy</span>
+<span class="sd">            process. When used, it should be a dictionary with keys &#39;groups&#39;,</span>
+<span class="sd">            &#39;leaves&#39;, &#39;links&#39; and &#39;bytes&#39; having a numeric value. Their values</span>
+<span class="sd">            willbe incremented to reflect the number of groups, leaves and</span>
+<span class="sd">            bytes, respectively, that have been copied during the operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_f_copy</span><span class="p">(</span>
+            <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">createparents</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Group._f_copy_children"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Group._f_copy_children">[docs]</a>    <span class="k">def</span> <span class="nf">_f_copy_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dstgroup</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                         <span class="n">createparents</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy the children of this group into another group.</span>
+
+<span class="sd">        Children hanging directly from this group are copied into dstgroup,</span>
+<span class="sd">        which can be a Group (see :ref:`GroupClassDescr`) object or its</span>
+<span class="sd">        pathname in string form. If createparents is true, the needed groups</span>
+<span class="sd">        for the given destination group path to exist will be created.</span>
+
+<span class="sd">        The operation will fail with a NodeError if there is a child node</span>
+<span class="sd">        in the destination group with the same name as one of the copied</span>
+<span class="sd">        children from this one, unless overwrite is true; in this case,</span>
+<span class="sd">        the former child node is recursively removed before copying the</span>
+<span class="sd">        later.</span>
+
+<span class="sd">        By default, nodes descending from children groups of this node</span>
+<span class="sd">        are not copied. If the recursive argument is true, all descendant</span>
+<span class="sd">        nodes of this node are recursively copied.</span>
+
+<span class="sd">        Additional keyword arguments may be passed to customize the</span>
+<span class="sd">        copying process. For instance, title and filters may be changed,</span>
+<span class="sd">        user attributes may be or may not be copied, data may be sub-sampled,</span>
+<span class="sd">        stats may be collected, etc. Arguments unknown to nodes are simply</span>
+<span class="sd">        ignored. Check the documentation for copying operations of nodes to</span>
+<span class="sd">        see which options they support.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+
+        <span class="c"># `dstgroup` is used instead of its path to avoid accepting</span>
+        <span class="c"># `Node` objects when `createparents` is true.  Also, note that</span>
+        <span class="c"># there is no risk of creating parent nodes and failing later</span>
+        <span class="c"># because of destination nodes already existing.</span>
+        <span class="n">dstparent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_or_create_path</span><span class="p">(</span><span class="n">dstgroup</span><span class="p">,</span> <span class="n">createparents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_group</span><span class="p">(</span><span class="n">dstparent</span><span class="p">)</span>  <span class="c"># Is it a group?</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="c"># Abort as early as possible when destination nodes exist</span>
+            <span class="c"># and overwriting is not enabled.</span>
+            <span class="k">for</span> <span class="n">childname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">childname</span> <span class="ow">in</span> <span class="n">dstparent</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span>
+                        <span class="s">&quot;destination group ``</span><span class="si">%s</span><span class="s">`` already has &quot;</span>
+                        <span class="s">&quot;a node named ``</span><span class="si">%s</span><span class="s">``; &quot;</span>
+                        <span class="s">&quot;you may want to use the ``overwrite`` argument&quot;</span>
+                        <span class="o">%</span> <span class="p">(</span><span class="n">dstparent</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">childname</span><span class="p">))</span>
+
+        <span class="n">use_hardlinks</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;use_hardlinks&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_hardlinks</span><span class="p">:</span>
+            <span class="n">address_map</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;address_map&#39;</span><span class="p">,</span> <span class="p">{})</span>
+
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="o">.</span><span class="n">itervalues</span><span class="p">():</span>
+                <span class="n">addr</span><span class="p">,</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">_get_obj_info</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">rc</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">addr</span> <span class="ow">in</span> <span class="n">address_map</span><span class="p">:</span>
+                    <span class="n">where</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">address_map</span><span class="p">[</span><span class="n">addr</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">localsrc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                    <span class="n">dstparent</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">create_hard_link</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                                       <span class="n">localsrc</span><span class="p">)</span>
+                    <span class="n">address_map</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">dstparent</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                    <span class="p">)</span>
+
+                    <span class="c"># Update statistics if needed.</span>
+                    <span class="n">stats</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;stats&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">stats</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">stats</span><span class="p">[</span><span class="s">&#39;hardlinks&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">child</span><span class="o">.</span><span class="n">_f_copy</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span>
+                                  <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">rc</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">address_map</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                            <span class="p">(</span><span class="n">dstparent</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                        <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="o">.</span><span class="n">itervalues</span><span class="p">():</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">_f_copy</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+    <span class="n">_f_copyChildren</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_f_copy_children</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a short string representation of the group.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            &gt;&gt;&gt; f=tables.open_file(&#39;data/test.h5&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; print(f.root.group0)</span>
+<span class="sd">            /group0 (Group) &#39;First Group&#39;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">pathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="n">classname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_title</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">) </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a detailed string representation of the group.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            &gt;&gt;&gt; f = tables.open_file(&#39;data/test.h5&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; f.root.group0</span>
+<span class="sd">            /group0 (Group) &#39;First Group&#39;</span>
+<span class="sd">              children := [&#39;tuple1&#39; (Table), &#39;group1&#39; (Group)]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s">&#39;</span><span class="si">%r</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">childname</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">childname</span><span class="p">,</span> <span class="n">child</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="n">childlist</span> <span class="o">=</span> <span class="s">&#39;[</span><span class="si">%s</span><span class="s">]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rep</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="se">\n</span><span class="s">  children := </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">childlist</span><span class="p">)</span>
+
+
+<span class="c"># Special definition for group root</span></div>
+<span class="k">class</span> <span class="nc">RootGroup</span><span class="p">(</span><span class="n">Group</span><span class="p">):</span>
+
+    <span class="n">_v_objectId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_v_objectid&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ptfile</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">new</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
+        <span class="n">mydict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
+
+        <span class="c"># Set group attributes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span> <span class="o">=</span> <span class="n">obversion</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span> <span class="o">=</span> <span class="n">new</span>
+        <span class="k">if</span> <span class="n">new</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_title</span> <span class="o">=</span> <span class="n">title</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_filters</span> <span class="o">=</span> <span class="n">filters</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_title</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_filters</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># Set node attributes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span> <span class="o">=</span> <span class="n">ptfile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span> <span class="o">=</span> <span class="bp">True</span>  <span class="c"># root is always open</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_depth</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_max_group_width</span> <span class="o">=</span> <span class="n">ptfile</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;MAX_GROUP_WIDTH&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v__deleting</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c"># later</span>
+
+        <span class="c"># Only the root node has the file as a parent.</span>
+        <span class="c"># Bypass __setattr__ to avoid the ``Node._v_parent`` property.</span>
+        <span class="n">mydict</span><span class="p">[</span><span class="s">&#39;_v_parent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ptfile</span>
+        <span class="n">ptfile</span><span class="o">.</span><span class="n">_node_manager</span><span class="o">.</span><span class="n">register_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;/&#39;</span><span class="p">)</span>
+
+        <span class="c"># hdf5extension operations (do before setting an AttributeSet):</span>
+        <span class="c">#   Update node attributes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_new</span><span class="p">(</span><span class="n">ptfile</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="c">#   Open the node and get its object ID.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_open</span><span class="p">()</span>
+
+        <span class="c"># Set disk attributes and read children names.</span>
+        <span class="c">#</span>
+        <span class="c"># This *must* be postponed because this method needs the root node</span>
+        <span class="c"># to be created and bound to ``File.root``.</span>
+        <span class="c"># This is an exception to the rule, handled by ``File.__init()__``.</span>
+        <span class="c">#</span>
+        <span class="c"># self._g_post_init_hook()</span>
+
+    <span class="k">def</span> <span class="nf">_g_load_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load a child node from disk.</span>
+
+<span class="sd">        The child node `childname` is loaded from disk and an adequate</span>
+<span class="sd">        `Node` object is created and returned.  If there is no such</span>
+<span class="sd">        child, a `NoSuchNodeError` is raised.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">root_uep</span> <span class="o">!=</span> <span class="s">&quot;/&quot;</span><span class="p">:</span>
+            <span class="n">childname</span> <span class="o">=</span> <span class="n">join_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">root_uep</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>
+        <span class="c"># Is the node a group or a leaf?</span>
+        <span class="n">node_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_has_child</span><span class="p">(</span><span class="n">childname</span><span class="p">)</span>
+
+        <span class="c"># Nodes that HDF5 report as H5G_UNKNOWN</span>
+        <span class="k">if</span> <span class="n">node_type</span> <span class="o">==</span> <span class="s">&#39;Unknown&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Unknown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>
+
+        <span class="c"># Guess the PyTables class suited to the node,</span>
+        <span class="c"># build a PyTables node and return it.</span>
+        <span class="k">if</span> <span class="n">node_type</span> <span class="o">==</span> <span class="s">&quot;Group&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;PYTABLES_SYS_ATTRS&#39;</span><span class="p">]:</span>
+                <span class="n">ChildClass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_get_child_group_class</span><span class="p">(</span><span class="n">childname</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Default is a Group class</span>
+                <span class="n">ChildClass</span> <span class="o">=</span> <span class="n">Group</span>
+            <span class="k">return</span> <span class="n">ChildClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">node_type</span> <span class="o">==</span> <span class="s">&quot;Leaf&quot;</span><span class="p">:</span>
+            <span class="n">ChildClass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_get_child_leaf_class</span><span class="p">(</span><span class="n">childname</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="c"># Building a leaf may still fail because of unsupported types</span>
+            <span class="c"># and other causes.</span>
+            <span class="c"># return ChildClass(self, childname)  # uncomment for debugging</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ChildClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>  <span class="c"># XXX</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s">&quot;problems loading leaf ``</span><span class="si">%s</span><span class="s">``::</span><span class="se">\n\n</span><span class="s">&quot;</span>
+                    <span class="s">&quot;  </span><span class="si">%s</span><span class="se">\n\n</span><span class="s">&quot;</span>
+                    <span class="s">&quot;The leaf will become an ``UnImplemented`` node.&quot;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_g_join</span><span class="p">(</span><span class="n">childname</span><span class="p">),</span> <span class="n">exc</span><span class="p">))</span>
+                <span class="c"># If not, associate an UnImplemented object to it</span>
+                <span class="k">return</span> <span class="n">UnImplemented</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">node_type</span> <span class="o">==</span> <span class="s">&quot;SoftLink&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SoftLink</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">node_type</span> <span class="o">==</span> <span class="s">&quot;ExternalLink&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ExternalLink</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">UnImplemented</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">childname</span><span class="p">)</span>
+
+    <span class="n">_g_loadChild</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_load_child</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_f_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newname</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span><span class="s">&quot;the root node can not be renamed&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_f_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span><span class="s">&quot;the root node can not be moved&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_f_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span><span class="s">&quot;the root node can not be removed&quot;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">TransactionGroupG</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;TRANSGROUP&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_width_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">the number of transactions is exceeding the recommended maximum (</span><span class="si">%d</span><span class="s">);</span><span class="se">\</span>
+<span class="s">be ready to see PyTables asking for *lots* of memory and possibly slow I/O&quot;&quot;&quot;</span>
+                      <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_max_group_width</span><span class="p">,),</span> <span class="n">PerformanceWarning</span><span class="p">)</span>
+
+    <span class="n">_g_widthWarning</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_width_warning</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">TransactionG</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;TRANSG&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_width_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">transaction ``</span><span class="si">%s</span><span class="s">`` is exceeding the recommended maximum number of marks (</span><span class="si">%d</span><span class="s">);</span><span class="se">\</span>
+<span class="s">be ready to see PyTables asking for *lots* of memory and possibly slow I/O&quot;&quot;&quot;</span>
+                      <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_max_group_width</span><span class="p">),</span>
+                      <span class="n">PerformanceWarning</span><span class="p">)</span>
+
+    <span class="n">_g_widthWarning</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_width_warning</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MarkG</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
+    <span class="c"># Class identifier.</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;MARKG&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="n">_c_shadow_name_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;^a[0-9]+$&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_width_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">mark ``</span><span class="si">%s</span><span class="s">`` is exceeding the recommended maximum action storage (</span><span class="si">%d</span><span class="s"> nodes);</span><span class="se">\</span>
+<span class="s">be ready to see PyTables asking for *lots* of memory and possibly slow I/O&quot;&quot;&quot;</span>
+                      <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_max_group_width</span><span class="p">),</span>
+                      <span class="n">PerformanceWarning</span><span class="p">)</span>
+
+    <span class="n">_g_widthWarning</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_width_warning</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Empty action storage (nodes and attributes).</span>
+
+<span class="sd">        This method empties all action storage kept in this node: nodes</span>
+<span class="sd">        and attributes.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Remove action storage nodes.</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_children</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">_g_remove</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+
+        <span class="c"># Remove action storage attributes.</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span>
+        <span class="n">shname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_shadow_name_re</span>
+        <span class="k">for</span> <span class="n">attrname</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="p">[:]:</span>
+            <span class="k">if</span> <span class="n">shname</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">attrname</span><span class="p">):</span>
+                <span class="n">attrs</span><span class="o">.</span><span class="n">_g__delattr</span><span class="p">(</span><span class="n">attrname</span><span class="p">)</span>
+
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## fill-column: 72</span>
+<span class="c">## End:</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

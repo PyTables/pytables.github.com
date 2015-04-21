@@ -1,0 +1,842 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.expression &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.expression</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: June 12, 2009</span>
+<span class="c"># Author: Francesc Alted - faltet@pytables.com</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Here is defined the Expr class.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tables</span> <span class="kn">as</span> <span class="nn">tb</span>
+<span class="kn">from</span> <span class="nn">numexpr.necompiler</span> <span class="kn">import</span> <span class="n">getContext</span><span class="p">,</span> <span class="n">getExprNames</span><span class="p">,</span> <span class="n">getType</span><span class="p">,</span> <span class="n">NumExpr</span>
+<span class="kn">from</span> <span class="nn">numexpr.expressions</span> <span class="kn">import</span> <span class="n">functions</span> <span class="k">as</span> <span class="n">numexpr_functions</span>
+<span class="kn">from</span> <span class="nn">tables.exceptions</span> <span class="kn">import</span> <span class="n">PerformanceWarning</span>
+<span class="kn">from</span> <span class="nn">tables.parameters</span> <span class="kn">import</span> <span class="n">IO_BUFFER_SIZE</span><span class="p">,</span> <span class="n">BUFFER_TIMES</span>
+
+<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span>
+
+
+<div class="viewcode-block" id="Expr"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr">[docs]</a><span class="k">class</span> <span class="nc">Expr</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A class for evaluating expressions with arbitrary array-like objects.</span>
+
+<span class="sd">    Expr is a class for evaluating expressions containing array-like objects.</span>
+<span class="sd">    With it, you can evaluate expressions (like &quot;3 * a + 4 * b&quot;) that</span>
+<span class="sd">    operate on arbitrary large arrays while optimizing the resources</span>
+<span class="sd">    required to perform them (basically main memory and CPU cache memory).</span>
+<span class="sd">    It is similar to the Numexpr package (see :ref:`[NUMEXPR] &lt;NUMEXPR&gt;`),</span>
+<span class="sd">    but in addition to NumPy objects, it also accepts disk-based homogeneous</span>
+<span class="sd">    arrays, like the Array, CArray, EArray and Column PyTables objects.</span>
+
+<span class="sd">    All the internal computations are performed via the Numexpr package,</span>
+<span class="sd">    so all the broadcast and upcasting rules of Numexpr applies here too.</span>
+<span class="sd">    These rules are very similar to the NumPy ones, but with some exceptions</span>
+<span class="sd">    due to the particularities of having to deal with potentially very large</span>
+<span class="sd">    disk-based arrays.  Be sure to read the documentation of the Expr</span>
+<span class="sd">    constructor and methods as well as that of Numexpr, if you want to fully</span>
+<span class="sd">    grasp these particularities.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    expr : str</span>
+<span class="sd">        This specifies the expression to be evaluated, such as &quot;2 * a + 3 * b&quot;.</span>
+<span class="sd">    uservars : dict</span>
+<span class="sd">        This can be used to define the variable names appearing in *expr*.</span>
+<span class="sd">        This mapping should consist of identifier-like strings pointing to any</span>
+<span class="sd">        `Array`, `CArray`, `EArray`, `Column` or NumPy ndarray instances (or</span>
+<span class="sd">        even others which will tried to be converted to ndarrays).  When</span>
+<span class="sd">        `uservars` is not provided or `None`, the current local and global</span>
+<span class="sd">        namespace is sought instead of `uservars`.  It is also possible to pass</span>
+<span class="sd">        just some of the variables in expression via the `uservars` mapping,</span>
+<span class="sd">        and the rest will be retrieved from the current local and global</span>
+<span class="sd">        namespaces.</span>
+<span class="sd">    kwargs : dict</span>
+<span class="sd">        This is meant to pass additional parameters to the Numexpr kernel.</span>
+<span class="sd">        This is basically the same as the kwargs argument in</span>
+<span class="sd">        Numexpr.evaluate(), and is mainly meant for advanced use.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    The following shows an example of using Expr.</span>
+
+<span class="sd">        &gt;&gt;&gt; a = f.create_array(&#39;/&#39;, &#39;a&#39;, np.array([1,2,3]))</span>
+<span class="sd">        &gt;&gt;&gt; b = f.create_array(&#39;/&#39;, &#39;b&#39;, np.array([3,4,5]))</span>
+<span class="sd">        &gt;&gt;&gt; c = np.array([4,5,6])</span>
+<span class="sd">        &gt;&gt;&gt; expr = tb.Expr(&quot;2 * a + b * c&quot;)   # initialize the expression</span>
+<span class="sd">        &gt;&gt;&gt; expr.eval()                 # evaluate it</span>
+<span class="sd">        array([14, 24, 36])</span>
+<span class="sd">        &gt;&gt;&gt; sum(expr)                   # use as an iterator</span>
+<span class="sd">        74</span>
+
+<span class="sd">    where you can see that you can mix different containers in</span>
+<span class="sd">    the expression (whenever shapes are consistent).</span>
+
+<span class="sd">    You can also work with multidimensional arrays::</span>
+
+<span class="sd">        &gt;&gt;&gt; a2 = f.create_array(&#39;/&#39;, &#39;a2&#39;, np.array([[1,2],[3,4]]))</span>
+<span class="sd">        &gt;&gt;&gt; b2 = f.create_array(&#39;/&#39;, &#39;b2&#39;, np.array([[3,4],[5,6]]))</span>
+<span class="sd">        &gt;&gt;&gt; c2 = np.array([4,5])           # This will be broadcasted</span>
+<span class="sd">        &gt;&gt;&gt; expr = tb.Expr(&quot;2 * a2 + b2-c2&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; expr.eval()</span>
+<span class="sd">        array([[1, 3],</span>
+<span class="sd">               [7, 9]])</span>
+<span class="sd">        &gt;&gt;&gt; sum(expr)</span>
+<span class="sd">        array([ 8, 12])</span>
+
+<span class="sd">    .. rubric:: Expr attributes</span>
+
+<span class="sd">    .. attribute:: append_mode</span>
+
+<span class="sd">        The append mode for user-provided output containers.</span>
+
+<span class="sd">    .. attribute:: maindim</span>
+
+<span class="sd">        Common main dimension for inputs in expression.</span>
+
+<span class="sd">    .. attribute:: names</span>
+
+<span class="sd">        The names of variables in expression (list).</span>
+
+<span class="sd">    .. attribute:: out</span>
+
+<span class="sd">        The user-provided container (if any) for the expression outcome.</span>
+
+<span class="sd">    .. attribute:: o_start</span>
+
+<span class="sd">        The start range selection for the user-provided output.</span>
+
+<span class="sd">    .. attribute:: o_stop</span>
+
+<span class="sd">        The stop range selection for the user-provided output.</span>
+
+<span class="sd">    .. attribute:: o_step</span>
+
+<span class="sd">        The step range selection for the user-provided output.</span>
+
+<span class="sd">    .. attribute:: shape</span>
+
+<span class="sd">        Common shape for the arrays in expression.</span>
+
+<span class="sd">    .. attribute:: values</span>
+
+<span class="sd">        The values of variables in expression (list).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_exprvars_cache</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="sd">&quot;&quot;&quot;Cache of variables participating in expressions.</span>
+
+<span class="sd">    .. versionadded:: 3.0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expr</span><span class="p">,</span> <span class="n">uservars</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">append_mode</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="sd">&quot;&quot;&quot;The append mode for user-provided output containers.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="sd">&quot;&quot;&quot;Common main dimension for inputs in expression.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="sd">&quot;&quot;&quot;The names of variables in expression (list).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The user-provided container (if any) for the expression outcome.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_start</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The start range selection for the user-provided output.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_stop</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The stop range selection for the user-provided output.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_step</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The step range selection for the user-provided output.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Common shape for the arrays in expression.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="p">(</span><span class="bp">None</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The start range selection for the input.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The stop range selection for the input.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The step range selection for the input.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="sd">&quot;&quot;&quot;The values of variables in expression (list).&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The compiled expression.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_single_row_out</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;A sample of the output with just a single row.&quot;&quot;&quot;</span>
+
+        <span class="c"># First, get the signature for the arrays in expression</span>
+        <span class="n">vars_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_required_expr_vars</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">uservars</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">getContext</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">getExprNames</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+        <span class="c"># Raise a ValueError in case we have unsupported objects</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">vars_</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">long</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="p">(</span><span class="n">tb</span><span class="o">.</span><span class="n">Leaf</span><span class="p">,</span> <span class="n">tb</span><span class="o">.</span><span class="n">Column</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="s">&quot;dtype&quot;</span><span class="p">):</span>
+                    <span class="c"># Quacks like a NumPy object</span>
+                    <span class="k">continue</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Unsupported variable type: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">var</span><span class="p">)</span>
+            <span class="n">objname</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+            <span class="k">if</span> <span class="n">objname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;Array&quot;</span><span class="p">,</span> <span class="s">&quot;CArray&quot;</span><span class="p">,</span> <span class="s">&quot;EArray&quot;</span><span class="p">,</span> <span class="s">&quot;Column&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Unsupported variable type: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">var</span><span class="p">)</span>
+
+        <span class="c"># NumPy arrays to be copied? (we don&#39;t need to worry about</span>
+        <span class="c"># PyTables objects, as the reads always return contiguous and</span>
+        <span class="c"># aligned objects, or at least I think so).</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">vars_</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="c"># See numexpr.necompiler.evaluate for a rational</span>
+                <span class="c"># of the code below</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">var</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">aligned</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="c"># Do a copy of this variable</span>
+                        <span class="n">var</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                        <span class="c"># Update the vars_ dictionary</span>
+                        <span class="n">vars_</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span>
+
+        <span class="c"># Get the variables and types</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">types_</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">vars_</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s">&#39;atom&#39;</span><span class="p">):</span>
+                <span class="n">types_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s">&#39;dtype&#39;</span><span class="p">):</span>
+                <span class="n">types_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># try to convert into a NumPy array</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">types_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c"># Create a signature for the expression</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">getType</span><span class="p">(</span><span class="n">type_</span><span class="p">))</span>
+                     <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">type_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">,</span> <span class="n">types_</span><span class="p">)]</span>
+
+        <span class="c"># Compile the expression</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span> <span class="o">=</span> <span class="n">NumExpr</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">signature</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c"># Guess the shape for the outcome and the maindim of inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guess_shape</span><span class="p">()</span>
+
+    <span class="c"># The next method is similar to their counterpart in `Table`, but</span>
+    <span class="c"># adapted to the `Expr` own requirements.</span>
+    <span class="k">def</span> <span class="nf">_required_expr_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">,</span> <span class="n">uservars</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the variables required by the `expression`.</span>
+
+<span class="sd">        A new dictionary defining the variables used in the `expression`</span>
+<span class="sd">        is returned.  Required variables are first looked up in the</span>
+<span class="sd">        `uservars` mapping, then in the set of top-level columns of the</span>
+<span class="sd">        table.  Unknown variables cause a `NameError` to be raised.</span>
+
+<span class="sd">        When `uservars` is `None`, the local and global namespace where</span>
+<span class="sd">        the API callable which uses this method is called is sought</span>
+<span class="sd">        instead.  To disable this mechanism, just specify a mapping as</span>
+<span class="sd">        `uservars`.</span>
+
+<span class="sd">        Nested columns and variables with an ``uint64`` type are not</span>
+<span class="sd">        allowed (`TypeError` and `NotImplementedError` are raised,</span>
+<span class="sd">        respectively).</span>
+
+<span class="sd">        `depth` specifies the depth of the frame in order to reach local</span>
+<span class="sd">        or global variables.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Get the names of variables used in the expression.</span>
+        <span class="n">exprvars_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exprvars_cache</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">expression</span> <span class="ow">in</span> <span class="n">exprvars_cache</span><span class="p">:</span>
+            <span class="c"># Protection against growing the cache too much</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exprvars_cache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">256</span><span class="p">:</span>
+                <span class="c"># Remove 10 (arbitrary) elements from the cache</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">exprvars_cache</span><span class="o">.</span><span class="n">keys</span><span class="p">()[:</span><span class="mi">10</span><span class="p">]:</span>
+                    <span class="k">del</span> <span class="n">exprvars_cache</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">cexpr</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="s">&#39;&lt;string&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;eval&#39;</span><span class="p">)</span>
+            <span class="n">exprvars</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">cexpr</span><span class="o">.</span><span class="n">co_names</span>
+                        <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;None&#39;</span><span class="p">,</span> <span class="s">&#39;False&#39;</span><span class="p">,</span> <span class="s">&#39;True&#39;</span><span class="p">]</span>
+                        <span class="ow">and</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">numexpr_functions</span><span class="p">]</span>
+            <span class="n">exprvars_cache</span><span class="p">[</span><span class="n">expression</span><span class="p">]</span> <span class="o">=</span> <span class="n">exprvars</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exprvars</span> <span class="o">=</span> <span class="n">exprvars_cache</span><span class="p">[</span><span class="n">expression</span><span class="p">]</span>
+
+        <span class="c"># Get the local and global variable mappings of the user frame</span>
+        <span class="c"># if no mapping has been explicitly given for user variables.</span>
+        <span class="n">user_locals</span><span class="p">,</span> <span class="n">user_globals</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">uservars</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">user_frame</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">(</span><span class="n">depth</span><span class="p">)</span>
+            <span class="n">user_locals</span> <span class="o">=</span> <span class="n">user_frame</span><span class="o">.</span><span class="n">f_locals</span>
+            <span class="n">user_globals</span> <span class="o">=</span> <span class="n">user_frame</span><span class="o">.</span><span class="n">f_globals</span>
+
+        <span class="c"># Look for the required variables first among the ones</span>
+        <span class="c"># explicitly provided by the user.</span>
+        <span class="n">reqvars</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">exprvars</span><span class="p">:</span>
+            <span class="c"># Get the value.</span>
+            <span class="k">if</span> <span class="n">uservars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">uservars</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">uservars</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">uservars</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">user_locals</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">user_locals</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">uservars</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">user_globals</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">user_globals</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s">&quot;name ``</span><span class="si">%s</span><span class="s">`` is not defined&quot;</span> <span class="o">%</span> <span class="n">var</span><span class="p">)</span>
+
+            <span class="c"># Check the value.</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s">&#39;dtype&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&#39;u8&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                    <span class="s">&quot;variable ``</span><span class="si">%s</span><span class="s">`` refers to &quot;</span>
+                    <span class="s">&quot;a 64-bit unsigned integer object, that is &quot;</span>
+                    <span class="s">&quot;not yet supported in expressions, sorry; &quot;</span> <span class="o">%</span> <span class="n">var</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s">&#39;_v_colpathnames&#39;</span><span class="p">):</span>  <span class="c"># nested column</span>
+                <span class="c"># This branch is never reached because the compile step</span>
+                <span class="c"># above already raise a ``TypeError`` for nested</span>
+                <span class="c"># columns, but that could change in the future.  So it</span>
+                <span class="c"># is best to let this here.</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s">&quot;variable ``</span><span class="si">%s</span><span class="s">`` refers to a nested column, &quot;</span>
+                    <span class="s">&quot;not allowed in expressions&quot;</span> <span class="o">%</span> <span class="n">var</span><span class="p">)</span>
+            <span class="n">reqvars</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">return</span> <span class="n">reqvars</span>
+
+    <span class="n">_requiredExprVars</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_required_expr_vars</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Expr.set_inputs_range"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_inputs_range">[docs]</a>    <span class="k">def</span> <span class="nf">set_inputs_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Define a range for all inputs in expression.</span>
+
+<span class="sd">        The computation will only take place for the range defined by</span>
+<span class="sd">        the start, stop and step parameters in the main dimension of</span>
+<span class="sd">        inputs (or the leading one, if the object lacks the concept of</span>
+<span class="sd">        main dimension, like a NumPy container).  If not a common main</span>
+<span class="sd">        dimension exists for all inputs, the leading dimension will be</span>
+<span class="sd">        used instead.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="n">stop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">step</span>
+</div>
+    <span class="n">setInputsRange</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">set_inputs_range</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Expr.set_output"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_output">[docs]</a>    <span class="k">def</span> <span class="nf">set_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">append_mode</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set out as container for output as well as the append_mode.</span>
+
+<span class="sd">        The out must be a container that is meant to keep the outcome of</span>
+<span class="sd">        the expression.  It should be an homogeneous type container and</span>
+<span class="sd">        can typically be an Array, CArray, EArray, Column or a NumPy ndarray.</span>
+
+<span class="sd">        The append_mode specifies the way of which the output is filled.</span>
+<span class="sd">        If true, the rows of the outcome are *appended* to the out container.</span>
+<span class="sd">        Of course, for doing this it is necessary that out would have an</span>
+<span class="sd">        append() method (like an EArray, for example).</span>
+
+<span class="sd">        If append_mode is false, the output is set via the __setitem__()</span>
+<span class="sd">        method (see the Expr.set_output_range() for info on how to select</span>
+<span class="sd">        the rows to be updated).  If out is smaller than what is required</span>
+<span class="sd">        by the expression, only the computations that are needed to fill</span>
+<span class="sd">        up the container are carried out.  If it is larger, the excess</span>
+<span class="sd">        elements are unaffected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s">&quot;shape&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s">&quot;__setitem__&quot;</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;You need to pass a settable multidimensional container &quot;</span>
+                <span class="s">&quot;as output&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="k">if</span> <span class="n">append_mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s">&quot;append&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;For activating the ``append`` mode, you need a container &quot;</span>
+                <span class="s">&quot;with an `append()` method (like the `EArray`)&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">append_mode</span> <span class="o">=</span> <span class="n">append_mode</span>
+</div>
+    <span class="n">setOutput</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">set_output</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Expr.set_output_range"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_output_range">[docs]</a>    <span class="k">def</span> <span class="nf">set_output_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Define a range for user-provided output object.</span>
+
+<span class="sd">        The output object will only be modified in the range specified by the</span>
+<span class="sd">        start, stop and step parameters in the main dimension of output (or the</span>
+<span class="sd">        leading one, if the object does not have the concept of main dimension,</span>
+<span class="sd">        like a NumPy container).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                <span class="s">&quot;You need to pass an output object to `setOut()` first&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_start</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_stop</span> <span class="o">=</span> <span class="n">stop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_step</span> <span class="o">=</span> <span class="n">step</span>
+</div>
+    <span class="n">setOutputRange</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">set_output_range</span><span class="p">)</span>
+
+    <span class="c"># Although the next code is similar to the method in `Leaf`, it</span>
+    <span class="c"># allows the use of pure NumPy objects.</span>
+    <span class="k">def</span> <span class="nf">_calc_nrowsinbuf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the number of rows that will fit in a buffer.&quot;&quot;&quot;</span>
+
+        <span class="c"># Compute the rowsize for the *leading* dimension</span>
+        <span class="n">shape_</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">object_</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">shape_</span><span class="p">:</span>
+            <span class="n">shape_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">rowsize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">shape_</span><span class="p">)</span> <span class="o">*</span> <span class="n">object_</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span>
+
+        <span class="c"># Compute the nrowsinbuf</span>
+        <span class="c"># Multiplying the I/O buffer size by 4 gives optimal results</span>
+        <span class="c"># in my benchmarks with `tables.Expr` (see ``bench/poly.py``)</span>
+        <span class="n">buffersize</span> <span class="o">=</span> <span class="n">IO_BUFFER_SIZE</span> <span class="o">*</span> <span class="mi">4</span>
+        <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="n">buffersize</span> <span class="o">//</span> <span class="n">rowsize</span>
+
+        <span class="c"># Safeguard against row sizes being extremely large</span>
+        <span class="k">if</span> <span class="n">nrowsinbuf</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c"># If rowsize is too large, issue a Performance warning</span>
+            <span class="n">maxrowsize</span> <span class="o">=</span> <span class="n">BUFFER_TIMES</span> <span class="o">*</span> <span class="n">buffersize</span>
+            <span class="k">if</span> <span class="n">rowsize</span> <span class="o">&gt;</span> <span class="n">maxrowsize</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">The object ``</span><span class="si">%s</span><span class="s">`` is exceeding the maximum recommended rowsize (</span><span class="si">%d</span><span class="s"></span>
+<span class="s">bytes); be ready to see PyTables asking for *lots* of memory and</span>
+<span class="s">possibly slow I/O.  You may want to reduce the rowsize by trimming the</span>
+<span class="s">value of dimensions that are orthogonal (and preferably close) to the</span>
+<span class="s">*leading* dimension of this object.&quot;&quot;&quot;</span>
+                              <span class="o">%</span> <span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">maxrowsize</span><span class="p">),</span>
+                              <span class="n">PerformanceWarning</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">nrowsinbuf</span>
+
+    <span class="k">def</span> <span class="nf">_guess_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Guess the shape of the output of the expression.&quot;&quot;&quot;</span>
+
+        <span class="c"># First, compute the maximum dimension of inputs and maindim</span>
+        <span class="c"># (if it exists)</span>
+        <span class="n">maxndim</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">maindims</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
+            <span class="c"># Get the minimum of the lengths</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">maxndim</span><span class="p">:</span>
+                <span class="n">maxndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s">&quot;maindim&quot;</span><span class="p">):</span>
+                <span class="n">maindims</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">maindim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">maxndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_single_row_out</span> <span class="o">=</span> <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(),</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">maindims</span> <span class="ow">and</span> <span class="p">[</span><span class="n">maindims</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">maindims</span><span class="p">)</span> <span class="o">==</span> <span class="n">maindims</span><span class="p">:</span>
+            <span class="c"># If all maindims detected are the same, use this as maindim</span>
+            <span class="n">maindim</span> <span class="o">=</span> <span class="n">maindims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># If not, the main dimension will be the default one</span>
+            <span class="n">maindim</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># The slices parameter for inputs</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">),)</span> <span class="o">*</span> <span class="n">maindim</span> <span class="o">+</span> <span class="p">(</span><span class="mi">0</span><span class="p">,)</span>
+
+        <span class="c"># Now, collect the values in first row of arrays with maximum dims</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">lens</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">shape</span>
+            <span class="c"># Warning: don&#39;t use len(val) below or it will raise an</span>
+            <span class="c"># `Overflow` error on 32-bit platforms for large enough arrays.</span>
+            <span class="k">if</span> <span class="n">shape</span> <span class="o">!=</span> <span class="p">()</span> <span class="ow">and</span> <span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">[:])</span>
+                <span class="n">lens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">maxndim</span><span class="p">:</span>
+                <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">__getitem__</span><span class="p">(</span><span class="n">slices</span><span class="p">))</span>
+                <span class="n">lens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">])</span>
+        <span class="n">minlen</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">lens</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_single_row_out</span> <span class="o">=</span> <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span><span class="p">(</span><span class="o">*</span><span class="n">vals</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">minlen</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">shape</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">maindim</span><span class="p">,</span> <span class="n">minlen</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span>
+
+    <span class="k">def</span> <span class="nf">_get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span><span class="p">,</span> <span class="n">itermode</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return various info needed for evaluating the computation loop.&quot;&quot;&quot;</span>
+
+        <span class="c"># Compute the shape of the resulting container having</span>
+        <span class="c"># in account new possible values of start, stop and step in</span>
+        <span class="c"># the inputs range</span>
+        <span class="k">if</span> <span class="n">maindim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">])</span>
+            <span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                <span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)))</span>
+            <span class="n">i_nrows</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span>
+            <span class="n">i_nrows</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">itermode</span><span class="p">:</span>
+            <span class="c"># Create a container for output if not defined yet</span>
+            <span class="n">o_maindim</span> <span class="o">=</span> <span class="mi">0</span>    <span class="c"># Default maindim</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_single_row_out</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                <span class="c"># Get the trivial values for start, stop and step</span>
+                <span class="k">if</span> <span class="n">maindim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="p">(</span><span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="p">(</span><span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span>
+                <span class="c"># Out container already provided.  Do some sanity checks.</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s">&quot;maindim&quot;</span><span class="p">):</span>
+                    <span class="n">o_maindim</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">maindim</span>
+
+                <span class="c"># Refine the shape of the resulting container having in</span>
+                <span class="c"># account new possible values of start, stop and step in</span>
+                <span class="c"># the output range</span>
+                <span class="n">o_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">o_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">o_stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">o_step</span><span class="p">)</span>
+                <span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">o_shape</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">])</span>
+                <span class="n">o_shape</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">o_shape</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">],</span>
+                                         <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span><span class="p">)))</span>
+
+                <span class="c"># Check that the shape of output is consistent with inputs</span>
+                <span class="n">tr_oshape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">o_shape</span><span class="p">)</span>   <span class="c"># this implies a copy</span>
+                <span class="n">olen_</span> <span class="o">=</span> <span class="n">tr_oshape</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">o_maindim</span><span class="p">)</span>
+                <span class="n">tr_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>      <span class="c"># do a copy</span>
+                <span class="k">if</span> <span class="n">maindim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">len_</span> <span class="o">=</span> <span class="n">tr_shape</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">o_maindim</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">len_</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">tr_oshape</span> <span class="o">!=</span> <span class="n">tr_shape</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s">&quot;Shape for out container does not match expression&quot;</span><span class="p">)</span>
+                <span class="c"># Force the input length to fit in `out`</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">append_mode</span> <span class="ow">and</span> <span class="n">olen_</span> <span class="o">&lt;</span> <span class="n">len_</span><span class="p">:</span>
+                    <span class="n">shape</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">]</span> <span class="o">=</span> <span class="n">olen_</span>
+                    <span class="n">stop</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">olen_</span>
+
+        <span class="c"># Get the positions of inputs that should be sliced (the others</span>
+        <span class="c"># will be broadcasted)</span>
+        <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">slice_pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="n">ndim</span><span class="p">]</span>
+
+        <span class="c"># The size of the I/O buffer</span>
+        <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">):</span>
+            <span class="c"># Skip scalar values in variables</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">slice_pos</span><span class="p">:</span>
+                <span class="n">nrows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_nrowsinbuf</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">nrows</span> <span class="o">&gt;</span> <span class="n">nrowsinbuf</span><span class="p">:</span>
+                    <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="n">nrows</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">itermode</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">i_nrows</span><span class="p">,</span> <span class="n">slice_pos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">nrowsinbuf</span><span class="p">,</span>
+                    <span class="n">out</span><span class="p">,</span> <span class="n">o_maindim</span><span class="p">,</span> <span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># For itermode, we don&#39;t need the out info</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">i_nrows</span><span class="p">,</span> <span class="n">slice_pos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">nrowsinbuf</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Expr.eval"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.eval">[docs]</a>    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Evaluate the expression and return the outcome.</span>
+
+<span class="sd">        Because of performance reasons, the computation order tries to go along</span>
+<span class="sd">        the common main dimension of all inputs.  If not such a common main</span>
+<span class="sd">        dimension is found, the iteration will go along the leading dimension</span>
+<span class="sd">        instead.</span>
+
+<span class="sd">        For non-consistent shapes in inputs (i.e. shapes having a different</span>
+<span class="sd">        number of dimensions), the regular NumPy broadcast rules applies.</span>
+<span class="sd">        There is one exception to this rule though: when the dimensions</span>
+<span class="sd">        orthogonal to the main dimension of the expression are consistent, but</span>
+<span class="sd">        the main dimension itself differs among the inputs, then the shortest</span>
+<span class="sd">        one is chosen for doing the computations.  This is so because trying to</span>
+<span class="sd">        expand very large on-disk arrays could be too expensive or simply not</span>
+<span class="sd">        possible.</span>
+
+<span class="sd">        Also, the regular Numexpr casting rules (which are similar to those of</span>
+<span class="sd">        NumPy, although you should check the Numexpr manual for the exceptions)</span>
+<span class="sd">        are applied to determine the output type.</span>
+
+<span class="sd">        Finally, if the setOuput() method specifying a user container has</span>
+<span class="sd">        already been called, the output is sent to this user-provided</span>
+<span class="sd">        container.  If not, a fresh NumPy container is returned instead.</span>
+
+<span class="sd">        .. warning::</span>
+
+<span class="sd">            When dealing with large on-disk inputs, failing to specify an</span>
+<span class="sd">            on-disk container may consume all your available memory.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">values</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span>
+
+        <span class="c"># Get different info we need for the main computation loop</span>
+        <span class="p">(</span><span class="n">i_nrows</span><span class="p">,</span> <span class="n">slice_pos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">nrowsinbuf</span><span class="p">,</span>
+         <span class="n">out</span><span class="p">,</span> <span class="n">o_maindim</span><span class="p">,</span> <span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span><span class="p">)</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">i_nrows</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># No elements to compute</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single_row_out</span>
+
+        <span class="c"># Create a key that selects every element in inputs and output</span>
+        <span class="c"># (including the main dimension)</span>
+        <span class="n">i_slices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">maindim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">o_slices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">o_maindim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c"># This is a hack to prevent doing unnecessary flavor conversions</span>
+        <span class="c"># while reading buffers</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s">&#39;maindim&#39;</span><span class="p">):</span>
+                <span class="n">val</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># Start the computation itself</span>
+        <span class="k">for</span> <span class="n">start2</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span><span class="p">):</span>
+            <span class="n">stop2</span> <span class="o">=</span> <span class="n">start2</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span>
+            <span class="k">if</span> <span class="n">stop2</span> <span class="o">&gt;</span> <span class="n">stop</span><span class="p">:</span>
+                <span class="n">stop2</span> <span class="o">=</span> <span class="n">stop</span>
+            <span class="c"># Set the proper slice for inputs</span>
+            <span class="n">i_slices</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start2</span><span class="p">,</span> <span class="n">stop2</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+            <span class="c"># Get the input values</span>
+            <span class="n">vals</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">slice_pos</span><span class="p">:</span>
+                    <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">__getitem__</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">i_slices</span><span class="p">)))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># A read of values is not apparently needed, as PyTables</span>
+                    <span class="c"># leaves seems to work just fine inside Numexpr</span>
+                    <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="c"># Do the actual computation for this slice</span>
+            <span class="n">rout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span><span class="p">(</span><span class="o">*</span><span class="n">vals</span><span class="p">)</span>
+            <span class="c"># Set the values into the out buffer</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">append_mode</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rout</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Compute the slice to be filled in output</span>
+                <span class="n">start3</span> <span class="o">=</span> <span class="n">o_start</span> <span class="o">+</span> <span class="p">(</span><span class="n">start2</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">//</span> <span class="n">step</span>
+                <span class="n">stop3</span> <span class="o">=</span> <span class="n">start3</span> <span class="o">+</span> <span class="n">nrowsinbuf</span> <span class="o">*</span> <span class="n">o_step</span>
+                <span class="k">if</span> <span class="n">stop3</span> <span class="o">&gt;</span> <span class="n">o_stop</span><span class="p">:</span>
+                    <span class="n">stop3</span> <span class="o">=</span> <span class="n">o_stop</span>
+                <span class="n">o_slices</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start3</span><span class="p">,</span> <span class="n">stop3</span><span class="p">,</span> <span class="n">o_step</span><span class="p">)</span>
+                <span class="c"># Set the slice</span>
+                <span class="n">out</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">o_slices</span><span class="p">)]</span> <span class="o">=</span> <span class="n">rout</span>
+
+        <span class="c"># Activate the conversion again (default)</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s">&#39;maindim&#39;</span><span class="p">):</span>
+                <span class="n">val</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">return</span> <span class="n">out</span>
+</div>
+<div class="viewcode-block" id="Expr.__iter__"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over the rows of the outcome of the expression.</span>
+
+<span class="sd">        This iterator always returns rows as NumPy objects, so a possible out</span>
+<span class="sd">        container specified in :meth:`Expr.set_output` method is ignored here.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">values</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span>
+
+        <span class="c"># Get different info we need for the main computation loop</span>
+        <span class="p">(</span><span class="n">i_nrows</span><span class="p">,</span> <span class="n">slice_pos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">nrowsinbuf</span><span class="p">)</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span><span class="p">,</span> <span class="n">itermode</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">i_nrows</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># No elements to compute</span>
+            <span class="k">return</span>
+
+        <span class="c"># Create a key that selects every element in inputs</span>
+        <span class="c"># (including the main dimension)</span>
+        <span class="n">i_slices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">maindim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c"># This is a hack to prevent doing unnecessary flavor conversions</span>
+        <span class="c"># while reading buffers</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s">&#39;maindim&#39;</span><span class="p">):</span>
+                <span class="n">val</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># Start the computation itself</span>
+        <span class="k">for</span> <span class="n">start2</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span><span class="p">):</span>
+            <span class="n">stop2</span> <span class="o">=</span> <span class="n">start2</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span>
+            <span class="k">if</span> <span class="n">stop2</span> <span class="o">&gt;</span> <span class="n">stop</span><span class="p">:</span>
+                <span class="n">stop2</span> <span class="o">=</span> <span class="n">stop</span>
+            <span class="c"># Set the proper slice in the main dimension</span>
+            <span class="n">i_slices</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start2</span><span class="p">,</span> <span class="n">stop2</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+            <span class="c"># Get the values for computing the buffer</span>
+            <span class="n">vals</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">slice_pos</span><span class="p">:</span>
+                    <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">__getitem__</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">i_slices</span><span class="p">)))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># A read of values is not apparently needed, as PyTables</span>
+                    <span class="c"># leaves seems to work just fine inside Numexpr</span>
+                    <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="c"># Do the actual computation</span>
+            <span class="n">rout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span><span class="p">(</span><span class="o">*</span><span class="n">vals</span><span class="p">)</span>
+            <span class="c"># Return one row per call</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rout</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">row</span>
+
+        <span class="c"># Activate the conversion again (default)</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s">&#39;maindim&#39;</span><span class="p">):</span>
+                <span class="n">val</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="bp">True</span>
+
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+
+    <span class="c"># shape = (10000,10000)</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s">&quot;/tmp/expression.h5&quot;</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+
+    <span class="c"># Create some arrays</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mf">1.</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mf">2.</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mf">3.</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mf">3.</span><span class="p">),</span>
+                          <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">Expr</span><span class="p">(</span><span class="s">&quot;a * b + c&quot;</span><span class="p">)</span>
+    <span class="n">expr</span><span class="o">.</span><span class="n">set_output</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;returned--&gt;&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+    <span class="c"># print(`d[:]`)</span>
+
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## fill-column: 72</span>
+<span class="c">## End:</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

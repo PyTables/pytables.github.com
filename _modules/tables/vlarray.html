@@ -1,0 +1,994 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.vlarray &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.vlarray</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: November 12, 2003</span>
+<span class="c"># Author: Francesc Alted - faltet@pytables.com</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Here is defined the VLArray class.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
+<span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">convert_to_np_atom</span><span class="p">,</span> <span class="n">convert_to_np_atom2</span><span class="p">,</span> <span class="n">idx2long</span><span class="p">,</span>
+                          <span class="n">correct_byteorder</span><span class="p">,</span> <span class="n">SizeType</span><span class="p">,</span> <span class="n">is_idx</span><span class="p">,</span> <span class="n">lazyattr</span><span class="p">)</span>
+
+
+<span class="kn">from</span> <span class="nn">tables.atom</span> <span class="kn">import</span> <span class="n">ObjectAtom</span><span class="p">,</span> <span class="n">VLStringAtom</span><span class="p">,</span> <span class="n">VLUnicodeAtom</span>
+<span class="kn">from</span> <span class="nn">tables.flavor</span> <span class="kn">import</span> <span class="n">internal_to_flavor</span>
+<span class="kn">from</span> <span class="nn">tables.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span><span class="p">,</span> <span class="n">calc_chunksize</span>
+<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span><span class="p">,</span> <span class="n">previous_api_property</span>
+
+<span class="c"># default version for VLARRAY objects</span>
+<span class="c"># obversion = &quot;1.0&quot;    # initial version</span>
+<span class="c"># obversion = &quot;1.0&quot;    # add support for complex datatypes</span>
+<span class="c"># obversion = &quot;1.1&quot;    # This adds support for time datatypes.</span>
+<span class="c"># obversion = &quot;1.2&quot;    # This adds support for enumerated datatypes.</span>
+<span class="c"># obversion = &quot;1.3&quot;     # Introduced &#39;PSEUDOATOM&#39; attribute.</span>
+<span class="n">obversion</span> <span class="o">=</span> <span class="s">&quot;1.4&quot;</span>    <span class="c"># Numeric and numarray flavors are gone.</span>
+
+
+<div class="viewcode-block" id="VLArray"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray">[docs]</a><span class="k">class</span> <span class="nc">VLArray</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">VLArray</span><span class="p">,</span> <span class="n">Leaf</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class represents variable length (ragged) arrays in an HDF5 file.</span>
+
+<span class="sd">    Instances of this class represent array objects in the object tree</span>
+<span class="sd">    with the property that their rows can have a *variable* number of</span>
+<span class="sd">    homogeneous elements, called *atoms*. Like Table datasets (see</span>
+<span class="sd">    :ref:`TableClassDescr`), variable length arrays can have only one</span>
+<span class="sd">    dimension, and the elements (atoms) of their rows can be fully</span>
+<span class="sd">    multidimensional.</span>
+
+<span class="sd">    When reading a range of rows from a VLArray, you will *always* get</span>
+<span class="sd">    a Python list of objects of the current flavor (each of them for a</span>
+<span class="sd">    row), which may have different lengths.</span>
+
+<span class="sd">    This class provides methods to write or read data to or from</span>
+<span class="sd">    variable length array objects in the file. Note that it also</span>
+<span class="sd">    inherits all the public attributes and methods that Leaf (see</span>
+<span class="sd">    :ref:`LeafClassDescr`) already provides.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">          VLArray objects also support compression although compression</span>
+<span class="sd">          is only performed on the data structures used internally by</span>
+<span class="sd">          the HDF5 to take references of the location of the variable</span>
+<span class="sd">          length data. Data itself (the raw data) are not compressed</span>
+<span class="sd">          or filtered.</span>
+
+<span class="sd">          Please refer to the `VLTypes Technical Note</span>
+<span class="sd">          &lt;http://www.hdfgroup.org/HDF5/doc/TechNotes/VLTypes.html&gt;`_</span>
+<span class="sd">          for more details on the topic.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parentnode</span>
+<span class="sd">        The parent :class:`Group` object.</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           Renamed from *parentNode* to *parentnode*.</span>
+
+<span class="sd">    name : str</span>
+<span class="sd">        The name of this node in its parent group.</span>
+<span class="sd">    atom</span>
+<span class="sd">        An `Atom` instance representing the *type* and *shape* of the atomic</span>
+<span class="sd">        objects to be saved.</span>
+<span class="sd">    title</span>
+<span class="sd">        A description for this node (it sets the ``TITLE`` HDF5 attribute on</span>
+<span class="sd">        disk).</span>
+<span class="sd">    filters</span>
+<span class="sd">        An instance of the `Filters` class that provides information about the</span>
+<span class="sd">        desired I/O filters to be applied during the life of this object.</span>
+<span class="sd">    expectedrows</span>
+<span class="sd">        A user estimate about the number of row elements that will</span>
+<span class="sd">        be added to the growable dimension in the `VLArray` node.</span>
+<span class="sd">        If not provided, the default value is ``EXPECTED_ROWS_VLARRAY``</span>
+<span class="sd">        (see ``tables/parameters.py``).  If you plan to create either</span>
+<span class="sd">        a much smaller or a much bigger `VLArray` try providing a guess;</span>
+<span class="sd">        this will optimize the HDF5 B-Tree creation and management</span>
+<span class="sd">        process time and the amount of memory used.</span>
+
+<span class="sd">        .. versionadded:: 3.0</span>
+
+<span class="sd">    chunkshape</span>
+<span class="sd">        The shape of the data chunk to be read or written in a single HDF5 I/O</span>
+<span class="sd">        operation.  Filters are applied to those chunks of data.  The</span>
+<span class="sd">        dimensionality of `chunkshape` must be 1.  If ``None``, a sensible</span>
+<span class="sd">        value is calculated (which is recommended).</span>
+<span class="sd">    byteorder</span>
+<span class="sd">        The byteorder of the data *on disk*, specified as &#39;little&#39; or &#39;big&#39;.</span>
+<span class="sd">        If this is not specified, the byteorder is that of the platform.</span>
+
+<span class="sd">    .. versionchanged:: 3.0</span>
+<span class="sd">       The *expectedsizeinMB* parameter has been replaced by *expectedrows*.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    See below a small example of the use of the VLArray class.  The code is</span>
+<span class="sd">    available in :file:`examples/vlarray1.py`::</span>
+
+<span class="sd">        import tables</span>
+<span class="sd">        from numpy import *</span>
+
+<span class="sd">        # Create a VLArray:</span>
+<span class="sd">        fileh = tables.open_file(&#39;vlarray1.h5&#39;, mode=&#39;w&#39;)</span>
+<span class="sd">        vlarray = fileh.create_vlarray(fileh.root, &#39;vlarray1&#39;,</span>
+<span class="sd">        tables.Int32Atom(shape=()),</span>
+<span class="sd">                        &quot;ragged array of ints&quot;,</span>
+<span class="sd">                        filters=tables.Filters(1))</span>
+
+<span class="sd">        # Append some (variable length) rows:</span>
+<span class="sd">        vlarray.append(array([5, 6]))</span>
+<span class="sd">        vlarray.append(array([5, 6, 7]))</span>
+<span class="sd">        vlarray.append([5, 6, 9, 8])</span>
+
+<span class="sd">        # Now, read it through an iterator:</span>
+<span class="sd">        print(&#39;--&gt;&#39;, vlarray.title)</span>
+<span class="sd">        for x in vlarray:</span>
+<span class="sd">            print(&#39;%s[%d]--&gt; %s&#39; % (vlarray.name, vlarray.nrow, x))</span>
+
+<span class="sd">        # Now, do the same with native Python strings.</span>
+<span class="sd">        vlarray2 = fileh.create_vlarray(fileh.root, &#39;vlarray2&#39;,</span>
+<span class="sd">        tables.StringAtom(itemsize=2),</span>
+<span class="sd">                            &quot;ragged array of strings&quot;,</span>
+<span class="sd">                            filters=tables.Filters(1))</span>
+<span class="sd">        vlarray2.flavor = &#39;python&#39;</span>
+
+<span class="sd">        # Append some (variable length) rows:</span>
+<span class="sd">        print(&#39;--&gt;&#39;, vlarray2.title)</span>
+<span class="sd">        vlarray2.append([&#39;5&#39;, &#39;66&#39;])</span>
+<span class="sd">        vlarray2.append([&#39;5&#39;, &#39;6&#39;, &#39;77&#39;])</span>
+<span class="sd">        vlarray2.append([&#39;5&#39;, &#39;6&#39;, &#39;9&#39;, &#39;88&#39;])</span>
+
+<span class="sd">        # Now, read it through an iterator:</span>
+<span class="sd">        for x in vlarray2:</span>
+<span class="sd">            print(&#39;%s[%d]--&gt; %s&#39; % (vlarray2.name, vlarray2.nrow, x))</span>
+
+<span class="sd">        # Close the file.</span>
+<span class="sd">        fileh.close()</span>
+
+<span class="sd">    The output for the previous script is something like::</span>
+
+<span class="sd">        --&gt; ragged array of ints</span>
+<span class="sd">        vlarray1[0]--&gt; [5 6]</span>
+<span class="sd">        vlarray1[1]--&gt; [5 6 7]</span>
+<span class="sd">        vlarray1[2]--&gt; [5 6 9 8]</span>
+<span class="sd">        --&gt; ragged array of strings</span>
+<span class="sd">        vlarray2[0]--&gt; [&#39;5&#39;, &#39;66&#39;]</span>
+<span class="sd">        vlarray2[1]--&gt; [&#39;5&#39;, &#39;6&#39;, &#39;77&#39;]</span>
+<span class="sd">        vlarray2[2]--&gt; [&#39;5&#39;, &#39;6&#39;, &#39;9&#39;, &#39;88&#39;]</span>
+
+
+<span class="sd">    .. rubric:: VLArray attributes</span>
+
+<span class="sd">    The instance variables below are provided in addition to those in</span>
+<span class="sd">    Leaf (see :ref:`LeafClassDescr`).</span>
+
+<span class="sd">    .. attribute:: atom</span>
+
+<span class="sd">        An Atom (see :ref:`AtomClassDescr`)</span>
+<span class="sd">        instance representing the *type* and</span>
+<span class="sd">        *shape* of the atomic objects to be</span>
+<span class="sd">        saved. You may use a *pseudo-atom* for</span>
+<span class="sd">        storing a serialized object or variable length string per row.</span>
+
+<span class="sd">    .. attribute:: flavor</span>
+
+<span class="sd">        The type of data object read from this leaf.</span>
+
+<span class="sd">        Please note that when reading several rows of VLArray data,</span>
+<span class="sd">        the flavor only applies to the *components* of the returned</span>
+<span class="sd">        Python list, not to the list itself.</span>
+
+<span class="sd">    .. attribute:: nrow</span>
+
+<span class="sd">        On iterators, this is the index of the current row.</span>
+
+<span class="sd">    .. attribute:: nrows</span>
+
+<span class="sd">        The current number of rows in the array.</span>
+
+<span class="sd">    .. attribute:: extdim</span>
+
+<span class="sd">       The index of the enlargeable dimension (always 0 for vlarrays).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Class identifier.</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;VLARRAY&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+
+    <span class="c"># Lazy read-only attributes</span>
+    <span class="c"># `````````````````````````</span>
+    <span class="nd">@lazyattr</span>
+    <span class="k">def</span> <span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The NumPy ``dtype`` that most closely matches this array.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="c"># Properties</span>
+    <span class="c"># ~~~~~~~~~~</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,),</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="s">&quot;The shape of the stored array.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_size_on_disk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;size_on_disk not implemented for VLArrays&#39;</span><span class="p">)</span>
+
+    <span class="n">size_on_disk</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_size_on_disk</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+                            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The HDF5 library does not include a function to determine size_on_disk</span>
+<span class="sd">        for variable-length arrays.  Accessing this attribute will raise a</span>
+<span class="sd">        NotImplementedError.</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">size_in_memory</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_memory_size</span><span class="p">(),</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The size of this array&#39;s data in bytes when it is fully loaded</span>
+<span class="sd">        into memory.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            When data is stored in a VLArray using the ObjectAtom type,</span>
+<span class="sd">            it is first serialized using pickle, and then converted to</span>
+<span class="sd">            a NumPy array suitable for storage in an HDF5 file.</span>
+<span class="sd">            This attribute will return the size of that NumPy</span>
+<span class="sd">            representation.  If you wish to know the size of the Python</span>
+<span class="sd">            objects after they are loaded from disk, you can use this</span>
+<span class="sd">            `ActiveState recipe</span>
+<span class="sd">            &lt;http://code.activestate.com/recipes/577504/&gt;`_.</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="c"># Other methods</span>
+    <span class="c"># ~~~~~~~~~~~~~</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">chunkshape</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The object version of this array.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span> <span class="o">=</span> <span class="n">new</span> <span class="o">=</span> <span class="n">atom</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Is this the first time the node has been created?&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="sd">&quot;&quot;&quot;New title for this node.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_filters</span> <span class="o">=</span> <span class="n">filters</span>
+        <span class="sd">&quot;&quot;&quot;New filter properties for this array.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">expectedrows</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">expectedrows</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;EXPECTED_ROWS_VLARRAY&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_expectedrows</span> <span class="o">=</span> <span class="n">expectedrows</span>
+        <span class="sd">&quot;&quot;&quot;The expected number of rows to be stored in the array.</span>
+
+<span class="sd">        .. versionadded:: 3.0</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_chunkshape</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Private storage for the `chunkshape` property of Leaf.&quot;&quot;&quot;</span>
+
+        <span class="c"># Miscellaneous iteration rubbish.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Starting row for the current iteration.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Stopping row for the current iteration.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Step size for the current iteration.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Number of rows read up to the current state of iteration.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_startb</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Starting row for current buffer.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Stopping row for current buffer. &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Current row in iterators (sentinel).&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="sd">&quot;&quot;&quot;Whether we are in the middle of an iteration or not (sentinel).&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Current buffer in iterators.&quot;&quot;&quot;</span>
+
+        <span class="c"># Documented (*public*) attributes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">atom</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        An Atom (see :ref:`AtomClassDescr`) instance representing the</span>
+<span class="sd">        *type* and *shape* of the atomic objects to be saved. You may</span>
+<span class="sd">        use a *pseudo-atom* for storing a serialized object or</span>
+<span class="sd">        variable length string per row.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;On iterators, this is the index of the current row.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The current number of rows in the array.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">extdim</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c"># VLArray only have one dimension currently</span>
+        <span class="sd">&quot;&quot;&quot;The index of the enlargeable dimension (always 0 for vlarrays).&quot;&quot;&quot;</span>
+
+        <span class="c"># Check the chunkshape parameter</span>
+        <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="n">chunkshape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">long</span><span class="p">)):</span>
+                <span class="n">chunkshape</span> <span class="o">=</span> <span class="p">(</span><span class="n">chunkshape</span><span class="p">,)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">chunkshape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s">&quot;`chunkshape` parameter must be an integer or sequence &quot;</span>
+                    <span class="s">&quot;and you passed a </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;`chunkshape` rank (length) must be 1: </span><span class="si">%r</span><span class="s">&quot;</span>
+                                 <span class="o">%</span> <span class="p">(</span><span class="n">chunkshape</span><span class="p">,))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_chunkshape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">chunkshape</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">VLArray</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">new</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span>
+                                      <span class="n">byteorder</span><span class="p">,</span> <span class="n">_log</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">VLArray</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_g_post_init_hook</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c"># maybe enough for most applications</span>
+
+    <span class="c"># This is too specific for moving it into Leaf</span>
+    <span class="k">def</span> <span class="nf">_calc_chunkshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expectedrows</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the size for the HDF5 chunk.&quot;&quot;&quot;</span>
+
+        <span class="c"># For computing the chunkshape for HDF5 VL types, we have to</span>
+        <span class="c"># choose the itemsize of the *each* element of the atom and</span>
+        <span class="c"># not the size of the entire atom.  I don&#39;t know why this</span>
+        <span class="c"># should be like this, perhaps I should report this to the</span>
+        <span class="c"># HDF5 list.</span>
+        <span class="c"># F. Alted 2006-11-23</span>
+        <span class="c"># elemsize = self.atom.atomsize()</span>
+        <span class="n">elemsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_basesize</span>
+
+        <span class="c"># AV 2013-05-03</span>
+        <span class="c"># This is just a quick workaround tha allows to change the API for</span>
+        <span class="c"># PyTables 3.0 release and remove the expected_mb parameter.</span>
+        <span class="c"># The algorithm for computing the chunkshape should be rewritten as</span>
+        <span class="c"># requested by gh-35.</span>
+        <span class="n">expected_mb</span> <span class="o">=</span> <span class="n">expectedrows</span> <span class="o">*</span> <span class="n">elemsize</span> <span class="o">/</span> <span class="mf">1024.</span> <span class="o">**</span> <span class="mi">2</span>
+
+        <span class="n">chunksize</span> <span class="o">=</span> <span class="n">calc_chunksize</span><span class="p">(</span><span class="n">expected_mb</span><span class="p">)</span>
+
+        <span class="c"># Set the chunkshape</span>
+        <span class="n">chunkshape</span> <span class="o">=</span> <span class="n">chunksize</span> <span class="o">//</span> <span class="n">elemsize</span>
+        <span class="c"># Safeguard against itemsizes being extremely large</span>
+        <span class="k">if</span> <span class="n">chunkshape</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">chunkshape</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">),)</span>
+
+    <span class="k">def</span> <span class="nf">_g_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a variable length array (ragged array).&quot;&quot;&quot;</span>
+
+        <span class="n">atom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span> <span class="o">=</span> <span class="n">obversion</span>
+        <span class="c"># Check for zero dims in atom shape (not allowed in VLArrays)</span>
+        <span class="n">zerodims</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">zerodims</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;When creating VLArrays, none of the dimensions &quot;</span>
+                             <span class="s">&quot;of the Atom instance can be zero.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="s">&#39;size&#39;</span><span class="p">):</span>  <span class="c"># it is a pseudo-atom</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_atomicdtype</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_atomicsize</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">size</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_basesize</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">itemsize</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_atomicdtype</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_atomicsize</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">size</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_basesize</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">itemsize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_atomictype</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_atomicshape</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="c"># Compute the optimal chunkshape, if needed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_chunkshape</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_chunkshape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_chunkshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_expectedrows</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">=</span> <span class="n">SizeType</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>     <span class="c"># No rows at creation time</span>
+
+        <span class="c"># Correct the byteorder if needed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span> <span class="o">=</span> <span class="n">correct_byteorder</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span>
+
+        <span class="c"># After creating the vlarray, ``self._v_objectid`` needs to be</span>
+        <span class="c"># set because it is needed for setting attributes afterwards.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_new_title</span><span class="p">)</span>
+
+        <span class="c"># Add an attribute in case we have a pseudo-atom so that we</span>
+        <span class="c"># can retrieve the proper class after a re-opening operation.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="s">&#39;size&#39;</span><span class="p">):</span>  <span class="c"># it is a pseudo-atom</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">PSEUDOATOM</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">kind</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span>
+
+    <span class="k">def</span> <span class="nf">_g_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the metadata info for an array in file.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_chunkshape</span><span class="p">,</span> <span class="n">atom</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_open_array</span><span class="p">()</span>
+
+        <span class="c"># Check if the atom can be a PseudoAtom</span>
+        <span class="k">if</span> <span class="s">&quot;PSEUDOATOM&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+            <span class="n">kind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">PSEUDOATOM</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s">&#39;vlstring&#39;</span><span class="p">:</span>
+                <span class="n">atom</span> <span class="o">=</span> <span class="n">VLStringAtom</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s">&#39;vlunicode&#39;</span><span class="p">:</span>
+                <span class="n">atom</span> <span class="o">=</span> <span class="n">VLUnicodeAtom</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s">&#39;object&#39;</span><span class="p">:</span>
+                <span class="n">atom</span> <span class="o">=</span> <span class="n">ObjectAtom</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s">&quot;pseudo-atom name ``</span><span class="si">%s</span><span class="s">`` not known.&quot;</span> <span class="o">%</span> <span class="n">kind</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">format_version</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;1&quot;</span><span class="p">:</span>
+            <span class="n">flavor1x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">FLAVOR</span>
+            <span class="k">if</span> <span class="n">flavor1x</span> <span class="o">==</span> <span class="s">&quot;VLString&quot;</span><span class="p">:</span>
+                <span class="n">atom</span> <span class="o">=</span> <span class="n">VLStringAtom</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">flavor1x</span> <span class="o">==</span> <span class="s">&quot;Object&quot;</span><span class="p">:</span>
+                <span class="n">atom</span> <span class="o">=</span> <span class="n">ObjectAtom</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">atom</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span>
+
+    <span class="k">def</span> <span class="nf">_getnobjects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nparr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the number of objects in a NumPy array.&quot;&quot;&quot;</span>
+
+        <span class="c"># Check for zero dimensionality array</span>
+        <span class="n">zerodims</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nparr</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">zerodims</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># No objects to be added</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">nparr</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">atom_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">shapelen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nparr</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">atom_shape</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">atomshapelen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">atom_shape</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">shape</span><span class="p">,)</span>
+            <span class="n">atomshapelen</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">diflen</span> <span class="o">=</span> <span class="n">shapelen</span> <span class="o">-</span> <span class="n">atomshapelen</span>
+        <span class="k">if</span> <span class="n">shape</span> <span class="o">==</span> <span class="n">atom_shape</span><span class="p">:</span>
+            <span class="n">nobjects</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">diflen</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">shape</span><span class="p">[</span><span class="n">diflen</span><span class="p">:]</span> <span class="o">==</span> <span class="n">atom_shape</span><span class="p">):</span>
+            <span class="c"># Check if the leading dimensions are all ones</span>
+            <span class="c"># if shape[:diflen-1] == (1,)*(diflen-1):</span>
+            <span class="c">#    nobjects = shape[diflen-1]</span>
+            <span class="c">#    shape = shape[diflen:]</span>
+            <span class="c"># It&#39;s better to accept only inputs with the exact dimensionality</span>
+            <span class="c"># i.e. a dimensionality only 1 element larger than atom</span>
+            <span class="n">nobjects</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">elif</span> <span class="n">atom_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="ow">and</span> <span class="n">shapelen</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c"># Case where shape = (N,) and shape_atom = 1 or (1,)</span>
+            <span class="n">nobjects</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;The object &#39;</span><span class="si">%s</span><span class="s">&#39; is composed of elements with &quot;</span>
+                             <span class="s">&quot;shape &#39;</span><span class="si">%s</span><span class="s">&#39;, which is not compatible with the &quot;</span>
+                             <span class="s">&quot;atom shape (&#39;</span><span class="si">%s</span><span class="s">&#39;).&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">atom_shape</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">nobjects</span>
+
+<div class="viewcode-block" id="VLArray.get_enum"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.get_enum">[docs]</a>    <span class="k">def</span> <span class="nf">get_enum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the enumerated type associated with this array.</span>
+
+<span class="sd">        If this array is of an enumerated type, the corresponding Enum instance</span>
+<span class="sd">        (see :ref:`EnumClassDescr`) is returned. If it is not of an enumerated</span>
+<span class="sd">        type, a TypeError is raised.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s">&#39;enum&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;array ``</span><span class="si">%s</span><span class="s">`` is not of an enumerated type&quot;</span>
+                            <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">enum</span>
+</div>
+    <span class="n">getEnum</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">get_enum</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VLArray.append"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a sequence of data to the end of the dataset.</span>
+
+<span class="sd">        This method appends the objects in the sequence to a *single row* in</span>
+<span class="sd">        this array. The type and shape of individual objects must be compliant</span>
+<span class="sd">        with the atoms in the array. In the case of serialized objects and</span>
+<span class="sd">        variable length strings, the object or string to append is itself the</span>
+<span class="sd">        sequence.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_check_writable</span><span class="p">()</span>
+
+        <span class="c"># Prepare the sequence to convert it into a NumPy object</span>
+        <span class="n">atom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="s">&#39;size&#39;</span><span class="p">):</span>  <span class="c"># it is a pseudo-atom</span>
+            <span class="n">sequence</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">toarray</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+            <span class="n">statom</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">base</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>  <span class="c"># fastest check in most cases</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;argument is not a sequence&quot;</span><span class="p">)</span>
+            <span class="n">statom</span> <span class="o">=</span> <span class="n">atom</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># The sequence needs to be copied to make the operation safe</span>
+            <span class="c"># to in-place conversion.</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="n">convert_to_np_atom2</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">statom</span><span class="p">)</span>
+            <span class="n">nobjects</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getnobjects</span><span class="p">(</span><span class="n">nparr</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nobjects</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_append</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="n">nobjects</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">+=</span> <span class="mi">1</span>
+</div>
+<div class="viewcode-block" id="VLArray.iterrows"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.iterrows">[docs]</a>    <span class="k">def</span> <span class="nf">iterrows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over the rows of the array.</span>
+
+<span class="sd">        This method returns an iterator yielding an object of the current</span>
+<span class="sd">        flavor for each selected row in the array.</span>
+
+<span class="sd">        If a range is not supplied, *all the rows* in the array are iterated</span>
+<span class="sd">        upon. You can also use the :meth:`VLArray.__iter__` special method for</span>
+<span class="sd">        that purpose.  If you only want to iterate over a given *range of rows*</span>
+<span class="sd">        in the array, you may use the start, stop and step parameters.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            for row in vlarray.iterrows(step=4):</span>
+<span class="sd">                print(&#39;%s[%d]--&gt; %s&#39; % (vlarray.name, vlarray.nrow, row))</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           If the *start* parameter is provided and *stop* is None then the</span>
+<span class="sd">           array is iterated from *start* to the last line.</span>
+<span class="sd">           In PyTables &lt; 3.0 only one element was returned.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_loop</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span>
+</div>
+<div class="viewcode-block" id="VLArray.__iter__"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over the rows of the array.</span>
+
+<span class="sd">        This is equivalent to calling :meth:`VLArray.iterrows` with default</span>
+<span class="sd">        arguments, i.e. it iterates over *all the rows* in the array.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            result = [row for row in vlarray]</span>
+
+<span class="sd">        Which is equivalent to::</span>
+
+<span class="sd">            result = [row for row in vlarray.iterrows()]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init</span><span class="p">:</span>
+            <span class="c"># If the iterator is called directly, assign default variables</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c"># and initialize the loop</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_loop</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+</div>
+    <span class="k">def</span> <span class="nf">_init_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialization for the __iter__ iterator.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_startb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>   <span class="c"># Sentinel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init</span> <span class="o">=</span> <span class="bp">True</span>  <span class="c"># Sentinel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">=</span> <span class="n">SizeType</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">)</span>    <span class="c"># row number</span>
+
+    <span class="n">_initLoop</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_init_loop</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VLArray.next"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the next element of the array during an iteration.</span>
+
+<span class="sd">        The element is returned as a list of objects of the current</span>
+<span class="sd">        flavor.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>        <span class="c"># end of iteration</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Read a chunk of rows</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_startb</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_startb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_startb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="VLArray.__getitem__"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a row or a range of rows from the array.</span>
+
+<span class="sd">        If key argument is an integer, the corresponding array row is returned</span>
+<span class="sd">        as an object of the current flavor.  If key is a slice, the range of</span>
+<span class="sd">        rows determined by it is returned as a list of objects of the current</span>
+<span class="sd">        flavor.</span>
+
+<span class="sd">        In addition, NumPy-style point selections are supported.  In</span>
+<span class="sd">        particular, if key is a list of row coordinates, the set of rows</span>
+<span class="sd">        determined by it is returned.  Furthermore, if key is an array of</span>
+<span class="sd">        boolean values, only the coordinates where key is True are returned.</span>
+<span class="sd">        Note that for the latter to work it is necessary that key list would</span>
+<span class="sd">        contain exactly as many rows as the array has.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            a_row = vlarray[4]</span>
+<span class="sd">            a_list = vlarray[4:1000:2]</span>
+<span class="sd">            a_list2 = vlarray[[0,2]]   # get list of coords</span>
+<span class="sd">            a_list3 = vlarray[[0,-2]]  # negative values accepted</span>
+<span class="sd">            a_list4 = vlarray[numpy.array([True,...,False])]  # array of bools</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">is_idx</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="c"># Index out of range protection</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Index out of range&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c"># To support negative values</span>
+                <span class="n">key</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span>
+            <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
+                <span class="n">key</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="c"># Try with a boolean or point selection</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_point_selection</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
+</div>
+    <span class="k">def</span> <span class="nf">_assign_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Assign the `values` to the positions stated in `coords`.&quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">nrow</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">nrow</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;First index out of range&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">nrow</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c"># To support negative values</span>
+                <span class="n">nrow</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span>
+            <span class="n">object_</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="c"># Prepare the object to convert it into a NumPy object</span>
+            <span class="n">atom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="s">&#39;size&#39;</span><span class="p">):</span>  <span class="c"># it is a pseudo-atom</span>
+                <span class="n">object_</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">toarray</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
+                <span class="n">statom</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">base</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">statom</span> <span class="o">=</span> <span class="n">atom</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">convert_to_np_atom</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="n">statom</span><span class="p">)</span>
+            <span class="n">nobjects</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getnobjects</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+            <span class="c"># Get the previous value</span>
+            <span class="n">nrow</span> <span class="o">=</span> <span class="n">idx2long</span><span class="p">(</span>
+                <span class="n">nrow</span><span class="p">)</span>   <span class="c"># To convert any possible numpy scalar value</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_array</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">nrow</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">nobjects</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nparr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">nobjects</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Length of value (</span><span class="si">%s</span><span class="s">) is larger than number &quot;</span>
+                                 <span class="s">&quot;of elements in row (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">),</span>
+                                                              <span class="n">nobjects</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">nparr</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>  <span class="c"># XXX</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Value parameter:</span><span class="se">\n</span><span class="s">&#39;</span><span class="si">%r</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&quot;</span>
+                                 <span class="s">&quot;cannot be converted into an array object &quot;</span>
+                                 <span class="s">&quot;compliant vlarray[</span><span class="si">%s</span><span class="s">] row: </span><span class="se">\n</span><span class="s">&#39;</span><span class="si">%r</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&quot;</span>
+                                 <span class="s">&quot;The error was: &lt;</span><span class="si">%s</span><span class="s">&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">nrow</span><span class="p">,</span>
+                                                          <span class="n">nparr</span><span class="p">[:],</span> <span class="n">exc</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">nparr</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_modify</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">nparr</span><span class="p">,</span> <span class="n">nobjects</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VLArray.__setitem__"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.__setitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set a row, or set of rows, in the array.</span>
+
+<span class="sd">        It takes different actions depending on the type of the *key*</span>
+<span class="sd">        parameter: if it is an integer, the corresponding table row is</span>
+<span class="sd">        set to *value* (a record or sequence capable of being converted</span>
+<span class="sd">        to the table structure).  If *key* is a slice, the row slice</span>
+<span class="sd">        determined by it is set to *value* (a record array or sequence</span>
+<span class="sd">        of rows capable of being converted to the table structure).</span>
+
+<span class="sd">        In addition, NumPy-style point selections are supported.  In</span>
+<span class="sd">        particular, if key is a list of row coordinates, the set of rows</span>
+<span class="sd">        determined by it is set to value.  Furthermore, if key is an array of</span>
+<span class="sd">        boolean values, only the coordinates where key is True are set to</span>
+<span class="sd">        values from value.  Note that for the latter to work it is necessary</span>
+<span class="sd">        that key list would contain exactly as many rows as the table has.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            When updating the rows of a VLArray object which uses a</span>
+<span class="sd">            pseudo-atom, there is a problem: you can only update values</span>
+<span class="sd">            with *exactly* the same size in bytes than the original row.</span>
+<span class="sd">            This is very difficult to meet with object pseudo-atoms,</span>
+<span class="sd">            because :mod:`pickle` applied on a Python object does not</span>
+<span class="sd">            guarantee to return the same number of bytes than over another</span>
+<span class="sd">            object, even if they are of the same class.</span>
+<span class="sd">            This effectively limits the kinds of objects than can be</span>
+<span class="sd">            updated in variable-length arrays.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            vlarray[0] = vlarray[0] * 2 + 3</span>
+<span class="sd">            vlarray[99] = arange(96) * 2 + 3</span>
+
+<span class="sd">            # Negative values for the index are supported.</span>
+<span class="sd">            vlarray[-99] = vlarray[5] * 2 + 3</span>
+<span class="sd">            vlarray[1:30:2] = list_of_rows</span>
+<span class="sd">            vlarray[[1,3]] = new_1_and_3_rows</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_check_writable</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">is_idx</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="c"># If key is not a sequence, convert to it</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
+                <span class="n">key</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="c"># Try with a boolean or point selection</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_point_selection</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
+
+        <span class="c"># Do the assignment row by row</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_assign_values</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="c"># Accessor for the _read_array method in superclass</span></div>
+<div class="viewcode-block" id="VLArray.read"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get data in the array as a list of objects of the current flavor.</span>
+
+<span class="sd">        Please note that, as the lengths of the different rows are variable,</span>
+<span class="sd">        the returned value is a *Python list* (not an array of the current</span>
+<span class="sd">        flavor), with as many entries as specified rows in the range</span>
+<span class="sd">        parameters.</span>
+
+<span class="sd">        The start, stop and step parameters can be used to select only a</span>
+<span class="sd">        *range of rows* in the array.  Their meanings are the same as in</span>
+<span class="sd">        the built-in range() Python function, except that negative values</span>
+<span class="sd">        of step are not allowed yet. Moreover, if only start is specified,</span>
+<span class="sd">        then stop will be set to start + 1. If you do not specify neither</span>
+<span class="sd">        start nor stop, then *all the rows* in the array are selected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="n">stop</span><span class="p">:</span>
+            <span class="n">listarr</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">listarr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_array</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+
+        <span class="n">atom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="s">&#39;size&#39;</span><span class="p">):</span>  <span class="c"># it is a pseudo-atom</span>
+            <span class="n">outlistarr</span> <span class="o">=</span> <span class="p">[</span><span class="n">atom</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span> <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">listarr</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Convert the list to the right flavor</span>
+            <span class="n">flavor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span>
+            <span class="n">outlistarr</span> <span class="o">=</span> <span class="p">[</span><span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span> <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">listarr</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">outlistarr</span>
+</div>
+    <span class="k">def</span> <span class="nf">_read_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read rows specified in `coords`.&quot;&quot;&quot;</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">:</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">long</span><span class="p">(</span><span class="n">coord</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">rows</span>
+
+    <span class="k">def</span> <span class="nf">_g_copy_with_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
+                           <span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">chunkshape</span><span class="p">,</span> <span class="n">_log</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Private part of Leaf.copy() for each kind of leaf.&quot;&quot;&quot;</span>
+
+        <span class="c"># Build the new VLArray object</span>
+        <span class="nb">object</span> <span class="o">=</span> <span class="n">VLArray</span><span class="p">(</span>
+            <span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+            <span class="n">expectedrows</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_expectedrows</span><span class="p">,</span> <span class="n">chunkshape</span><span class="o">=</span><span class="n">chunkshape</span><span class="p">,</span>
+            <span class="n">_log</span><span class="o">=</span><span class="n">_log</span><span class="p">)</span>
+
+        <span class="c"># Now, fill the new vlarray with values from the old one</span>
+        <span class="c"># This is not buffered because we cannot forsee the length</span>
+        <span class="c"># of each record. So, the safest would be a copy row by row.</span>
+        <span class="c"># In the future, some analysis can be done in order to buffer</span>
+        <span class="c"># the copy process.</span>
+        <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="c"># Optimized version (no conversions, no type and shape checks, etc...)</span>
+        <span class="n">nrowscopied</span> <span class="o">=</span> <span class="n">SizeType</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">nbytes</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="s">&#39;size&#39;</span><span class="p">):</span>  <span class="c"># it is a pseudo-atom</span>
+            <span class="n">atomsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">size</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">atomsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">size</span>
+        <span class="k">for</span> <span class="n">start2</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span><span class="p">):</span>
+            <span class="c"># Save the records on disk</span>
+            <span class="n">stop2</span> <span class="o">=</span> <span class="n">start2</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span>
+            <span class="k">if</span> <span class="n">stop2</span> <span class="o">&gt;</span> <span class="n">stop</span><span class="p">:</span>
+                <span class="n">stop2</span> <span class="o">=</span> <span class="n">stop</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_array</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">start2</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">stop2</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">nobjects</span> <span class="o">=</span> <span class="n">nparr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="nb">object</span><span class="o">.</span><span class="n">_append</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="n">nobjects</span><span class="p">)</span>
+            <span class="n">nbytes</span> <span class="o">+=</span> <span class="n">nobjects</span> <span class="o">*</span> <span class="n">atomsize</span>
+            <span class="n">nrowscopied</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">nrows</span> <span class="o">=</span> <span class="n">nrowscopied</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">nbytes</span><span class="p">)</span>
+
+    <span class="n">_g_copyWithStats</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_copy_with_stats</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This provides more metainfo in addition to standard __str__&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="s">&quot;&quot;&quot;</span><span class="si">%s</span><span class="s"></span>
+<span class="s">  atom = </span><span class="si">%r</span><span class="s"></span>
+<span class="s">  byteorder = </span><span class="si">%r</span><span class="s"></span>
+<span class="s">  nrows = </span><span class="si">%s</span><span class="s"></span>
+<span class="s">  flavor = </span><span class="si">%r</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

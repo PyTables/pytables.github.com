@@ -1,0 +1,506 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.exceptions &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.exceptions</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: December 17, 2004</span>
+<span class="c"># Author:  Francesc Alted - faltet@pytables.com</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Declare exceptions and warnings that are specific to PyTables.&quot;&quot;&quot;</span>
+
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;reStructuredText&#39;</span>
+<span class="sd">&quot;&quot;&quot;The format of documentation strings in this module.&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+
+<div class="viewcode-block" id="HDF5ExtError"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.HDF5ExtError">[docs]</a><span class="k">class</span> <span class="nc">HDF5ExtError</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A low level HDF5 operation failed.</span>
+
+<span class="sd">    This exception is raised the low level PyTables components used for</span>
+<span class="sd">    accessing HDF5 files.  It usually signals that something is not</span>
+<span class="sd">    going well in the HDF5 library or even at the Input/Output level.</span>
+
+<span class="sd">    Errors in the HDF5 C library may be accompanied by an extensive</span>
+<span class="sd">    HDF5 back trace on standard error (see also</span>
+<span class="sd">    :func:`tables.silence_hdf5_messages`).</span>
+
+<span class="sd">    .. versionchanged:: 2.4</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    message</span>
+<span class="sd">        error message</span>
+<span class="sd">    h5bt</span>
+<span class="sd">        This parameter (keyword only) controls the HDF5 back trace</span>
+<span class="sd">        handling. Any keyword arguments other than h5bt is ignored.</span>
+
+<span class="sd">        * if set to False the HDF5 back trace is ignored and the</span>
+<span class="sd">          :attr:`HDF5ExtError.h5backtrace` attribute is set to None</span>
+<span class="sd">        * if set to True the back trace is retrieved from the HDF5</span>
+<span class="sd">          library and stored in the :attr:`HDF5ExtError.h5backtrace`</span>
+<span class="sd">          attribute as a list of tuples</span>
+<span class="sd">        * if set to &quot;VERBOSE&quot; (default) the HDF5 back trace is</span>
+<span class="sd">          stored in the :attr:`HDF5ExtError.h5backtrace` attribute</span>
+<span class="sd">          and also included in the string representation of the</span>
+<span class="sd">          exception</span>
+<span class="sd">        * if not set (or set to None) the default policy is used</span>
+<span class="sd">          (see :attr:`HDF5ExtError.DEFAULT_H5_BACKTRACE_POLICY`)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># NOTE: in order to avoid circular dependencies between modules the</span>
+    <span class="c">#       _dump_h5_backtrace method is set at initialization time in</span>
+    <span class="c">#       the utilsExtenion.</span>
+    <span class="n">_dump_h5_backtrace</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="n">DEFAULT_H5_BACKTRACE_POLICY</span> <span class="o">=</span> <span class="s">&quot;VERBOSE&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Default policy for HDF5 backtrace handling</span>
+
+<span class="sd">    * if set to False the HDF5 back trace is ignored and the</span>
+<span class="sd">      :attr:`HDF5ExtError.h5backtrace` attribute is set to None</span>
+<span class="sd">    * if set to True the back trace is retrieved from the HDF5</span>
+<span class="sd">      library and stored in the :attr:`HDF5ExtError.h5backtrace`</span>
+<span class="sd">      attribute as a list of tuples</span>
+<span class="sd">    * if set to &quot;VERBOSE&quot; (default) the HDF5 back trace is</span>
+<span class="sd">      stored in the :attr:`HDF5ExtError.h5backtrace` attribute</span>
+<span class="sd">      and also included in the string representation of the</span>
+<span class="sd">      exception</span>
+
+<span class="sd">    This parameter can be set using the</span>
+<span class="sd">    :envvar:`PT_DEFAULT_H5_BACKTRACE_POLICY` environment variable.</span>
+<span class="sd">    Allowed values are &quot;IGNORE&quot; (or &quot;FALSE&quot;), &quot;SAVE&quot; (or &quot;TRUE&quot;) and</span>
+<span class="sd">    &quot;VERBOSE&quot; to set the policy to False, True and &quot;VERBOSE&quot;</span>
+<span class="sd">    respectively.  The special value &quot;DEFAULT&quot; can be used to reset</span>
+<span class="sd">    the policy to the default value</span>
+
+<span class="sd">    .. versionadded:: 2.4</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">set_policy_from_env</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="n">envmap</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&quot;IGNORE&quot;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="s">&quot;FALSE&quot;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="s">&quot;SAVE&quot;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+            <span class="s">&quot;TRUE&quot;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+            <span class="s">&quot;VERBOSE&quot;</span><span class="p">:</span> <span class="s">&quot;VERBOSE&quot;</span><span class="p">,</span>
+            <span class="s">&quot;DEFAULT&quot;</span><span class="p">:</span> <span class="s">&quot;VERBOSE&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">oldvalue</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">DEFAULT_H5_BACKTRACE_POLICY</span>
+        <span class="n">envvalue</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;PT_DEFAULT_H5_BACKTRACE_POLICY&quot;</span><span class="p">,</span> <span class="s">&quot;DEFAULT&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">newvalue</span> <span class="o">=</span> <span class="n">envmap</span><span class="p">[</span><span class="n">envvalue</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;Invalid value for the environment variable &quot;</span>
+                          <span class="s">&quot;&#39;PT_DEFAULT_H5_BACKTRACE_POLICY&#39;.  The default &quot;</span>
+                          <span class="s">&quot;policy for HDF5 back trace management in PyTables &quot;</span>
+                          <span class="s">&quot;will be: &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">oldvalue</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">DEFAULT_H5_BACKTRACE_POLICY</span> <span class="o">=</span> <span class="n">newvalue</span>
+
+        <span class="k">return</span> <span class="n">oldvalue</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">HDF5ExtError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_h5bt_policy</span> <span class="o">=</span> <span class="n">kargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;h5bt&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_H5_BACKTRACE_POLICY</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_h5bt_policy</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dump_h5_backtrace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h5backtrace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dump_h5_backtrace</span><span class="p">()</span>
+            <span class="sd">&quot;&quot;&quot;HDF5 back trace.</span>
+
+<span class="sd">            Contains the HDF5 back trace as a (possibly empty) list of</span>
+<span class="sd">            tuples.  Each tuple has the following format::</span>
+
+<span class="sd">                (filename, line number, function name, text)</span>
+
+<span class="sd">            Depending on the value of the *h5bt* parameter passed to the</span>
+<span class="sd">            initializer the h5backtrace attribute can be set to None.</span>
+<span class="sd">            This means that the HDF5 back trace has been simply ignored</span>
+<span class="sd">            (not retrieved from the HDF5 C library error stack) or that</span>
+<span class="sd">            there has been an error (silently ignored) during the HDF5 back</span>
+<span class="sd">            trace retrieval.</span>
+
+<span class="sd">            .. versionadded:: 2.4</span>
+
+<span class="sd">            See Also</span>
+<span class="sd">            --------</span>
+<span class="sd">            traceback.format_list : :func:`traceback.format_list`</span>
+
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="c"># XXX: check _dump_h5_backtrace failures</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h5backtrace</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a sting representation of the exception.</span>
+
+<span class="sd">        The actual result depends on policy set in the initializer</span>
+<span class="sd">        :meth:`HDF5ExtError.__init__`.</span>
+
+<span class="sd">        .. versionadded:: 2.4</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">verbose</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_h5bt_policy</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;VERBOSE&#39;</span><span class="p">,</span> <span class="s">&#39;verbose&#39;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5backtrace</span><span class="p">:</span>
+            <span class="n">bt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+                <span class="s">&quot;HDF5 error back trace</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">format_h5_backtrace</span><span class="p">(),</span>
+                <span class="s">&quot;End of HDF5 error back trace&quot;</span>
+            <span class="p">])</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">basestring</span><span class="p">):</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">HDF5ExtError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__str__</span><span class="p">()</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="se">\n\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">bt</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5backtrace</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="se">\n\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">bt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5backtrace</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">bt</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">HDF5ExtError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__str__</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">msg</span>
+
+<div class="viewcode-block" id="HDF5ExtError.format_h5_backtrace"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.HDF5ExtError.format_h5_backtrace">[docs]</a>    <span class="k">def</span> <span class="nf">format_h5_backtrace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtrace</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the HDF5 trace back represented as a list of tuples.</span>
+<span class="sd">        (see :attr:`HDF5ExtError.h5backtrace`) into a string.</span>
+
+<span class="sd">        .. versionadded:: 2.4</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">backtrace</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">backtrace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5backtrace</span>
+
+        <span class="k">if</span> <span class="n">backtrace</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;No HDF5 back trace available&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_list</span><span class="p">(</span><span class="n">backtrace</span><span class="p">))</span>
+
+
+<span class="c"># Initialize the policy for HDF5 back trace handling</span></div></div>
+<span class="n">HDF5ExtError</span><span class="o">.</span><span class="n">set_policy_from_env</span><span class="p">()</span>
+
+
+<span class="c"># The following exceptions are concretions of the ``ValueError`` exceptions</span>
+<span class="c"># raised by ``file`` objects on certain operations.</span>
+
+<div class="viewcode-block" id="ClosedNodeError"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.ClosedNodeError">[docs]</a><span class="k">class</span> <span class="nc">ClosedNodeError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The operation can not be completed because the node is closed.</span>
+
+<span class="sd">    For instance, listing the children of a closed group is not allowed.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="ClosedFileError"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.ClosedFileError">[docs]</a><span class="k">class</span> <span class="nc">ClosedFileError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The operation can not be completed because the hosting file is closed.</span>
+
+<span class="sd">    For instance, getting an existing node from a closed file is not</span>
+<span class="sd">    allowed.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="FileModeError"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.FileModeError">[docs]</a><span class="k">class</span> <span class="nc">FileModeError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The operation can not be carried out because the mode in which the</span>
+<span class="sd">    hosting file is opened is not adequate.</span>
+
+<span class="sd">    For instance, removing an existing leaf from a read-only file is not</span>
+<span class="sd">    allowed.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="NodeError"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.NodeError">[docs]</a><span class="k">class</span> <span class="nc">NodeError</span><span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">LookupError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Invalid hierarchy manipulation operation requested.</span>
+
+<span class="sd">    This exception is raised when the user requests an operation on the</span>
+<span class="sd">    hierarchy which can not be run because of the current layout of the</span>
+<span class="sd">    tree.  This includes accessing nonexistent nodes, moving or copying</span>
+<span class="sd">    or creating over an existing node, non-recursively removing groups</span>
+<span class="sd">    with children, and other similarly invalid operations.</span>
+
+<span class="sd">    A node in a PyTables database cannot be simply overwritten by</span>
+<span class="sd">    replacing it.  Instead, the old node must be removed explicitely</span>
+<span class="sd">    before another one can take its place.  This is done to protect</span>
+<span class="sd">    interactive users from inadvertedly deleting whole trees of data by</span>
+<span class="sd">    a single erroneous command.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="NoSuchNodeError"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.NoSuchNodeError">[docs]</a><span class="k">class</span> <span class="nc">NoSuchNodeError</span><span class="p">(</span><span class="n">NodeError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An operation was requested on a node that does not exist.</span>
+
+<span class="sd">    This exception is raised when an operation gets a path name or a</span>
+<span class="sd">    ``(where, name)`` pair leading to a nonexistent node.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="UndoRedoError"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.UndoRedoError">[docs]</a><span class="k">class</span> <span class="nc">UndoRedoError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Problems with doing/redoing actions with Undo/Redo feature.</span>
+
+<span class="sd">    This exception indicates a problem related to the Undo/Redo</span>
+<span class="sd">    mechanism, such as trying to undo or redo actions with this</span>
+<span class="sd">    mechanism disabled, or going to a nonexistent mark.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="UndoRedoWarning"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.UndoRedoWarning">[docs]</a><span class="k">class</span> <span class="nc">UndoRedoWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Issued when an action not supporting Undo/Redo is run.</span>
+
+<span class="sd">    This warning is only shown when the Undo/Redo mechanism is enabled.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="NaturalNameWarning"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.NaturalNameWarning">[docs]</a><span class="k">class</span> <span class="nc">NaturalNameWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Issued when a non-pythonic name is given for a node.</span>
+
+<span class="sd">    This is not an error and may even be very useful in certain</span>
+<span class="sd">    contexts, but one should be aware that such nodes cannot be</span>
+<span class="sd">    accessed using natural naming (instead, ``getattr()`` must be</span>
+<span class="sd">    used explicitly).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="PerformanceWarning"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.PerformanceWarning">[docs]</a><span class="k">class</span> <span class="nc">PerformanceWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Warning for operations which may cause a performance drop.</span>
+
+<span class="sd">    This warning is issued when an operation is made on the database</span>
+<span class="sd">    which may cause it to slow down on future operations (i.e. making</span>
+<span class="sd">    the node tree grow too much).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="FlavorError"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.FlavorError">[docs]</a><span class="k">class</span> <span class="nc">FlavorError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Unsupported or unavailable flavor or flavor conversion.</span>
+
+<span class="sd">    This exception is raised when an unsupported or unavailable flavor</span>
+<span class="sd">    is given to a dataset, or when a conversion of data between two</span>
+<span class="sd">    given flavors is not supported nor available.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="FlavorWarning"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.FlavorWarning">[docs]</a><span class="k">class</span> <span class="nc">FlavorWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Unsupported or unavailable flavor conversion.</span>
+
+<span class="sd">    This warning is issued when a conversion of data between two given</span>
+<span class="sd">    flavors is not supported nor available, and raising an error would</span>
+<span class="sd">    render the data inaccessible (e.g. on a dataset of an unavailable</span>
+<span class="sd">    flavor in a read-only file).</span>
+
+<span class="sd">    See the `FlavorError` class for more information.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="FiltersWarning"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.FiltersWarning">[docs]</a><span class="k">class</span> <span class="nc">FiltersWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Unavailable filters.</span>
+
+<span class="sd">    This warning is issued when a valid filter is specified but it is</span>
+<span class="sd">    not available in the system.  It may mean that an available default</span>
+<span class="sd">    filter is to be used instead.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="OldIndexWarning"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.OldIndexWarning">[docs]</a><span class="k">class</span> <span class="nc">OldIndexWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Unsupported index format.</span>
+
+<span class="sd">    This warning is issued when an index in an unsupported format is</span>
+<span class="sd">    found.  The index will be marked as invalid and will behave as if</span>
+<span class="sd">    doesn&#39;t exist.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="DataTypeWarning"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.DataTypeWarning">[docs]</a><span class="k">class</span> <span class="nc">DataTypeWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Unsupported data type.</span>
+
+<span class="sd">    This warning is issued when an unsupported HDF5 data type is found</span>
+<span class="sd">    (normally in a file created with other tool than PyTables).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="ExperimentalFeatureWarning"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.ExperimentalFeatureWarning">[docs]</a><span class="k">class</span> <span class="nc">ExperimentalFeatureWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generic warning for experimental features.</span>
+
+<span class="sd">    This warning is issued when using a functionality that is still</span>
+<span class="sd">    experimental and that users have to use with care.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## fill-column: 72</span>
+<span class="c">## End:</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

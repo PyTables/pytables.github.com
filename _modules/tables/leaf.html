@@ -1,0 +1,906 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.leaf &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.leaf</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: October 14, 2002</span>
+<span class="c"># Author: Francesc Alted - faltet@pytables.com</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Here is defined the Leaf class.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="kn">from</span> <span class="nn">tables.flavor</span> <span class="kn">import</span> <span class="p">(</span><span class="n">check_flavor</span><span class="p">,</span> <span class="n">internal_flavor</span><span class="p">,</span>
+                           <span class="n">alias_map</span> <span class="k">as</span> <span class="n">flavor_alias_map</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">tables.node</span> <span class="kn">import</span> <span class="n">Node</span>
+<span class="kn">from</span> <span class="nn">tables.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
+<span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="n">byteorders</span><span class="p">,</span> <span class="n">lazyattr</span><span class="p">,</span> <span class="n">SizeType</span>
+<span class="kn">from</span> <span class="nn">tables.exceptions</span> <span class="kn">import</span> <span class="n">PerformanceWarning</span>
+<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">utilsextension</span>
+<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span>
+
+
+<span class="k">def</span> <span class="nf">csformula</span><span class="p">(</span><span class="n">expected_mb</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the fitted chunksize for expected_mb.&quot;&quot;&quot;</span>
+
+    <span class="c"># For a basesize of 8 KB, this will return:</span>
+    <span class="c"># 8 KB for datasets &lt;= 1 MB</span>
+    <span class="c"># 1 MB for datasets &gt;= 10 TB</span>
+    <span class="n">basesize</span> <span class="o">=</span> <span class="mi">8</span> <span class="o">*</span> <span class="mi">1024</span>   <span class="c"># 8 KB is a good minimum</span>
+    <span class="k">return</span> <span class="n">basesize</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">expected_mb</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">limit_es</span><span class="p">(</span><span class="n">expected_mb</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Protection against creating too small or too large chunks.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">expected_mb</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>        <span class="c"># &lt; 1 MB</span>
+        <span class="n">expected_mb</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">expected_mb</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="o">**</span><span class="mi">7</span><span class="p">:</span>  <span class="c"># &gt; 10 TB</span>
+        <span class="n">expected_mb</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="mi">7</span>
+    <span class="k">return</span> <span class="n">expected_mb</span>
+
+
+<span class="k">def</span> <span class="nf">calc_chunksize</span><span class="p">(</span><span class="n">expected_mb</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the optimum HDF5 chunksize for I/O purposes.</span>
+
+<span class="sd">    Rational: HDF5 takes the data in bunches of chunksize length to</span>
+<span class="sd">    write the on disk. A BTree in memory is used to map structures on</span>
+<span class="sd">    disk. The more chunks that are allocated for a dataset the larger</span>
+<span class="sd">    the B-tree. Large B-trees take memory and causes file storage</span>
+<span class="sd">    overhead as well as more disk I/O and higher contention for the meta</span>
+<span class="sd">    data cache.  You have to balance between memory and I/O overhead</span>
+<span class="sd">    (small B-trees) and time to access to data (big B-trees).</span>
+
+<span class="sd">    The tuning of the chunksize parameter affects the performance and</span>
+<span class="sd">    the memory consumed. This is based on my own experiments and, as</span>
+<span class="sd">    always, your mileage may vary.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">expected_mb</span> <span class="o">=</span> <span class="n">limit_es</span><span class="p">(</span><span class="n">expected_mb</span><span class="p">)</span>
+    <span class="n">zone</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">expected_mb</span><span class="p">))</span>
+    <span class="n">expected_mb</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="n">zone</span>
+    <span class="n">chunksize</span> <span class="o">=</span> <span class="n">csformula</span><span class="p">(</span><span class="n">expected_mb</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">chunksize</span> <span class="o">*</span> <span class="mi">8</span>     <span class="c"># XXX: Multiply by 8 seems optimal for</span>
+                           <span class="c"># sequential access</span>
+
+
+<div class="viewcode-block" id="Leaf"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf">[docs]</a><span class="k">class</span> <span class="nc">Leaf</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Abstract base class for all PyTables leaves.</span>
+
+<span class="sd">    A leaf is a node (see the Node class in :class:`Node`) which hangs from a</span>
+<span class="sd">    group (see the Group class in :class:`Group`) but, unlike a group, it can</span>
+<span class="sd">    not have any further children below it (i.e. it is an end node).</span>
+
+<span class="sd">    This definition includes all nodes which contain actual data (datasets</span>
+<span class="sd">    handled by the Table - see :ref:`TableClassDescr`, Array -</span>
+<span class="sd">    see :ref:`ArrayClassDescr`, CArray - see :ref:`CArrayClassDescr`, EArray -</span>
+<span class="sd">    see :ref:`EArrayClassDescr`, and VLArray - see :ref:`VLArrayClassDescr`</span>
+<span class="sd">    classes) and unsupported nodes (the UnImplemented</span>
+<span class="sd">    class - :ref:`UnImplementedClassDescr`) these classes do in fact inherit</span>
+<span class="sd">    from Leaf.</span>
+
+
+<span class="sd">    .. rubric:: Leaf attributes</span>
+
+<span class="sd">    These instance variables are provided in addition to those in Node</span>
+<span class="sd">    (see :ref:`NodeClassDescr`):</span>
+
+<span class="sd">    .. attribute:: byteorder</span>
+
+<span class="sd">        The byte ordering of the leaf data *on disk*.  It will be either</span>
+<span class="sd">        ``little`` or ``big``.</span>
+
+<span class="sd">    .. attribute:: dtype</span>
+
+<span class="sd">        The NumPy dtype that most closely matches this leaf type.</span>
+
+<span class="sd">    .. attribute:: extdim</span>
+
+<span class="sd">        The index of the enlargeable dimension (-1 if none).</span>
+
+<span class="sd">    .. attribute:: nrows</span>
+
+<span class="sd">        The length of the main dimension of the leaf data.</span>
+
+<span class="sd">    .. attribute:: nrowsinbuf</span>
+
+<span class="sd">        The number of rows that fit in internal input buffers.</span>
+
+<span class="sd">        You can change this to fine-tune the speed or memory</span>
+<span class="sd">        requirements of your application.</span>
+
+<span class="sd">    .. attribute:: shape</span>
+
+<span class="sd">        The shape of data in the leaf.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Properties</span>
+    <span class="c"># ~~~~~~~~~~</span>
+
+    <span class="c"># Node property aliases</span>
+    <span class="c"># `````````````````````</span>
+    <span class="c"># These are a little hard to override, but so are properties.</span>
+    <span class="n">attrs</span> <span class="o">=</span> <span class="n">Node</span><span class="o">.</span><span class="n">_v_attrs</span>
+    <span class="sd">&quot;&quot;&quot;The associated AttributeSet instance - see :ref:`AttributeSetClassDescr`</span>
+<span class="sd">    (This is an easier-to-write alias of :attr:`Node._v_attrs`.&quot;&quot;&quot;</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">Node</span><span class="o">.</span><span class="n">_v_title</span>
+    <span class="sd">&quot;&quot;&quot;A description for this node</span>
+<span class="sd">    (This is an easier-to-write alias of :attr:`Node._v_title`).&quot;&quot;&quot;</span>
+
+    <span class="c"># Read-only node property aliases</span>
+    <span class="c"># ```````````````````````````````</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;The name of this node in its parent group</span>
+<span class="sd">        (This is an easier-to-write alias of :attr:`Node._v_name`).&quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">chunkshape</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_v_chunkshape&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;The HDF5 chunk size for chunked leaves (a tuple).</span>
+
+<span class="sd">        This is read-only because you cannot change the chunk size of a</span>
+<span class="sd">        leaf once it has been created.</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">object_id</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;A node identifier, which may change from run to run.</span>
+<span class="sd">        (This is an easier-to-write alias of :attr:`Node._v_objectid`).</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           The *objectID* property has been renamed into *object_id*.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">objectID</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">object_id</span><span class="p">)</span>
+
+    <span class="n">ndim</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;The number of dimensions of the leaf data.</span>
+
+<span class="sd">        .. versionadded: 2.4&quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="c"># Lazy read-only attributes</span>
+    <span class="c"># `````````````````````````</span>
+    <span class="nd">@lazyattr</span>
+    <span class="k">def</span> <span class="nf">filters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Filter properties for this leaf.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        Filters</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">Filters</span><span class="o">.</span><span class="n">_from_leaf</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="c"># Other properties</span>
+    <span class="c"># ````````````````</span>
+    <span class="k">def</span> <span class="nf">_getmaindim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extdim</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>  <span class="c"># choose the first dimension</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extdim</span>
+
+    <span class="n">maindim</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="n">_getmaindim</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;The dimension along which iterators work.</span>
+
+<span class="sd">        Its value is 0 (i.e. the first dimension) when the dataset is not</span>
+<span class="sd">        extendable, and self.extdim (where available) for extendable ones.</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_setflavor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flavor</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_check_writable</span><span class="p">()</span>
+        <span class="n">check_flavor</span><span class="p">(</span><span class="n">flavor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">FLAVOR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span> <span class="o">=</span> <span class="n">flavor</span>  <span class="c"># logs the change</span>
+
+    <span class="k">def</span> <span class="nf">_delflavor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">FLAVOR</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span> <span class="o">=</span> <span class="n">internal_flavor</span>
+
+    <span class="n">flavor</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span><span class="p">,</span> <span class="n">_setflavor</span><span class="p">,</span> <span class="n">_delflavor</span><span class="p">,</span>
+        <span class="sd">&quot;&quot;&quot;The type of data object read from this leaf.</span>
+
+<span class="sd">        It can be any of &#39;numpy&#39; or &#39;python&#39;.</span>
+
+<span class="sd">        You can (and are encouraged to) use this property to get, set</span>
+<span class="sd">        and delete the FLAVOR HDF5 attribute of the leaf. When the leaf</span>
+<span class="sd">        has no such attribute, the default flavor is used..</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">size_on_disk</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_storage_size</span><span class="p">(),</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+                            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The size of this leaf&#39;s data in bytes as it is stored on disk.  If the</span>
+<span class="sd">        data is compressed, this shows the compressed size.  In the case of</span>
+<span class="sd">        uncompressed, chunked data, this may be slightly larger than the amount</span>
+<span class="sd">        of data, due to partially filled chunks.</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="c"># Special methods</span>
+    <span class="c"># ~~~~~~~~~~~~~~~</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">new</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">byteorder</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span> <span class="o">=</span> <span class="n">new</span>
+        <span class="sd">&quot;&quot;&quot;Is this the first time the node has been created?&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The number of rows that fits in internal input buffers.</span>
+
+<span class="sd">        You can change this to fine-tune the speed or memory</span>
+<span class="sd">        requirements of your application.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Private storage for the `flavor` property.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">new</span><span class="p">:</span>
+            <span class="c"># Get filter properties from parent group if not given.</span>
+            <span class="k">if</span> <span class="n">filters</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">filters</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">_v_filters</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;filters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">filters</span>  <span class="c"># bypass the property</span>
+
+            <span class="k">if</span> <span class="n">byteorder</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="s">&#39;little&#39;</span><span class="p">,</span> <span class="s">&#39;big&#39;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s">&quot;the byteorder can only take &#39;little&#39; or &#39;big&#39; values &quot;</span>
+                    <span class="s">&quot;and you passed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">byteorder</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span> <span class="o">=</span> <span class="n">byteorder</span>
+            <span class="sd">&quot;&quot;&quot;The byte ordering of the leaf data *on disk*.&quot;&quot;&quot;</span>
+
+        <span class="c"># Existing filters need not be read since `filters`</span>
+        <span class="c"># is a lazy property that automatically handles their loading.</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Leaf</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">_log</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Leaf.__len__"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.__len__">[docs]</a>    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the length of the main dimension of the leaf data.</span>
+
+<span class="sd">        Please note that this may raise an OverflowError on 32-bit platforms</span>
+<span class="sd">        for datasets having more than 2**31-1 rows.  This is a limitation of</span>
+<span class="sd">        Python that you can work around by using the nrows or shape attributes.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span>
+</div>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The string representation for this object is its pathname in the</span>
+<span class="sd">        HDF5 object tree plus some additional metainfo.&quot;&quot;&quot;</span>
+
+        <span class="c"># Get this class name</span>
+        <span class="n">classname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="c"># The title</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_title</span>
+        <span class="c"># The filters</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">fletcher32</span><span class="p">:</span>
+            <span class="n">filters</span> <span class="o">+=</span> <span class="s">&quot;, fletcher32&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complevel</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">shuffle</span><span class="p">:</span>
+                <span class="n">filters</span> <span class="o">+=</span> <span class="s">&quot;, shuffle&quot;</span>
+            <span class="n">filters</span> <span class="o">+=</span> <span class="s">&quot;, </span><span class="si">%s</span><span class="s">(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complib</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complevel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%s%s%s</span><span class="s">) </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> \
+               <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+
+    <span class="c"># Private methods</span>
+    <span class="c"># ~~~~~~~~~~~~~~~</span>
+    <span class="k">def</span> <span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Code to be run after node creation and before creation logging.</span>
+
+<span class="sd">        This method gets or sets the flavor of the leaf.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Leaf</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_g_post_init_hook</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span><span class="p">:</span>  <span class="c"># set flavor of new node</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span> <span class="o">=</span> <span class="n">internal_flavor</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c"># flavor set at creation time, do not log</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;PYTABLES_SYS_ATTRS&#39;</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_g__setattr</span><span class="p">(</span><span class="s">&#39;FLAVOR&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c"># get flavor of existing node (if any)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;PYTABLES_SYS_ATTRS&#39;</span><span class="p">]:</span>
+                <span class="n">flavor</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="s">&#39;FLAVOR&#39;</span><span class="p">,</span> <span class="n">internal_flavor</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span> <span class="o">=</span> <span class="n">flavor_alias_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">flavor</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span> <span class="o">=</span> <span class="n">internal_flavor</span>
+
+    <span class="n">_g_postInitHook</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_post_init_hook</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_calc_chunkshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expectedrows</span><span class="p">,</span> <span class="n">rowsize</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the shape for the HDF5 chunk.&quot;&quot;&quot;</span>
+
+        <span class="c"># In case of a scalar shape, return the unit chunksize</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="mi">1</span><span class="p">),)</span>
+
+        <span class="c"># Compute the chunksize</span>
+        <span class="n">MB</span> <span class="o">=</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span>
+        <span class="n">expected_mb</span> <span class="o">=</span> <span class="p">(</span><span class="n">expectedrows</span> <span class="o">*</span> <span class="n">rowsize</span><span class="p">)</span> <span class="o">//</span> <span class="n">MB</span>
+        <span class="n">chunksize</span> <span class="o">=</span> <span class="n">calc_chunksize</span><span class="p">(</span><span class="n">expected_mb</span><span class="p">)</span>
+
+        <span class="n">maindim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span>
+        <span class="c"># Compute the chunknitems</span>
+        <span class="n">chunknitems</span> <span class="o">=</span> <span class="n">chunksize</span> <span class="o">//</span> <span class="n">itemsize</span>
+        <span class="c"># Safeguard against itemsizes being extremely large</span>
+        <span class="k">if</span> <span class="n">chunknitems</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">chunknitems</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">chunkshape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="c"># Check whether trimming the main dimension is enough</span>
+        <span class="n">chunkshape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">newchunknitems</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">newchunknitems</span> <span class="o">&lt;=</span> <span class="n">chunknitems</span><span class="p">:</span>
+            <span class="n">chunkshape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunknitems</span> <span class="o">//</span> <span class="n">newchunknitems</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># No, so start trimming other dimensions as well</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">)):</span>
+                <span class="c"># Check whether trimming this dimension is enough</span>
+                <span class="n">chunkshape</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">newchunknitems</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">newchunknitems</span> <span class="o">&lt;=</span> <span class="n">chunknitems</span><span class="p">:</span>
+                    <span class="n">chunkshape</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunknitems</span> <span class="o">//</span> <span class="n">newchunknitems</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Ops, we ran out of the loop without a break</span>
+                <span class="c"># Set the last dimension to chunknitems</span>
+                <span class="n">chunkshape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunknitems</span>
+
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">chunkshape</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_calc_nrowsinbuf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the number of rows that fits on a PyTables buffer.&quot;&quot;&quot;</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span>
+        <span class="c"># Compute the nrowsinbuf</span>
+        <span class="n">rowsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span>
+        <span class="n">buffersize</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s">&#39;IO_BUFFER_SIZE&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">rowsize</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="n">buffersize</span> <span class="o">//</span> <span class="n">rowsize</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;Table&quot;</span><span class="p">:</span>
+                <span class="c"># The number of rows in buffer needs to be an exact multiple of</span>
+                <span class="c"># chunkshape[0] for queries using indexed columns.</span>
+                <span class="c"># Fixes #319 and probably #409 too.</span>
+                <span class="n">nrowsinbuf</span> <span class="o">-=</span> <span class="n">nrowsinbuf</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c"># tableextension.pyx performs an assertion</span>
+        <span class="c"># to make sure nrowsinbuf is greater than or</span>
+        <span class="c"># equal to the chunksize.</span>
+        <span class="c"># See gh-206 and gh-238</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">chunksize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maindim</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">nrowsinbuf</span> <span class="o">&lt;</span> <span class="n">chunksize</span><span class="p">:</span>
+                <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="n">chunksize</span>
+
+        <span class="c"># Safeguard against row sizes being extremely large</span>
+        <span class="k">if</span> <span class="n">nrowsinbuf</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c"># If rowsize is too large, issue a Performance warning</span>
+            <span class="n">maxrowsize</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s">&#39;BUFFER_TIMES&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">buffersize</span>
+            <span class="k">if</span> <span class="n">rowsize</span> <span class="o">&gt;</span> <span class="n">maxrowsize</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">The Leaf ``</span><span class="si">%s</span><span class="s">`` is exceeding the maximum recommended rowsize (</span><span class="si">%d</span><span class="s"> bytes);</span>
+<span class="s">be ready to see PyTables asking for *lots* of memory and possibly slow</span>
+<span class="s">I/O.  You may want to reduce the rowsize by trimming the value of</span>
+<span class="s">dimensions that are orthogonal (and preferably close) to the *main*</span>
+<span class="s">dimension of this leave.  Alternatively, in case you have specified a</span>
+<span class="s">very small/large chunksize, you may want to increase/decrease it.&quot;&quot;&quot;</span>
+                              <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">maxrowsize</span><span class="p">),</span>
+                              <span class="n">PerformanceWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">nrowsinbuf</span>
+
+    <span class="c"># This method is appropriate for calls to __getitem__ methods</span>
+    <span class="k">def</span> <span class="nf">_process_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">warn_negstep</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">nrows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span>  <span class="c"># self.shape[self.maindim]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nrows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">warn_negstep</span> <span class="ow">and</span> <span class="n">step</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;slice step cannot be negative&quot;</span><span class="p">)</span>
+
+        <span class="c">#if start is not None: start = long(start)</span>
+        <span class="c">#if stop is not None: stop = long(stop)</span>
+        <span class="c">#if step is not None: step = long(step)</span>
+
+        <span class="k">return</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="nb">long</span><span class="p">(</span><span class="n">nrows</span><span class="p">))</span>
+
+    <span class="n">_processRange</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_process_range</span><span class="p">)</span>
+
+    <span class="c"># This method is appropriate for calls to read() methods</span>
+    <span class="k">def</span> <span class="nf">_process_range_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">warn_negstep</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="n">nrows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">stop</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">step</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># Protection against start greater than available records</span>
+            <span class="c"># nrows == 0 is a special case for empty objects</span>
+            <span class="k">if</span> <span class="n">nrows</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">start</span> <span class="o">&gt;=</span> <span class="n">nrows</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;start of range (</span><span class="si">%s</span><span class="s">) is greater than &quot;</span>
+                                 <span class="s">&quot;number of rows (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">nrows</span><span class="p">))</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c"># corner case</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="n">nrows</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="c"># Finally, get the correct values (over the main dimension)</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
+                                                <span class="n">warn_negstep</span><span class="o">=</span><span class="n">warn_negstep</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+
+    <span class="n">_processRangeRead</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_process_range_read</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c"># Compute default arguments.</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;start&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;stop&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;step&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;title&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_title</span><span class="p">)</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;filters&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">)</span>
+        <span class="n">chunkshape</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;chunkshape&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">)</span>
+        <span class="n">copyuserattrs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;copyuserattrs&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;stats&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chunkshape</span> <span class="o">==</span> <span class="s">&#39;keep&#39;</span><span class="p">:</span>
+            <span class="n">chunkshape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span>  <span class="c"># Keep the original chunkshape</span>
+        <span class="k">elif</span> <span class="n">chunkshape</span> <span class="o">==</span> <span class="s">&#39;auto&#39;</span><span class="p">:</span>
+            <span class="n">chunkshape</span> <span class="o">=</span> <span class="bp">None</span>             <span class="c"># Will recompute chunkshape</span>
+
+        <span class="c"># Fix arguments with explicit None values for backwards compatibility.</span>
+        <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_title</span>
+        <span class="k">if</span> <span class="n">filters</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">filters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span>
+
+        <span class="c"># Create a copy of the object.</span>
+        <span class="p">(</span><span class="n">new_node</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy_with_stats</span><span class="p">(</span>
+            <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
+            <span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">chunkshape</span><span class="p">,</span> <span class="n">_log</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c"># Copy user attributes if requested (or the flavor at least).</span>
+        <span class="k">if</span> <span class="n">copyuserattrs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">new_node</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">copyclass</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s">&#39;FLAVOR&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;PYTABLES_SYS_ATTRS&#39;</span><span class="p">]:</span>
+                <span class="n">new_node</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_g__setattr</span><span class="p">(</span><span class="s">&#39;FLAVOR&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span><span class="p">)</span>
+        <span class="n">new_node</span><span class="o">.</span><span class="n">_flavor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span>  <span class="c"># update cached value</span>
+
+        <span class="c"># Update statistics if needed.</span>
+        <span class="k">if</span> <span class="n">stats</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s">&#39;leaves&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s">&#39;bytes&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">bytes</span>
+
+        <span class="k">return</span> <span class="n">new_node</span>
+
+    <span class="k">def</span> <span class="nf">_g_fix_byteorder_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dbyteorder</span><span class="p">):</span>
+        <span class="s">&quot;Fix the byteorder of data passed in constructors.&quot;</span>
+        <span class="n">dbyteorder</span> <span class="o">=</span> <span class="n">byteorders</span><span class="p">[</span><span class="n">dbyteorder</span><span class="p">]</span>
+        <span class="c"># If self.byteorder has not been passed as an argument of</span>
+        <span class="c"># the constructor, then set it to the same value of data.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span> <span class="o">=</span> <span class="n">dbyteorder</span>
+        <span class="c"># Do an additional in-place byteswap of data if the in-memory</span>
+        <span class="c"># byteorder doesn&#39;t match that of the on-disk.  This is the only</span>
+        <span class="c"># place that we have to do the conversion manually. In all the</span>
+        <span class="c"># other cases, it will be HDF5 the responsible of doing the</span>
+        <span class="c"># byteswap properly.</span>
+        <span class="k">if</span> <span class="n">dbyteorder</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;little&#39;</span><span class="p">,</span> <span class="s">&#39;big&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">dbyteorder</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">:</span>
+                <span class="c"># if data is not writeable, do a copy first</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">writeable</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">byteswap</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Fix the byteorder again, no matter which byteorder have</span>
+            <span class="c"># specified the user in the constructor.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span> <span class="o">=</span> <span class="s">&quot;irrelevant&quot;</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="nf">_point_selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform a point-wise selection.</span>
+
+<span class="sd">        `key` can be any of the following items:</span>
+
+<span class="sd">        * A boolean array with the same shape than self. Those positions</span>
+<span class="sd">          with True values will signal the coordinates to be returned.</span>
+
+<span class="sd">        * A numpy array (or list or tuple) with the point coordinates.</span>
+<span class="sd">          This has to be a two-dimensional array of size len(self.shape)</span>
+<span class="sd">          by num_elements containing a list of of zero-based values</span>
+<span class="sd">          specifying the coordinates in the dataset of the selected</span>
+<span class="sd">          elements. The order of the element coordinates in the array</span>
+<span class="sd">          specifies the order in which the array elements are iterated</span>
+<span class="sd">          through when I/O is performed. Duplicate coordinate locations</span>
+<span class="sd">          are not checked for.</span>
+
+<span class="sd">        Return the coordinates array.  If this is not possible, raise a</span>
+<span class="sd">        `TypeError` so that the next selection method can be tried out.</span>
+
+<span class="sd">        This is useful for whatever `Leaf` instance implementing a</span>
+<span class="sd">        point-wise selection.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
+            <span class="c"># Try to convert key to a numpy array.  If not possible,</span>
+            <span class="c"># a TypeError will be issued (to be catched later on).</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
+
+        <span class="c"># Protection against empty keys</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;i8&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s">&#39;b&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                    <span class="s">&quot;Boolean indexing array has incompatible shape&quot;</span><span class="p">)</span>
+            <span class="c"># Get the True coordinates (64-bit indices!)</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;i8&#39;</span><span class="p">)</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">key</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s">&#39;i&#39;</span> <span class="ow">or</span> <span class="n">key</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s">&#39;u&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                    <span class="s">&quot;Coordinate indexing array has incompatible shape&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                        <span class="s">&quot;Coordinate indexing array has incompatible shape&quot;</span><span class="p">)</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;i8&quot;</span><span class="p">)</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># For 1-dimensional datasets</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;i8&quot;</span><span class="p">)</span>
+
+            <span class="c"># handle negative indices</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">coords</span> <span class="o">&lt;</span> <span class="mi">0</span>
+            <span class="n">coords</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">coords</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)[</span><span class="n">idx</span><span class="p">]</span>
+
+            <span class="c"># bounds check</span>
+            <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">coords</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">numpy</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">coords</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Index out of bounds&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Only integer coordinates allowed.&quot;</span><span class="p">)</span>
+        <span class="c"># We absolutely need a contiguous array</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">coords</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">contiguous</span><span class="p">:</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">coords</span>
+
+    <span class="n">_pointSelection</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_point_selection</span><span class="p">)</span>
+
+    <span class="c"># Public methods</span>
+    <span class="c"># ~~~~~~~~~~~~~~</span>
+    <span class="c"># Tree manipulation</span>
+    <span class="c"># `````````````````</span>
+<div class="viewcode-block" id="Leaf.remove"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove this node from the hierarchy.</span>
+
+<span class="sd">        This method has the behavior described</span>
+<span class="sd">        in :meth:`Node._f_remove`. Please note that there is no recursive flag</span>
+<span class="sd">        since leaves do not have child nodes.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f_remove</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Leaf.rename"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.rename">[docs]</a>    <span class="k">def</span> <span class="nf">rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rename this node in place.</span>
+
+<span class="sd">        This method has the behavior described in :meth:`Node._f_rename()`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f_rename</span><span class="p">(</span><span class="n">newname</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Leaf.move"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.move">[docs]</a>    <span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+             <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move or rename this node.</span>
+
+<span class="sd">        This method has the behavior described in :meth:`Node._f_move`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f_move</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">createparents</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Leaf.copy"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+             <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy this node and return the new one.</span>
+
+<span class="sd">        This method has the behavior described in :meth:`Node._f_copy`. Please</span>
+<span class="sd">        note that there is no recursive flag since leaves do not have child</span>
+<span class="sd">        nodes.</span>
+
+<span class="sd">        .. warning::</span>
+
+<span class="sd">            Note that unknown parameters passed to this method will be</span>
+<span class="sd">            ignored, so may want to double check the spelling of these</span>
+<span class="sd">            (i.e. if you write them incorrectly, they will most probably</span>
+<span class="sd">            be ignored).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        title</span>
+<span class="sd">            The new title for the destination. If omitted or None, the original</span>
+<span class="sd">            title is used.</span>
+<span class="sd">        filters : Filters</span>
+<span class="sd">            Specifying this parameter overrides the original filter properties</span>
+<span class="sd">            in the source node. If specified, it must be an instance of the</span>
+<span class="sd">            Filters class (see :ref:`FiltersClassDescr`). The default is to</span>
+<span class="sd">            copy the filter properties from the source node.</span>
+<span class="sd">        copyuserattrs</span>
+<span class="sd">            You can prevent the user attributes from being copied by setting</span>
+<span class="sd">            this parameter to False. The default is to copy them.</span>
+<span class="sd">        start, stop, step : int</span>
+<span class="sd">            Specify the range of rows to be copied; the default is to copy all</span>
+<span class="sd">            the rows.</span>
+<span class="sd">        stats</span>
+<span class="sd">            This argument may be used to collect statistics on the copy</span>
+<span class="sd">            process. When used, it should be a dictionary with keys &#39;groups&#39;,</span>
+<span class="sd">            &#39;leaves&#39; and &#39;bytes&#39; having a numeric value. Their values will be</span>
+<span class="sd">            incremented to reflect the number of groups, leaves and bytes,</span>
+<span class="sd">            respectively, that have been copied during the operation.</span>
+<span class="sd">        chunkshape</span>
+<span class="sd">            The chunkshape of the new leaf.  It supports a couple of special</span>
+<span class="sd">            values.  A value of keep means that the chunkshape will be the same</span>
+<span class="sd">            than original leaf (this is the default).  A value of auto means</span>
+<span class="sd">            that a new shape will be computed automatically in order to ensure</span>
+<span class="sd">            best performance when accessing the dataset through the main</span>
+<span class="sd">            dimension.  Any other value should be an integer or a tuple</span>
+<span class="sd">            matching the dimensions of the leaf.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_copy</span><span class="p">(</span>
+            <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">createparents</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Leaf.truncate"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.truncate">[docs]</a>    <span class="k">def</span> <span class="nf">truncate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Truncate the main dimension to be size rows.</span>
+
+<span class="sd">        If the main dimension previously was larger than this size, the extra</span>
+<span class="sd">        data is lost.  If the main dimension previously was shorter, it is</span>
+<span class="sd">        extended, and the extended part is filled with the default values.</span>
+
+<span class="sd">        The truncation operation can only be applied to *enlargeable* datasets,</span>
+<span class="sd">        else a TypeError will be raised.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># A non-enlargeable arrays (Array, CArray) cannot be truncated</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extdim</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;non-enlargeable datasets cannot be truncated&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_truncate</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Leaf.isvisible"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.isvisible">[docs]</a>    <span class="k">def</span> <span class="nf">isvisible</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Is this node visible?</span>
+
+<span class="sd">        This method has the behavior described in :meth:`Node._f_isvisible()`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_isvisible</span><span class="p">()</span>
+</div>
+    <span class="n">isVisible</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">isvisible</span><span class="p">)</span>
+
+    <span class="c"># Attribute handling</span>
+    <span class="c"># ``````````````````</span>
+<div class="viewcode-block" id="Leaf.get_attr"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.get_attr">[docs]</a>    <span class="k">def</span> <span class="nf">get_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a PyTables attribute from this node.</span>
+
+<span class="sd">        This method has the behavior described in :meth:`Node._f_getattr`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_getattr</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</div>
+    <span class="n">getAttr</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">get_attr</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Leaf.set_attr"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.set_attr">[docs]</a>    <span class="k">def</span> <span class="nf">set_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set a PyTables attribute for this node.</span>
+
+<span class="sd">        This method has the behavior described in :meth:`Node._f_setattr()`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f_setattr</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</div>
+    <span class="n">setAttr</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">set_attr</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Leaf.del_attr"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.del_attr">[docs]</a>    <span class="k">def</span> <span class="nf">del_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Delete a PyTables attribute from this node.</span>
+
+<span class="sd">        This method has the behavior described in :meth:`Node_f_delAttr`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f_delattr</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</div>
+    <span class="n">delAttr</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">del_attr</span><span class="p">)</span>
+
+    <span class="c"># Data handling</span>
+    <span class="c"># `````````````</span>
+<div class="viewcode-block" id="Leaf.flush"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.flush">[docs]</a>    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flush pending data to disk.</span>
+
+<span class="sd">        Saves whatever remaining buffered data to disk. It also releases</span>
+<span class="sd">        I/O buffers, so if you are filling many datasets in the same</span>
+<span class="sd">        PyTables session, please call flush() extensively so as to help</span>
+<span class="sd">        PyTables to keep memory requirements low.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_flush</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Leaf._f_close"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf._f_close">[docs]</a>    <span class="k">def</span> <span class="nf">_f_close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close this node in the tree.</span>
+
+<span class="sd">        This method has the behavior described in :meth:`Node._f_close`.</span>
+<span class="sd">        Besides that, the optional argument flush tells whether to flush</span>
+<span class="sd">        pending data to disk or not before closing.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="k">return</span>  <span class="c"># the node is already closed or not initialized</span>
+
+        <span class="c"># Only do a flush in case the leaf has an IO buffer.  The</span>
+        <span class="c"># internal buffers of HDF5 will be flushed afterwards during the</span>
+        <span class="c"># self._g_close() call.  Avoiding an unnecessary flush()</span>
+        <span class="c"># operation accelerates the closing for the unbuffered leaves.</span>
+        <span class="k">if</span> <span class="n">flush</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;_v_iobuf&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="c"># Close the dataset and release resources</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_close</span><span class="p">()</span>
+
+        <span class="c"># Close myself as a node.</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Leaf</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_f_close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Leaf.close"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close this node in the tree.</span>
+
+<span class="sd">        This method is completely equivalent to :meth:`Leaf._f_close`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f_close</span><span class="p">(</span><span class="n">flush</span><span class="p">)</span>
+
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## fill-column: 72</span>
+<span class="c">## End:</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

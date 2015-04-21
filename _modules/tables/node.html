@@ -1,0 +1,1084 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.node &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.node</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: 2005-02-11</span>
+<span class="c"># Author: Ivan Vilata i Balaguer - ivan@selidor.net</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;PyTables nodes.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">tables.registry</span> <span class="kn">import</span> <span class="n">class_name_dict</span><span class="p">,</span> <span class="n">class_id_dict</span>
+<span class="kn">from</span> <span class="nn">tables.exceptions</span> <span class="kn">import</span> <span class="p">(</span><span class="n">ClosedNodeError</span><span class="p">,</span> <span class="n">NodeError</span><span class="p">,</span> <span class="n">UndoRedoWarning</span><span class="p">,</span>
+                               <span class="n">PerformanceWarning</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">tables.path</span> <span class="kn">import</span> <span class="n">join_path</span><span class="p">,</span> <span class="n">split_path</span><span class="p">,</span> <span class="n">isvisiblepath</span>
+<span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="n">lazyattr</span>
+<span class="kn">from</span> <span class="nn">tables.undoredo</span> <span class="kn">import</span> <span class="n">move_to_shadow</span>
+<span class="kn">from</span> <span class="nn">tables.attributeset</span> <span class="kn">import</span> <span class="n">AttributeSet</span><span class="p">,</span> <span class="n">NotLoggedAttributeSet</span>
+<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span><span class="p">,</span> <span class="n">previous_api_property</span>
+
+
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;reStructuredText&#39;</span>
+<span class="sd">&quot;&quot;&quot;The format of documentation strings in this module.&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_closedrepr</span><span class="p">(</span><span class="n">oldmethod</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorate string representation method to handle closed nodes.</span>
+
+<span class="sd">    If the node is closed, a string like this is returned::</span>
+
+<span class="sd">      &lt;closed MODULE.CLASS at ADDRESS&gt;</span>
+
+<span class="sd">    instead of calling `oldmethod` and returning its result.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">newmethod</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="n">cmod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__module__</span>
+            <span class="n">cname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+            <span class="n">addr</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+            <span class="k">return</span> <span class="s">&#39;&lt;closed </span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s"> at </span><span class="si">%s</span><span class="s">&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmod</span><span class="p">,</span> <span class="n">cname</span><span class="p">,</span> <span class="n">addr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">oldmethod</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="n">newmethod</span><span class="o">.</span><span class="n">__name__</span> <span class="o">=</span> <span class="n">oldmethod</span><span class="o">.</span><span class="n">__name__</span>
+    <span class="n">newmethod</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">oldmethod</span><span class="o">.</span><span class="n">__doc__</span>
+    <span class="k">return</span> <span class="n">newmethod</span>
+
+
+<span class="k">class</span> <span class="nc">MetaNode</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Node metaclass.</span>
+
+<span class="sd">    This metaclass ensures that their instance classes get registered</span>
+<span class="sd">    into several dictionaries (namely the `tables.utils.class_name_dict`</span>
+<span class="sd">    class name dictionary and the `tables.utils.class_id_dict` class</span>
+<span class="sd">    identifier dictionary).</span>
+
+<span class="sd">    It also adds sanity checks to some methods:</span>
+
+<span class="sd">      * Check that the node is open when calling string representation</span>
+<span class="sd">        and provide a default string if so.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dict_</span><span class="p">):</span>
+        <span class="c"># Add default behaviour for representing closed nodes.</span>
+        <span class="k">for</span> <span class="n">mname</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;__str__&#39;</span><span class="p">,</span> <span class="s">&#39;__repr__&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">mname</span> <span class="ow">in</span> <span class="n">dict_</span><span class="p">:</span>
+                <span class="n">dict_</span><span class="p">[</span><span class="n">mname</span><span class="p">]</span> <span class="o">=</span> <span class="n">_closedrepr</span><span class="p">(</span><span class="n">dict_</span><span class="p">[</span><span class="n">mname</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="nb">type</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dict_</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dict_</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MetaNode</span><span class="p">,</span> <span class="n">class_</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dict_</span><span class="p">)</span>
+
+        <span class="c"># Always register into class name dictionary.</span>
+        <span class="n">class_name_dict</span><span class="p">[</span><span class="n">class_</span><span class="o">.</span><span class="n">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">class_</span>
+
+        <span class="c"># Register into class identifier dictionary only if the class</span>
+        <span class="c"># has an identifier and it is different from its parents&#39;.</span>
+        <span class="n">cid</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="s">&#39;_c_classid&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="n">bases</span><span class="p">:</span>
+                <span class="n">pcid</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s">&#39;_c_classid&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pcid</span> <span class="o">==</span> <span class="n">cid</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">class_id_dict</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">class_</span>
+
+
+<div class="viewcode-block" id="Node"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node">[docs]</a><span class="k">class</span> <span class="nc">Node</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Abstract base class for all PyTables nodes.</span>
+
+<span class="sd">    This is the base class for *all* nodes in a PyTables hierarchy. It is an</span>
+<span class="sd">    abstract class, i.e. it may not be directly instantiated; however, every</span>
+<span class="sd">    node in the hierarchy is an instance of this class.</span>
+
+<span class="sd">    A PyTables node is always hosted in a PyTables *file*, under a *parent</span>
+<span class="sd">    group*, at a certain *depth* in the node hierarchy. A node knows its own</span>
+<span class="sd">    *name* in the parent group and its own *path name* in the file.</span>
+
+<span class="sd">    All the previous information is location-dependent, i.e. it may change when</span>
+<span class="sd">    moving or renaming a node in the hierarchy. A node also has</span>
+<span class="sd">    location-independent information, such as its *HDF5 object identifier* and</span>
+<span class="sd">    its *attribute set*.</span>
+
+<span class="sd">    This class gathers the operations and attributes (both location-dependent</span>
+<span class="sd">    and independent) which are common to all PyTables nodes, whatever their</span>
+<span class="sd">    type is. Nonetheless, due to natural naming restrictions, the names of all</span>
+<span class="sd">    of these members start with a reserved prefix (see the Group class</span>
+<span class="sd">    in :ref:`GroupClassDescr`).</span>
+
+<span class="sd">    Sub-classes with no children (e.g. *leaf nodes*) may define new methods,</span>
+<span class="sd">    attributes and properties to avoid natural naming restrictions. For</span>
+<span class="sd">    instance, _v_attrs may be shortened to attrs and _f_rename to</span>
+<span class="sd">    rename. However, the original methods and attributes should still be</span>
+<span class="sd">    available.</span>
+
+<span class="sd">    .. rubric:: Node attributes</span>
+
+<span class="sd">    .. attribute:: _v_depth</span>
+
+<span class="sd">        The depth of this node in the tree (an non-negative integer value).</span>
+
+<span class="sd">    .. attribute:: _v_file</span>
+
+<span class="sd">        The hosting File instance (see :ref:`FileClassDescr`).</span>
+
+<span class="sd">    .. attribute:: _v_name</span>
+
+<span class="sd">        The name of this node in its parent group (a string).</span>
+
+<span class="sd">    .. attribute:: _v_pathname</span>
+
+<span class="sd">        The path of this node in the tree (a string).</span>
+
+<span class="sd">    .. attribute:: _v_objectid</span>
+
+<span class="sd">        A node identifier (may change from run to run).</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           The *_v_objectID* attribute has been renamed into *_v_object_id*.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># This makes this class and all derived subclasses be handled by MetaNode.</span>
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">MetaNode</span>
+
+    <span class="c"># By default, attributes accept Undo/Redo.</span>
+    <span class="n">_AttributeSet</span> <span class="o">=</span> <span class="n">AttributeSet</span>
+
+    <span class="c"># `_v_parent` is accessed via its file to avoid upwards references.</span>
+    <span class="k">def</span> <span class="nf">_g_getparent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="p">(</span><span class="n">parentpath</span><span class="p">,</span> <span class="n">nodename</span><span class="p">)</span> <span class="o">=</span> <span class="n">split_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">parentpath</span><span class="p">)</span>
+
+    <span class="n">_v_parent</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
+        <span class="n">_g_getparent</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="p">(</span><span class="s">&quot;The parent :class:`Group` instance&quot;</span><span class="p">))</span>
+
+    <span class="c"># &#39;_v_attrs&#39; is defined as a lazy read-only attribute.</span>
+    <span class="c"># This saves 0.7s/3.8s.</span>
+    <span class="nd">@lazyattr</span>
+    <span class="k">def</span> <span class="nf">_v_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The associated `AttributeSet` instance.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        tables.attributeset.AttributeSet : container for the HDF5 attributes</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_AttributeSet</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="c"># &#39;_v_title&#39; is a direct read-write shorthand for the &#39;TITLE&#39; attribute</span>
+    <span class="c"># with the empty string as a default value.</span>
+    <span class="k">def</span> <span class="nf">_g_gettitle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="s">&#39;TITLE&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">TITLE</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">_g_settitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">TITLE</span> <span class="o">=</span> <span class="n">title</span>
+
+    <span class="n">_v_title</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_g_gettitle</span><span class="p">,</span> <span class="n">_g_settitle</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+                        <span class="p">(</span><span class="s">&quot;A description of this node. A shorthand for &quot;</span>
+                         <span class="s">&quot;TITLE attribute.&quot;</span><span class="p">))</span>
+
+    <span class="c"># This may be looked up by ``__del__`` when ``__init__`` doesn&#39;t get</span>
+    <span class="c"># to be called.  See ticket #144 for more info.</span>
+    <span class="n">_v_isopen</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="sd">&quot;&quot;&quot;Whehter this node is open or not.&quot;&quot;&quot;</span>
+
+    <span class="n">_v_objectId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_v_objectid&#39;</span><span class="p">)</span>
+    <span class="n">_v_maxTreeDepth</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_v_maxtreedepth&#39;</span><span class="p">)</span>
+
+    <span class="c"># The ``_log`` argument is only meant to be used by ``_g_copy_as_child()``</span>
+    <span class="c"># to avoid logging the creation of children nodes of a copied sub-tree.</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="c"># Remember to assign these values in the root group constructor</span>
+        <span class="c"># as it does not use this method implementation!</span>
+
+        <span class="c"># if the parent node is a softlink, dereference it</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">class_name_dict</span><span class="p">[</span><span class="s">&#39;SoftLink&#39;</span><span class="p">]):</span>
+            <span class="n">parentnode</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The hosting File instance (see :ref:`FileClassDescr`).&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="sd">&quot;&quot;&quot;Whether this node is open or not.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The path of this node in the tree (a string).&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The name of this node in its parent group (a string).&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_depth</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The depth of this node in the tree (an non-negative integer value).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_maxtreedepth</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;MAX_TREE_DEPTH&#39;</span><span class="p">]</span>
+        <span class="sd">&quot;&quot;&quot;Maximum tree depth before warning the user.</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           Renamed into *_v_maxtreedepth* from *_v_maxTreeDepth*.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v__deleting</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="sd">&quot;&quot;&quot;Is the node being deleted?&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;A node identifier (may change from run to run).</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           The *_v_objectID* attribute has been renamed into *_v_objectid*.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">validate</span> <span class="o">=</span> <span class="n">new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span>  <span class="c"># set by subclass constructor</span>
+
+        <span class="c"># Is the parent node a group?  Is it open?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_group</span><span class="p">(</span><span class="n">parentnode</span><span class="p">)</span>
+        <span class="n">parentnode</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="n">file_</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span>
+
+        <span class="c"># Will the file be able to host a new node?</span>
+        <span class="k">if</span> <span class="n">new</span><span class="p">:</span>
+            <span class="n">file_</span><span class="o">.</span><span class="n">_check_writable</span><span class="p">()</span>
+
+        <span class="c"># Bind to the parent node and set location-dependent information.</span>
+        <span class="k">if</span> <span class="n">new</span><span class="p">:</span>
+            <span class="c"># Only new nodes need to be referenced.</span>
+            <span class="c"># Opened nodes are already known by their parent group.</span>
+            <span class="n">parentnode</span><span class="o">.</span><span class="n">_g_refnode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">validate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_set_location</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># hdf5extension operations:</span>
+            <span class="c">#   Update node attributes.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_new</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="c">#   Create or open the node and get its object ID.</span>
+            <span class="k">if</span> <span class="n">new</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_create</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_open</span><span class="p">()</span>
+
+            <span class="c"># The node *has* been created, log that.</span>
+            <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="n">_log</span> <span class="ow">and</span> <span class="n">file_</span><span class="o">.</span><span class="n">is_undo_enabled</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_g_log_create</span><span class="p">()</span>
+
+            <span class="c"># This allows extra operations after creating the node.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_post_init_hook</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="c"># If anything happens, the node must be closed</span>
+            <span class="c"># to undo every possible registration made so far.</span>
+            <span class="c"># We do *not* rely on ``__del__()`` doing it later,</span>
+            <span class="c"># since it might never be called anyway.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_f_close</span><span class="p">()</span>
+            <span class="k">raise</span>
+
+    <span class="k">def</span> <span class="nf">_g_log_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s">&#39;CREATE&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+
+    <span class="n">_g_logCreate</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_log_create</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># Closed `Node` instances can not be killed and revived.</span>
+        <span class="c"># Instead, accessing a closed and deleted (from memory, not</span>
+        <span class="c"># disk) one yields a *new*, open `Node` instance.  This is</span>
+        <span class="c"># because of two reasons:</span>
+        <span class="c">#</span>
+        <span class="c"># 1. Predictability.  After closing a `Node` and deleting it,</span>
+        <span class="c">#    only one thing can happen when accessing it again: a new,</span>
+        <span class="c">#    open `Node` instance is returned.  If closed nodes could be</span>
+        <span class="c">#    revived, one could get either a closed or an open `Node`.</span>
+        <span class="c">#</span>
+        <span class="c"># 2. Ease of use.  If the user wants to access a closed node</span>
+        <span class="c">#    again, the only condition would be that no references to</span>
+        <span class="c">#    the `Node` instance were left.  If closed nodes could be</span>
+        <span class="c">#    revived, the user would also need to force the closed</span>
+        <span class="c">#    `Node` out of memory, which is not a trivial task.</span>
+        <span class="c">#</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="k">return</span>  <span class="c"># the node is already closed or not initialized</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v__deleting</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="c"># If we get here, the `Node` is still open.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">node_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_node_manager</span>
+            <span class="n">node_manager</span><span class="o">.</span><span class="n">drop_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_unregistered</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="c"># At this point the node can still be open if there is still some</span>
+            <span class="c"># alive reference around (e.g. if the __del__ method is called</span>
+            <span class="c"># explicitly by the user).</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v__deleting</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_f_close</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_g_pre_kill_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Code to be called before killing the node.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="n">_g_preKillHook</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_pre_kill_hook</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new HDF5 node and return its object identifier.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">_g_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open an existing HDF5 node and return its object identifier.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">_g_check_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check that the node is open.</span>
+
+<span class="sd">        If the node is closed, a `ClosedNodeError` is raised.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ClosedNodeError</span><span class="p">(</span><span class="s">&quot;the node object is closed&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">isopen</span><span class="p">,</span> <span class="s">&quot;found an open node in a closed file&quot;</span>
+
+    <span class="n">_g_checkOpen</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_check_open</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_set_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set location-dependent attributes.</span>
+
+<span class="sd">        Sets the location-dependent attributes of this node to reflect</span>
+<span class="sd">        that it is placed under the specified `parentnode`, with the</span>
+<span class="sd">        specified `name`.</span>
+
+<span class="sd">        This also triggers the insertion of file references to this</span>
+<span class="sd">        node.  If the maximum recommended tree depth is exceeded, a</span>
+<span class="sd">        `PerformanceWarning` is issued.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">file_</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span>
+        <span class="n">parentdepth</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">_v_depth</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span> <span class="o">=</span> <span class="n">file_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="n">root_uep</span> <span class="o">=</span> <span class="n">file_</span><span class="o">.</span><span class="n">root_uep</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">root_uep</span><span class="p">):</span>
+            <span class="c"># This has been called from File._get_node()</span>
+            <span class="k">assert</span> <span class="n">parentdepth</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">root_uep</span> <span class="o">==</span> <span class="s">&quot;/&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">root_uep</span><span class="p">):]</span>
+            <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span> <span class="o">=</span> <span class="n">split_path</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_depth</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="n">root_uep</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># If we enter here is because this has been called elsewhere</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">=</span> <span class="n">join_path</span><span class="p">(</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_depth</span> <span class="o">=</span> <span class="n">parentdepth</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="c"># Check if the node is too deep in the tree.</span>
+        <span class="k">if</span> <span class="n">parentdepth</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_maxtreedepth</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">node ``</span><span class="si">%s</span><span class="s">`` is exceeding the recommended maximum depth (</span><span class="si">%d</span><span class="s">);</span><span class="se">\</span>
+<span class="s">be ready to see PyTables asking for *lots* of memory and possibly slow I/O&quot;&quot;&quot;</span>
+                          <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_maxtreedepth</span><span class="p">),</span>
+                          <span class="n">PerformanceWarning</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">!=</span> <span class="s">&#39;/&#39;</span><span class="p">:</span>
+            <span class="n">file_</span><span class="o">.</span><span class="n">_node_manager</span><span class="o">.</span><span class="n">cache_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+
+    <span class="n">_g_setLocation</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_set_location</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_update_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparentpath</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update location-dependent attributes.</span>
+
+<span class="sd">        Updates location data when an ancestor node has changed its</span>
+<span class="sd">        location in the hierarchy to `newparentpath`.  In fact, this</span>
+<span class="sd">        method is expected to be called by an ancestor of this node.</span>
+
+<span class="sd">        This also triggers the update of file references to this node.</span>
+<span class="sd">        If the maximum recommended node depth is exceeded, a</span>
+<span class="sd">        `PerformanceWarning` is issued.  This warning is assured to be</span>
+<span class="sd">        unique.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">oldpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="n">newpath</span> <span class="o">=</span> <span class="n">join_path</span><span class="p">(</span><span class="n">newparentpath</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span><span class="p">)</span>
+        <span class="n">newdepth</span> <span class="o">=</span> <span class="n">newpath</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">=</span> <span class="n">newpath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_depth</span> <span class="o">=</span> <span class="n">newdepth</span>
+
+        <span class="c"># Check if the node is too deep in the tree.</span>
+        <span class="k">if</span> <span class="n">newdepth</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_maxtreedepth</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">moved descendent node is exceeding the recommended maximum depth (</span><span class="si">%d</span><span class="s">);</span><span class="se">\</span>
+<span class="s">be ready to see PyTables asking for *lots* of memory and possibly slow I/O&quot;&quot;&quot;</span>
+                          <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_maxtreedepth</span><span class="p">,),</span> <span class="n">PerformanceWarning</span><span class="p">)</span>
+
+        <span class="n">node_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_node_manager</span>
+        <span class="n">node_manager</span><span class="o">.</span><span class="n">rename_node</span><span class="p">(</span><span class="n">oldpath</span><span class="p">,</span> <span class="n">newpath</span><span class="p">)</span>
+
+        <span class="c"># Tell dependent objects about the new location of this node.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_update_dependent</span><span class="p">()</span>
+
+    <span class="n">_g_updateLocation</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_update_location</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_del_location</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear location-dependent attributes.</span>
+
+<span class="sd">        This also triggers the removal of file references to this node.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">node_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_node_manager</span>
+        <span class="n">pathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__deleting</span><span class="p">:</span>
+            <span class="n">node_manager</span><span class="o">.</span><span class="n">drop_from_cache</span><span class="p">(</span><span class="n">pathname</span><span class="p">)</span>
+            <span class="c"># Note: node_manager.drop_node do not removes the node form the</span>
+            <span class="c"># registry if it is still open</span>
+            <span class="n">node_manager</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_depth</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="n">_g_delLocation</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_del_location</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Code to be run after node creation and before creation logging.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="n">_g_postInitHook</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_post_init_hook</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_update_dependent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update dependent objects after a location change.</span>
+
+<span class="sd">        All dependent objects (but not nodes!) referencing this node</span>
+<span class="sd">        must be updated here.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="s">&#39;_v_attrs&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_g_update_node_location</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="n">_g_updateDependent</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_update_dependent</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Node._f_close"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_close">[docs]</a>    <span class="k">def</span> <span class="nf">_f_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close this node in the tree.</span>
+
+<span class="sd">        This releases all resources held by the node, so it should not</span>
+<span class="sd">        be used again.  On nodes with data, it may be flushed to disk.</span>
+
+<span class="sd">        You should not need to close nodes manually because they are</span>
+<span class="sd">        automatically opened/closed when they are loaded/evicted from</span>
+<span class="sd">        the integrated LRU cache.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># After calling ``_f_close()``, two conditions are met:</span>
+        <span class="c">#</span>
+        <span class="c">#   1. The node object is detached from the tree.</span>
+        <span class="c">#   2. *Every* attribute of the node is removed.</span>
+        <span class="c">#</span>
+        <span class="c"># Thus, cleanup operations used in ``_f_close()`` in sub-classes</span>
+        <span class="c"># must be run *before* calling the method in the superclass.</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="k">return</span>  <span class="c"># the node is already closed</span>
+
+        <span class="n">myDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
+
+        <span class="c"># Close the associated `AttributeSet`</span>
+        <span class="c"># only if it has already been placed in the object&#39;s dictionary.</span>
+        <span class="k">if</span> <span class="s">&#39;_v_attrs&#39;</span> <span class="ow">in</span> <span class="n">myDict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_g_close</span><span class="p">()</span>
+
+        <span class="c"># Detach the node from the tree if necessary.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_del_location</span><span class="p">()</span>
+
+        <span class="c"># Finally, clear all remaining attributes from the object.</span>
+        <span class="n">myDict</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="c"># Just add a final flag to signal that the node is closed:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span> <span class="o">=</span> <span class="bp">False</span>
+</div>
+    <span class="k">def</span> <span class="nf">_g_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove this node from the hierarchy.</span>
+
+<span class="sd">        If the node has children, recursive removal must be stated by</span>
+<span class="sd">        giving `recursive` a true value; otherwise, a `NodeError` will</span>
+<span class="sd">        be raised.</span>
+
+<span class="sd">        If `force` is set to true, the node will be removed no matter it</span>
+<span class="sd">        has children or not (useful for deleting hard links).</span>
+
+<span class="sd">        It does not log the change.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Remove the node from the PyTables hierarchy.</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">_g_unrefnode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span><span class="p">)</span>
+        <span class="c"># Close the node itself.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f_close</span><span class="p">()</span>
+        <span class="c"># hdf5extension operations:</span>
+        <span class="c"># Remove the node from the HDF5 hierarchy.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_delete</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Node._f_remove"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_remove">[docs]</a>    <span class="k">def</span> <span class="nf">_f_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove this node from the hierarchy.</span>
+
+<span class="sd">        If the node has children, recursive removal must be stated by giving</span>
+<span class="sd">        recursive a true value; otherwise, a NodeError will be raised.</span>
+
+<span class="sd">        If the node is a link to a Group object, and you are sure that you want</span>
+<span class="sd">        to delete it, you can do this by setting the force flag to true.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="n">file_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span>
+        <span class="n">file_</span><span class="o">.</span><span class="n">_check_writable</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">file_</span><span class="o">.</span><span class="n">is_undo_enabled</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_remove_and_log</span><span class="p">(</span><span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_remove</span><span class="p">(</span><span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_g_remove_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">):</span>
+        <span class="n">file_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span>
+        <span class="n">oldpathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="c"># Log *before* moving to use the right shadow name.</span>
+        <span class="n">file_</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s">&#39;REMOVE&#39;</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">)</span>
+        <span class="n">move_to_shadow</span><span class="p">(</span><span class="n">file_</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">)</span>
+
+    <span class="n">_g_removeAndLog</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_remove_and_log</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move this node in the hierarchy.</span>
+
+<span class="sd">        Moves the node into the given `newparent`, with the given</span>
+<span class="sd">        `newname`.</span>
+
+<span class="sd">        It does not log the change.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">oldparent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span>
+        <span class="n">oldname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span>
+        <span class="n">oldpathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>  <span class="c"># to move the HDF5 node</span>
+
+        <span class="c"># Try to insert the node into the new parent.</span>
+        <span class="n">newparent</span><span class="o">.</span><span class="n">_g_refnode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newname</span><span class="p">)</span>
+        <span class="c"># Remove the node from the new parent.</span>
+        <span class="n">oldparent</span><span class="o">.</span><span class="n">_g_unrefnode</span><span class="p">(</span><span class="n">oldname</span><span class="p">)</span>
+
+        <span class="c"># Remove location information for this node.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_del_location</span><span class="p">()</span>
+        <span class="c"># Set new location information for this node.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_set_location</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">)</span>
+
+        <span class="c"># hdf5extension operations:</span>
+        <span class="c">#   Update node attributes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_new</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="c">#   Move the node.</span>
+        <span class="c"># self._v_parent._g_move_node(oldpathname, self._v_pathname)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span><span class="o">.</span><span class="n">_g_move_node</span><span class="p">(</span><span class="n">oldparent</span><span class="o">.</span><span class="n">_v_objectid</span><span class="p">,</span> <span class="n">oldname</span><span class="p">,</span>
+                                    <span class="n">newparent</span><span class="o">.</span><span class="n">_v_objectid</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span>
+                                    <span class="n">oldpathname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+
+        <span class="c"># Tell dependent objects about the new location of this node.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_update_dependent</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Node._f_rename"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_rename">[docs]</a>    <span class="k">def</span> <span class="nf">_f_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rename this node in place.</span>
+
+<span class="sd">        Changes the name of a node to *newname* (a string).  If a node with the</span>
+<span class="sd">        same newname already exists and overwrite is true, recursively remove</span>
+<span class="sd">        it before renaming.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f_move</span><span class="p">(</span><span class="n">newname</span><span class="o">=</span><span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Node._f_move"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_move">[docs]</a>    <span class="k">def</span> <span class="nf">_f_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move or rename this node.</span>
+
+<span class="sd">        Moves a node into a new parent group, or changes the name of the</span>
+<span class="sd">        node. newparent can be a Group object (see :ref:`GroupClassDescr`) or a</span>
+<span class="sd">        pathname in string form. If it is not specified or None, the current</span>
+<span class="sd">        parent group is chosen as the new parent.  newname must be a string</span>
+<span class="sd">        with a new name. If it is not specified or None, the current name is</span>
+<span class="sd">        chosen as the new name. If createparents is true, the needed groups for</span>
+<span class="sd">        the given new parent group path to exist will be created.</span>
+
+<span class="sd">        Moving a node across databases is not allowed, nor it is moving a node</span>
+<span class="sd">        *into* itself. These result in a NodeError. However, moving a node</span>
+<span class="sd">        *over* itself is allowed and simply does nothing. Moving over another</span>
+<span class="sd">        existing node is similarly not allowed, unless the optional overwrite</span>
+<span class="sd">        argument is true, in which case that node is recursively removed before</span>
+<span class="sd">        moving.</span>
+
+<span class="sd">        Usually, only the first argument will be used, effectively moving the</span>
+<span class="sd">        node to a new location without changing its name.  Using only the</span>
+<span class="sd">        second argument is equivalent to renaming the node in place.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="n">file_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span>
+        <span class="n">oldparent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span>
+        <span class="n">oldname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span>
+
+        <span class="c"># Set default arguments.</span>
+        <span class="k">if</span> <span class="n">newparent</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">newname</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span><span class="s">&quot;you should specify at least &quot;</span>
+                            <span class="s">&quot;a ``newparent`` or a ``newname`` parameter&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">newparent</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">newparent</span> <span class="o">=</span> <span class="n">oldparent</span>
+        <span class="k">if</span> <span class="n">newname</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">newname</span> <span class="o">=</span> <span class="n">oldname</span>
+
+        <span class="c"># Get destination location.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="s">&#39;_v_file&#39;</span><span class="p">):</span>  <span class="c"># from node</span>
+            <span class="n">newfile</span> <span class="o">=</span> <span class="n">newparent</span><span class="o">.</span><span class="n">_v_file</span>
+            <span class="n">newpath</span> <span class="o">=</span> <span class="n">newparent</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="s">&#39;startswith&#39;</span><span class="p">):</span>  <span class="c"># from path</span>
+            <span class="n">newfile</span> <span class="o">=</span> <span class="n">file_</span>
+            <span class="n">newpath</span> <span class="o">=</span> <span class="n">newparent</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;new parent is not a node nor a path: </span><span class="si">%r</span><span class="s">&quot;</span>
+                            <span class="o">%</span> <span class="p">(</span><span class="n">newparent</span><span class="p">,))</span>
+
+        <span class="c"># Validity checks on arguments.</span>
+        <span class="c"># Is it in the same file?</span>
+        <span class="k">if</span> <span class="n">newfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">file_</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span><span class="s">&quot;nodes can not be moved across databases; &quot;</span>
+                            <span class="s">&quot;please make a copy of the node&quot;</span><span class="p">)</span>
+
+        <span class="c"># The movement always fails if the hosting file can not be modified.</span>
+        <span class="n">file_</span><span class="o">.</span><span class="n">_check_writable</span><span class="p">()</span>
+
+        <span class="c"># Moving over itself?</span>
+        <span class="n">oldpath</span> <span class="o">=</span> <span class="n">oldparent</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="k">if</span> <span class="n">newpath</span> <span class="o">==</span> <span class="n">oldpath</span> <span class="ow">and</span> <span class="n">newname</span> <span class="o">==</span> <span class="n">oldname</span><span class="p">:</span>
+            <span class="c"># This is equivalent to renaming the node to its current name,</span>
+            <span class="c"># and it does not change the referenced object,</span>
+            <span class="c"># so it is an allowed no-op.</span>
+            <span class="k">return</span>
+
+        <span class="c"># Moving into itself?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_not_contains</span><span class="p">(</span><span class="n">newpath</span><span class="p">)</span>
+
+        <span class="c"># Note that the previous checks allow us to go ahead and create</span>
+        <span class="c"># the parent groups if `createparents` is true.  `newparent` is</span>
+        <span class="c"># used instead of `newpath` to avoid accepting `Node` objects</span>
+        <span class="c"># when `createparents` is true.</span>
+        <span class="n">newparent</span> <span class="o">=</span> <span class="n">file_</span><span class="o">.</span><span class="n">_get_or_create_path</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="n">createparents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_group</span><span class="p">(</span><span class="n">newparent</span><span class="p">)</span>  <span class="c"># Is it a group?</span>
+
+        <span class="c"># Moving over an existing node?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_maybe_remove</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">)</span>
+
+        <span class="c"># Move the node.</span>
+        <span class="n">oldpathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_move</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">)</span>
+
+        <span class="c"># Log the change.</span>
+        <span class="k">if</span> <span class="n">file_</span><span class="o">.</span><span class="n">is_undo_enabled</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_g_log_move</span><span class="p">(</span><span class="n">oldpathname</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_g_log_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s">&#39;MOVE&#39;</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+
+    <span class="n">_g_logMove</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_log_move</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy this node and return the new one.</span>
+
+<span class="sd">        Creates and returns a copy of the node in the given `newparent`,</span>
+<span class="sd">        with the given `newname`.  If `recursive` copy is stated, all</span>
+<span class="sd">        descendents are copied as well.  Additional keyword argumens may</span>
+<span class="sd">        affect the way that the copy is made.  Unknown arguments must be</span>
+<span class="sd">        ignored.  On recursive copies, all keyword arguments must be</span>
+<span class="sd">        passed on to the children invocation of this method.</span>
+
+<span class="sd">        If `_log` is false, the change is not logged.  This is *only*</span>
+<span class="sd">        intended to be used by ``_g_copy_as_child()`` as a means of</span>
+<span class="sd">        optimising sub-tree copies.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">_g_copy_as_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy this node as a child of another group.</span>
+
+<span class="sd">        Copies just this node into `newparent`, not recursing children</span>
+<span class="sd">        nor overwriting nodes nor logging the copy.  This is intended to</span>
+<span class="sd">        be used when copying whole sub-trees.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span><span class="p">,</span>
+                            <span class="n">recursive</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">_g_copyAsChild</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_copy_as_child</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Node._f_copy"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_copy">[docs]</a>    <span class="k">def</span> <span class="nf">_f_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy this node and return the new node.</span>
+
+<span class="sd">        Creates and returns a copy of the node, maybe in a different place in</span>
+<span class="sd">        the hierarchy. newparent can be a Group object (see</span>
+<span class="sd">        :ref:`GroupClassDescr`) or a pathname in string form. If it is not</span>
+<span class="sd">        specified or None, the current parent group is chosen as the new</span>
+<span class="sd">        parent.  newname must be a string with a new name. If it is not</span>
+<span class="sd">        specified or None, the current name is chosen as the new name. If</span>
+<span class="sd">        recursive copy is stated, all descendants are copied as well. If</span>
+<span class="sd">        createparents is true, the needed groups for the given new parent group</span>
+<span class="sd">        path to exist will be created.</span>
+
+<span class="sd">        Copying a node across databases is supported but can not be</span>
+<span class="sd">        undone. Copying a node over itself is not allowed, nor it is</span>
+<span class="sd">        recursively copying a node into itself. These result in a</span>
+<span class="sd">        NodeError. Copying over another existing node is similarly not allowed,</span>
+<span class="sd">        unless the optional overwrite argument is true, in which case that node</span>
+<span class="sd">        is recursively removed before copying.</span>
+
+<span class="sd">        Additional keyword arguments may be passed to customize the copying</span>
+<span class="sd">        process. For instance, title and filters may be changed, user</span>
+<span class="sd">        attributes may be or may not be copied, data may be sub-sampled, stats</span>
+<span class="sd">        may be collected, etc. See the documentation for the particular node</span>
+<span class="sd">        type.</span>
+
+<span class="sd">        Using only the first argument is equivalent to copying the node to a</span>
+<span class="sd">        new location without changing its name. Using only the second argument</span>
+<span class="sd">        is equivalent to making a copy of the node in the same group.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="n">srcfile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span>
+        <span class="n">srcparent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span>
+        <span class="n">srcname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span>
+
+        <span class="n">dstparent</span> <span class="o">=</span> <span class="n">newparent</span>
+        <span class="n">dstname</span> <span class="o">=</span> <span class="n">newname</span>
+
+        <span class="c"># Set default arguments.</span>
+        <span class="k">if</span> <span class="n">dstparent</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">dstname</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span><span class="s">&quot;you should specify at least &quot;</span>
+                            <span class="s">&quot;a ``newparent`` or a ``newname`` parameter&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dstparent</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">dstparent</span> <span class="o">=</span> <span class="n">srcparent</span>
+        <span class="k">if</span> <span class="n">dstname</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">dstname</span> <span class="o">=</span> <span class="n">srcname</span>
+
+        <span class="c"># Get destination location.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span> <span class="s">&#39;_v_file&#39;</span><span class="p">):</span>  <span class="c"># from node</span>
+            <span class="n">dstfile</span> <span class="o">=</span> <span class="n">dstparent</span><span class="o">.</span><span class="n">_v_file</span>
+            <span class="n">dstpath</span> <span class="o">=</span> <span class="n">dstparent</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span> <span class="s">&#39;startswith&#39;</span><span class="p">):</span>  <span class="c"># from path</span>
+            <span class="n">dstfile</span> <span class="o">=</span> <span class="n">srcfile</span>
+            <span class="n">dstpath</span> <span class="o">=</span> <span class="n">dstparent</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;new parent is not a node nor a path: </span><span class="si">%r</span><span class="s">&quot;</span>
+                            <span class="o">%</span> <span class="p">(</span><span class="n">dstparent</span><span class="p">,))</span>
+
+        <span class="c"># Validity checks on arguments.</span>
+        <span class="k">if</span> <span class="n">dstfile</span> <span class="ow">is</span> <span class="n">srcfile</span><span class="p">:</span>
+            <span class="c"># Copying over itself?</span>
+            <span class="n">srcpath</span> <span class="o">=</span> <span class="n">srcparent</span><span class="o">.</span><span class="n">_v_pathname</span>
+            <span class="k">if</span> <span class="n">dstpath</span> <span class="o">==</span> <span class="n">srcpath</span> <span class="ow">and</span> <span class="n">dstname</span> <span class="o">==</span> <span class="n">srcname</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span>
+                    <span class="s">&quot;source and destination nodes are the same node: ``</span><span class="si">%s</span><span class="s">``&quot;</span>
+                    <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+
+            <span class="c"># Recursively copying into itself?</span>
+            <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_not_contains</span><span class="p">(</span><span class="n">dstpath</span><span class="p">)</span>
+
+        <span class="c"># Note that the previous checks allow us to go ahead and create</span>
+        <span class="c"># the parent groups if `createparents` is true.  `dstParent` is</span>
+        <span class="c"># used instead of `dstPath` because it may be in other file, and</span>
+        <span class="c"># to avoid accepting `Node` objects when `createparents` is</span>
+        <span class="c"># true.</span>
+        <span class="n">dstparent</span> <span class="o">=</span> <span class="n">srcfile</span><span class="o">.</span><span class="n">_get_or_create_path</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span> <span class="n">createparents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_group</span><span class="p">(</span><span class="n">dstparent</span><span class="p">)</span>  <span class="c"># Is it a group?</span>
+
+        <span class="c"># Copying to another file with undo enabled?</span>
+        <span class="k">if</span> <span class="n">dstfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">srcfile</span> <span class="ow">and</span> <span class="n">srcfile</span><span class="o">.</span><span class="n">is_undo_enabled</span><span class="p">():</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;copying across databases can not be undone &quot;</span>
+                          <span class="s">&quot;nor redone from this database&quot;</span><span class="p">,</span>
+                          <span class="n">UndoRedoWarning</span><span class="p">)</span>
+
+        <span class="c"># Copying over an existing node?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_maybe_remove</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span> <span class="n">dstname</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">)</span>
+
+        <span class="c"># Copy the node.</span>
+        <span class="c"># The constructor of the new node takes care of logging.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span> <span class="n">dstname</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Node._f_isvisible"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_isvisible">[docs]</a>    <span class="k">def</span> <span class="nf">_f_isvisible</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Is this node visible?&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">isvisiblepath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+</div>
+    <span class="n">_f_isVisible</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_f_isvisible</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_check_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="c"># Node must be defined in order to define a Group.</span>
+        <span class="c"># However, we need to know Group here.</span>
+        <span class="c"># Using class_name_dict avoids a circular import.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">class_name_dict</span><span class="p">[</span><span class="s">&#39;Node&#39;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;new parent is not a registered node: </span><span class="si">%s</span><span class="s">&quot;</span>
+                            <span class="o">%</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">class_name_dict</span><span class="p">[</span><span class="s">&#39;Group&#39;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;new parent node ``</span><span class="si">%s</span><span class="s">`` is not a group&quot;</span>
+                            <span class="o">%</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+
+    <span class="n">_g_checkGroup</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_check_group</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_check_not_contains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pathname</span><span class="p">):</span>
+        <span class="c"># The not-a-TARDIS test. ;)</span>
+        <span class="n">mypathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">mypathname</span> <span class="o">==</span> <span class="s">&#39;/&#39;</span>  <span class="c"># all nodes fall below the root group</span>
+           <span class="ow">or</span> <span class="n">pathname</span> <span class="o">==</span> <span class="n">mypathname</span>
+           <span class="ow">or</span> <span class="n">pathname</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">mypathname</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span><span class="s">&quot;can not move or recursively copy node ``</span><span class="si">%s</span><span class="s">`` &quot;</span>
+                            <span class="s">&quot;into itself&quot;</span> <span class="o">%</span> <span class="n">mypathname</span><span class="p">)</span>
+
+    <span class="n">_g_checkNotContains</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_check_not_contains</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_maybe_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">parent</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">destination group ``</span><span class="si">%s</span><span class="s">`` already has a node named ``</span><span class="si">%s</span><span class="s">``; </span><span class="se">\</span>
+<span class="s">you may want to use the ``overwrite`` argument&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">_f_get_child</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">_f_remove</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">_g_maybeRemove</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_maybe_remove</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_check_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check validity of name for this particular kind of node.</span>
+
+<span class="sd">        This is invoked once the standard HDF5 and natural naming checks</span>
+<span class="sd">        have successfully passed.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_i_&#39;</span><span class="p">):</span>
+            <span class="c"># This is reserved for table index groups.</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;node name starts with reserved prefix ``_i_``: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="n">_g_checkName</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_check_name</span><span class="p">)</span>
+
+    <span class="c"># &lt;attribute handling&gt;</span>
+<div class="viewcode-block" id="Node._f_getattr"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_getattr">[docs]</a>    <span class="k">def</span> <span class="nf">_f_getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a PyTables attribute from this node.</span>
+
+<span class="sd">        If the named attribute does not exist, an AttributeError is</span>
+<span class="sd">        raised.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+</div>
+    <span class="n">_f_getAttr</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_f_getattr</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Node._f_setattr"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_setattr">[docs]</a>    <span class="k">def</span> <span class="nf">_f_setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set a PyTables attribute for this node.</span>
+
+<span class="sd">        If the node already has a large number of attributes, a</span>
+<span class="sd">        PerformanceWarning is issued.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</div>
+    <span class="n">_f_setAttr</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_f_setattr</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Node._f_delattr"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_delattr">[docs]</a>    <span class="k">def</span> <span class="nf">_f_delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Delete a PyTables attribute from this node.</span>
+
+<span class="sd">        If the named attribute does not exist, an AttributeError is</span>
+<span class="sd">        raised.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+</div>
+    <span class="n">_f_delAttr</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_f_delattr</span><span class="p">)</span>
+
+    <span class="c"># &lt;/attribute handling&gt;</span>
+
+</div>
+<span class="k">class</span> <span class="nc">NotLoggedMixin</span><span class="p">:</span>
+    <span class="c"># Include this class in your inheritance tree</span>
+    <span class="c"># to avoid changes to instances of your class from being logged.</span>
+
+    <span class="n">_AttributeSet</span> <span class="o">=</span> <span class="n">NotLoggedAttributeSet</span>
+
+    <span class="k">def</span> <span class="nf">_g_log_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="n">_g_logCreate</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_log_create</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_log_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="n">_g_logMove</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_log_move</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_remove_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_remove</span><span class="p">(</span><span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">)</span>
+
+    <span class="n">_g_removeAndLog</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_remove_and_log</span><span class="p">)</span>
+
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## fill-column: 72</span>
+<span class="c">## End:</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

@@ -1,0 +1,259 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.tests.test_all &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.tests.test_all</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;Run all test cases.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="kn">import</span> <span class="nn">tables</span>
+<span class="kn">from</span> <span class="nn">tables.req_versions</span> <span class="kn">import</span> <span class="n">min_hdf5_version</span><span class="p">,</span> <span class="n">min_numpy_version</span>
+<span class="kn">from</span> <span class="nn">tables.tests</span> <span class="kn">import</span> <span class="n">common</span>
+<span class="kn">from</span> <span class="nn">tables.tests.common</span> <span class="kn">import</span> <span class="n">unittest</span>
+<span class="kn">from</span> <span class="nn">tables.tests.common</span> <span class="kn">import</span> <span class="n">print_heavy</span><span class="p">,</span> <span class="n">print_versions</span>
+
+
+<span class="k">def</span> <span class="nf">get_tuple_version</span><span class="p">(</span><span class="n">hexversion</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get a tuple from a compact version in hex.&quot;&quot;&quot;</span>
+
+    <span class="n">h</span> <span class="o">=</span> <span class="n">hexversion</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">h</span> <span class="o">&amp;</span> <span class="mh">0xff0000</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">,</span> <span class="p">(</span><span class="n">h</span> <span class="o">&amp;</span> <span class="mh">0xff00</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">,</span> <span class="n">h</span> <span class="o">&amp;</span> <span class="mh">0xff</span>
+
+
+<span class="k">def</span> <span class="nf">suite</span><span class="p">():</span>
+    <span class="n">test_modules</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s">&#39;tables.tests.test_attributes&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_basics&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_create&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_backcompat&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_types&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_lists&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_tables&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_tablesMD&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_array&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_earray&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_carray&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_vlarray&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_tree&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_timetype&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_do_undo&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_enum&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_nestedtypes&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_hdf5compat&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_numpy&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_queries&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_expression&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_links&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_indexes&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_indexvalues&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_index_backcompat&#39;</span><span class="p">,</span>
+        <span class="s">&#39;tables.tests.test_aux&#39;</span><span class="p">,</span>
+        <span class="c"># Sub-packages</span>
+        <span class="s">&#39;tables.nodes.tests.test_filenode&#39;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="c"># print(&#39;-=&#39; * 38)</span>
+
+    <span class="c"># The test for garbage must be run *in the last place*.</span>
+    <span class="c"># Else, it is not as useful.</span>
+    <span class="n">test_modules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;tables.tests.test_garbage&#39;</span><span class="p">)</span>
+
+    <span class="n">alltests</span> <span class="o">=</span> <span class="n">unittest</span><span class="o">.</span><span class="n">TestSuite</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">common</span><span class="o">.</span><span class="n">show_memory</span><span class="p">:</span>
+        <span class="c"># Add a memory report at the beginning</span>
+        <span class="n">alltests</span><span class="o">.</span><span class="n">addTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">makeSuite</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">ShowMemTime</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">test_modules</span><span class="p">:</span>
+        <span class="c"># Unexpectedly, the following code doesn&#39;t seem to work anymore</span>
+        <span class="c"># in python 3</span>
+        <span class="c"># exec(&#39;from %s import suite as test_suite&#39; % name)</span>
+        <span class="nb">__import__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">test_suite</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">suite</span>
+
+        <span class="n">alltests</span><span class="o">.</span><span class="n">addTest</span><span class="p">(</span><span class="n">test_suite</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">common</span><span class="o">.</span><span class="n">show_memory</span><span class="p">:</span>
+            <span class="c"># Add a memory report after each test module</span>
+            <span class="n">alltests</span><span class="o">.</span><span class="n">addTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">makeSuite</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">ShowMemTime</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">alltests</span>
+
+
+<div class="viewcode-block" id="test"><a class="viewcode-back" href="../../../usersguide/libref/top_level.html#tables.test">[docs]</a><span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">heavy</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Run all the tests in the test suite.</span>
+
+<span class="sd">    If *verbose* is set, the test suite will emit messages with full</span>
+<span class="sd">    verbosity (not recommended unless you are looking into a certain</span>
+<span class="sd">    problem).</span>
+
+<span class="sd">    If *heavy* is set, the test suite will be run in *heavy* mode (you</span>
+<span class="sd">    should be careful with this because it can take a lot of time and</span>
+<span class="sd">    resources from your computer).</span>
+
+<span class="sd">    Return 0 (os.EX_OK) if all tests pass, 1 in case of failure</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">print_versions</span><span class="p">()</span>
+    <span class="n">print_heavy</span><span class="p">(</span><span class="n">heavy</span><span class="p">)</span>
+
+    <span class="c"># What a context this is!</span>
+    <span class="c">#oldverbose, common.verbose = common.verbose, verbose</span>
+    <span class="n">oldheavy</span><span class="p">,</span> <span class="n">common</span><span class="o">.</span><span class="n">heavy</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">heavy</span><span class="p">,</span> <span class="n">heavy</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">unittest</span><span class="o">.</span><span class="n">TextTestRunner</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">1</span><span class="o">+</span><span class="nb">int</span><span class="p">(</span><span class="n">verbose</span><span class="p">))</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">suite</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">wasSuccessful</span><span class="p">():</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="c">#common.verbose = oldverbose</span>
+        <span class="n">common</span><span class="o">.</span><span class="n">heavy</span> <span class="o">=</span> <span class="n">oldheavy</span>  <span class="c"># there are pretty young heavies, too ;)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="n">common</span><span class="o">.</span><span class="n">parse_argv</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+
+    <span class="n">hdf5_version</span> <span class="o">=</span> <span class="n">get_tuple_version</span><span class="p">(</span><span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s">&quot;hdf5&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">hdf5_version</span> <span class="o">&lt;</span> <span class="n">min_hdf5_version</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;*Warning*: HDF5 version is lower than recommended: </span><span class="si">%s</span><span class="s"> &lt; </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+              <span class="p">(</span><span class="n">hdf5_version</span><span class="p">,</span> <span class="n">min_hdf5_version</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&lt;</span> <span class="n">min_numpy_version</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;*Warning*: NumPy version is lower than recommended: </span><span class="si">%s</span><span class="s"> &lt; </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+              <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span> <span class="n">min_numpy_version</span><span class="p">))</span>
+
+    <span class="c"># Handle some global flags (i.e. only useful for test_all.py)</span>
+    <span class="n">only_versions</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[:]</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+        <span class="c"># Remove &#39;show-versions&#39; for PyTables 2.3 or higher</span>
+        <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;--print-versions&#39;</span><span class="p">,</span> <span class="s">&#39;--show-versions&#39;</span><span class="p">]:</span>
+            <span class="n">only_versions</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">arg</span> <span class="o">==</span> <span class="s">&#39;--show-memory&#39;</span><span class="p">:</span>
+            <span class="n">common</span><span class="o">.</span><span class="n">show_memory</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+
+    <span class="n">print_versions</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">only_versions</span><span class="p">:</span>
+        <span class="n">print_heavy</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">heavy</span><span class="p">)</span>
+        <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">defaultTest</span><span class="o">=</span><span class="s">&#39;tables.tests.suite&#39;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../../index.html">
+          <img class="logo" src="../../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

@@ -1,0 +1,532 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.flavor &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.flavor</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: December 30, 2006</span>
+<span class="c"># Author: Ivan Vilata i Balaguer - ivan at selidor dot net</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Utilities for handling different array flavors in PyTables.</span>
+
+<span class="sd">Variables</span>
+<span class="sd">=========</span>
+
+<span class="sd">`__docformat`__</span>
+<span class="sd">    The format of documentation strings in this module.</span>
+<span class="sd">`internal_flavor`</span>
+<span class="sd">    The flavor used internally by PyTables.</span>
+<span class="sd">`all_flavors`</span>
+<span class="sd">    List of all flavors available to PyTables.</span>
+<span class="sd">`alias_map`</span>
+<span class="sd">    Maps old flavor names to the most similar current flavor.</span>
+<span class="sd">`description_map`</span>
+<span class="sd">    Maps flavors to short descriptions of their supported objects.</span>
+<span class="sd">`identifier_map`</span>
+<span class="sd">    Maps flavors to functions that can identify their objects.</span>
+
+<span class="sd">    The function associated with a given flavor will return a true</span>
+<span class="sd">    value if the object passed to it can be identified as being of</span>
+<span class="sd">    that flavor.</span>
+
+<span class="sd">    See the `flavor_of()` function for a friendlier interface to</span>
+<span class="sd">    flavor identification.</span>
+
+<span class="sd">`converter_map`</span>
+<span class="sd">    Maps (source, destination) flavor pairs to converter functions.</span>
+
+<span class="sd">    Converter functions get an array of the source flavor and return</span>
+<span class="sd">    an array of the destination flavor.</span>
+
+<span class="sd">    See the `array_of_flavor()` and `flavor_to_flavor()` functions for</span>
+<span class="sd">    friendlier interfaces to flavor conversion.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c"># Imports</span>
+<span class="c"># =======</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">tables.exceptions</span> <span class="kn">import</span> <span class="n">FlavorError</span><span class="p">,</span> <span class="n">FlavorWarning</span>
+
+
+<span class="c"># Public variables</span>
+<span class="c"># ================</span>
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;reStructuredText&#39;</span>
+<span class="sd">&quot;&quot;&quot;The format of documentation strings in this module.&quot;&quot;&quot;</span>
+
+<span class="n">internal_flavor</span> <span class="o">=</span> <span class="s">&#39;numpy&#39;</span>
+<span class="sd">&quot;&quot;&quot;The flavor used internally by PyTables.&quot;&quot;&quot;</span>
+
+<span class="c"># This is very slightly slower than a set for a small number of values</span>
+<span class="c"># in terms of (infrequent) lookup time, but allows `flavor_of()`</span>
+<span class="c"># (which may be called much more frequently) to check for flavors in</span>
+<span class="c"># order, beginning with the most common one.</span>
+<span class="n">all_flavors</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c"># filled as flavors are registered</span>
+<span class="sd">&quot;&quot;&quot;List of all flavors available to PyTables.&quot;&quot;&quot;</span>
+
+<span class="n">alias_map</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c"># filled as flavors are registered</span>
+<span class="sd">&quot;&quot;&quot;Maps old flavor names to the most similar current flavor.&quot;&quot;&quot;</span>
+
+<span class="n">description_map</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c"># filled as flavors are registered</span>
+<span class="sd">&quot;&quot;&quot;Maps flavors to short descriptions of their supported objects.&quot;&quot;&quot;</span>
+
+<span class="n">identifier_map</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c"># filled as flavors are registered</span>
+<span class="sd">&quot;&quot;&quot;Maps flavors to functions that can identify their objects.</span>
+
+<span class="sd">The function associated with a given flavor will return a true value</span>
+<span class="sd">if the object passed to it can be identified as being of that flavor.</span>
+
+<span class="sd">See the `flavor_of()` function for a friendlier interface to flavor</span>
+<span class="sd">identification.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">converter_map</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c"># filled as flavors are registered</span>
+<span class="sd">&quot;&quot;&quot;Maps (source, destination) flavor pairs to converter functions.</span>
+
+<span class="sd">Converter functions get an array of the source flavor and return an</span>
+<span class="sd">array of the destination flavor.</span>
+
+<span class="sd">See the `array_of_flavor()` and `flavor_to_flavor()` functions for</span>
+<span class="sd">friendlier interfaces to flavor conversion.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c"># Public functions</span>
+<span class="c"># ================</span>
+<span class="k">def</span> <span class="nf">check_flavor</span><span class="p">(</span><span class="n">flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Raise a ``FlavorError`` if the `flavor` is not valid.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">flavor</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_flavors</span><span class="p">:</span>
+        <span class="n">available_flavs</span> <span class="o">=</span> <span class="s">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">flav</span> <span class="k">for</span> <span class="n">flav</span> <span class="ow">in</span> <span class="n">all_flavors</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">FlavorError</span><span class="p">(</span>
+            <span class="s">&quot;flavor ``</span><span class="si">%s</span><span class="s">`` is unsupported or unavailable; &quot;</span>
+            <span class="s">&quot;available flavors in this system are: </span><span class="si">%s</span><span class="s">&quot;</span>
+            <span class="o">%</span> <span class="p">(</span><span class="n">flavor</span><span class="p">,</span> <span class="n">available_flavs</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">array_of_flavor2</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">src_flavor</span><span class="p">,</span> <span class="n">dst_flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get a version of the given `array` in a different flavor.</span>
+
+<span class="sd">    The input `array` must be of the given `src_flavor`, and the</span>
+<span class="sd">    returned array will be of the indicated `dst_flavor`.  Both</span>
+<span class="sd">    flavors may be the same, but it is not guaranteed that the</span>
+<span class="sd">    returned array will be the same object as the input one in this</span>
+<span class="sd">    case.</span>
+
+<span class="sd">    If the conversion is not supported, a ``FlavorError`` is raised.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">convkey</span> <span class="o">=</span> <span class="p">(</span><span class="n">src_flavor</span><span class="p">,</span> <span class="n">dst_flavor</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">convkey</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">converter_map</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">FlavorError</span><span class="p">(</span><span class="s">&quot;conversion from flavor ``</span><span class="si">%s</span><span class="s">`` to flavor ``</span><span class="si">%s</span><span class="s">`` &quot;</span>
+                          <span class="s">&quot;is unsupported or unavailable in this system&quot;</span>
+                          <span class="o">%</span> <span class="p">(</span><span class="n">src_flavor</span><span class="p">,</span> <span class="n">dst_flavor</span><span class="p">))</span>
+
+    <span class="n">convfunc</span> <span class="o">=</span> <span class="n">converter_map</span><span class="p">[</span><span class="n">convkey</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">convfunc</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">flavor_to_flavor</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">src_flavor</span><span class="p">,</span> <span class="n">dst_flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get a version of the given `array` in a different flavor.</span>
+
+<span class="sd">    The input `array` must be of the given `src_flavor`, and the</span>
+<span class="sd">    returned array will be of the indicated `dst_flavor` (see below</span>
+<span class="sd">    for an exception to this).  Both flavors may be the same, but it</span>
+<span class="sd">    is not guaranteed that the returned array will be the same object</span>
+<span class="sd">    as the input one in this case.</span>
+
+<span class="sd">    If the conversion is not supported, a `FlavorWarning` is issued</span>
+<span class="sd">    and the input `array` is returned as is.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">array_of_flavor2</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">src_flavor</span><span class="p">,</span> <span class="n">dst_flavor</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">FlavorError</span> <span class="k">as</span> <span class="n">fe</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">; returning an object of the ``</span><span class="si">%s</span><span class="s">`` flavor instead&quot;</span>
+                      <span class="o">%</span> <span class="p">(</span><span class="n">fe</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">src_flavor</span><span class="p">),</span> <span class="n">FlavorWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">array</span>
+
+
+<span class="k">def</span> <span class="nf">internal_to_flavor</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">dst_flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get a version of the given `array` in a different `dst_flavor`.</span>
+
+<span class="sd">    The input `array` must be of the internal flavor, and the returned</span>
+<span class="sd">    array will be of the given `dst_flavor`.  See `flavor_to_flavor()`</span>
+<span class="sd">    for more information.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">flavor_to_flavor</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">internal_flavor</span><span class="p">,</span> <span class="n">dst_flavor</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">array_as_internal</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">src_flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get a version of the given `array` in the internal flavor.</span>
+
+<span class="sd">    The input `array` must be of the given `src_flavor`, and the</span>
+<span class="sd">    returned array will be of the internal flavor.</span>
+
+<span class="sd">    If the conversion is not supported, a ``FlavorError`` is raised.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">array_of_flavor2</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">src_flavor</span><span class="p">,</span> <span class="n">internal_flavor</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">flavor_of</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Identify the flavor of a given `array`.</span>
+
+<span class="sd">    If the `array` can not be matched with any flavor, a ``TypeError``</span>
+<span class="sd">    is raised.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">flavor</span> <span class="ow">in</span> <span class="n">all_flavors</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">identifier_map</span><span class="p">[</span><span class="n">flavor</span><span class="p">](</span><span class="n">array</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">flavor</span>
+    <span class="n">type_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">array</span><span class="p">)</span><span class="o">.</span><span class="n">__name__</span>
+    <span class="n">supported_descs</span> <span class="o">=</span> <span class="s">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">description_map</span><span class="p">[</span><span class="n">fl</span><span class="p">]</span> <span class="k">for</span> <span class="n">fl</span> <span class="ow">in</span> <span class="n">all_flavors</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+        <span class="s">&quot;objects of type ``</span><span class="si">%s</span><span class="s">`` are not supported in this context, sorry; &quot;</span>
+        <span class="s">&quot;supported objects are: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">type_name</span><span class="p">,</span> <span class="n">supported_descs</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">array_of_flavor</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">dst_flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get a version of the given `array` in a different `dst_flavor`.</span>
+
+<span class="sd">    The flavor of the input `array` is guessed, and the returned array</span>
+<span class="sd">    will be of the given `dst_flavor`.</span>
+
+<span class="sd">    If the conversion is not supported, a ``FlavorError`` is raised.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">array_of_flavor2</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">flavor_of</span><span class="p">(</span><span class="n">array</span><span class="p">),</span> <span class="n">dst_flavor</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="restrict_flavors"><a class="viewcode-back" href="../../usersguide/libref/top_level.html#tables.restrict_flavors">[docs]</a><span class="k">def</span> <span class="nf">restrict_flavors</span><span class="p">(</span><span class="n">keep</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;python&#39;</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Disable all flavors except those in keep.</span>
+
+<span class="sd">    Providing an empty keep sequence implies disabling all flavors (but the</span>
+<span class="sd">    internal one).  If the sequence is not specified, only optional flavors are</span>
+<span class="sd">    disabled.</span>
+
+<span class="sd">    .. important:: Once you disable a flavor, it can not be enabled again.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">keep</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">keep</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">([</span><span class="n">internal_flavor</span><span class="p">])</span>
+    <span class="n">remove</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">all_flavors</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">keep</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">flavor</span> <span class="ow">in</span> <span class="n">remove</span><span class="p">:</span>
+        <span class="n">_disable_flavor</span><span class="p">(</span><span class="n">flavor</span><span class="p">)</span>
+
+
+<span class="c"># Flavor registration</span>
+<span class="c"># ===================</span>
+<span class="c">#</span>
+<span class="c"># The order in which flavors appear in `all_flavors` determines the</span>
+<span class="c"># order in which they will be tested for by `flavor_of()`, so place</span>
+<span class="c"># most frequent flavors first.</span></div>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">all_flavors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;numpy&#39;</span><span class="p">)</span>  <span class="c"># this is the internal flavor</span>
+
+<span class="n">all_flavors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;python&#39;</span><span class="p">)</span>  <span class="c"># this is always supported</span>
+
+
+<span class="k">def</span> <span class="nf">_register_aliases</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Register aliases of *available* flavors.&quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">flavor</span> <span class="ow">in</span> <span class="n">all_flavors</span><span class="p">:</span>
+        <span class="n">aliases</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="s">&#39;_</span><span class="si">%s</span><span class="s">_aliases&#39;</span> <span class="o">%</span> <span class="n">flavor</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">aliases</span><span class="p">:</span>
+            <span class="n">alias_map</span><span class="p">[</span><span class="n">alias</span><span class="p">]</span> <span class="o">=</span> <span class="n">flavor</span>
+
+
+<span class="k">def</span> <span class="nf">_register_descriptions</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Register descriptions of *available* flavors.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">flavor</span> <span class="ow">in</span> <span class="n">all_flavors</span><span class="p">:</span>
+        <span class="n">description_map</span><span class="p">[</span><span class="n">flavor</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="s">&#39;_</span><span class="si">%s</span><span class="s">_desc&#39;</span> <span class="o">%</span> <span class="n">flavor</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_register_identifiers</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Register identifier functions of *available* flavors.&quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">flavor</span> <span class="ow">in</span> <span class="n">all_flavors</span><span class="p">:</span>
+        <span class="n">identifier_map</span><span class="p">[</span><span class="n">flavor</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="s">&#39;_is_</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">flavor</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_register_converters</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Register converter functions between *available* flavors.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">array</span>
+    <span class="k">for</span> <span class="n">src_flavor</span> <span class="ow">in</span> <span class="n">all_flavors</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">dst_flavor</span> <span class="ow">in</span> <span class="n">all_flavors</span><span class="p">:</span>
+            <span class="c"># Converters with the same source and destination flavor</span>
+            <span class="c"># are used when available, since they may perform some</span>
+            <span class="c"># optimizations on the resulting array (e.g. making it</span>
+            <span class="c"># contiguous).  Otherwise, an identity function is used.</span>
+            <span class="n">convfunc</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">convfunc</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="s">&#39;_conv_</span><span class="si">%s</span><span class="s">_to_</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">src_flavor</span><span class="p">,</span> <span class="n">dst_flavor</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">src_flavor</span> <span class="o">==</span> <span class="n">dst_flavor</span><span class="p">:</span>
+                    <span class="n">convfunc</span> <span class="o">=</span> <span class="n">identity</span>
+            <span class="k">if</span> <span class="n">convfunc</span><span class="p">:</span>
+                <span class="n">converter_map</span><span class="p">[(</span><span class="n">src_flavor</span><span class="p">,</span> <span class="n">dst_flavor</span><span class="p">)]</span> <span class="o">=</span> <span class="n">convfunc</span>
+
+
+<span class="k">def</span> <span class="nf">_register_all</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Register all *available* flavors.&quot;&quot;&quot;</span>
+
+    <span class="n">_register_aliases</span><span class="p">()</span>
+    <span class="n">_register_descriptions</span><span class="p">()</span>
+    <span class="n">_register_identifiers</span><span class="p">()</span>
+    <span class="n">_register_converters</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_deregister_aliases</span><span class="p">(</span><span class="n">flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deregister aliases of a given `flavor` (no checks).&quot;&quot;&quot;</span>
+
+    <span class="n">rm_aliases</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">an_alias</span><span class="p">,</span> <span class="n">a_flavor</span><span class="p">)</span> <span class="ow">in</span> <span class="n">alias_map</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">a_flavor</span> <span class="o">==</span> <span class="n">flavor</span><span class="p">:</span>
+            <span class="n">rm_aliases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">an_alias</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">an_alias</span> <span class="ow">in</span> <span class="n">rm_aliases</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">alias_map</span><span class="p">[</span><span class="n">an_alias</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_deregister_description</span><span class="p">(</span><span class="n">flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deregister description of a given `flavor` (no checks).&quot;&quot;&quot;</span>
+
+    <span class="k">del</span> <span class="n">description_map</span><span class="p">[</span><span class="n">flavor</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_deregister_identifier</span><span class="p">(</span><span class="n">flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deregister identifier function of a given `flavor` (no checks).&quot;&quot;&quot;</span>
+
+    <span class="k">del</span> <span class="n">identifier_map</span><span class="p">[</span><span class="n">flavor</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_deregister_converters</span><span class="p">(</span><span class="n">flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deregister converter functions of a given `flavor` (no checks).&quot;&quot;&quot;</span>
+
+    <span class="n">rm_flavor_pairs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">flavor_pair</span> <span class="ow">in</span> <span class="n">converter_map</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">flavor</span> <span class="ow">in</span> <span class="n">flavor_pair</span><span class="p">:</span>
+            <span class="n">rm_flavor_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flavor_pair</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">flavor_pair</span> <span class="ow">in</span> <span class="n">rm_flavor_pairs</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">converter_map</span><span class="p">[</span><span class="n">flavor_pair</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_disable_flavor</span><span class="p">(</span><span class="n">flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Completely disable the given `flavor` (no checks).&quot;&quot;&quot;</span>
+
+    <span class="n">_deregister_aliases</span><span class="p">(</span><span class="n">flavor</span><span class="p">)</span>
+    <span class="n">_deregister_description</span><span class="p">(</span><span class="n">flavor</span><span class="p">)</span>
+    <span class="n">_deregister_identifier</span><span class="p">(</span><span class="n">flavor</span><span class="p">)</span>
+    <span class="n">_deregister_converters</span><span class="p">(</span><span class="n">flavor</span><span class="p">)</span>
+    <span class="n">all_flavors</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">flavor</span><span class="p">)</span>
+
+
+<span class="c"># Implementation of flavors</span>
+<span class="c"># =========================</span>
+<span class="n">_python_aliases</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s">&#39;List&#39;</span><span class="p">,</span> <span class="s">&#39;Tuple&#39;</span><span class="p">,</span>
+    <span class="s">&#39;Int&#39;</span><span class="p">,</span> <span class="s">&#39;Float&#39;</span><span class="p">,</span> <span class="s">&#39;String&#39;</span><span class="p">,</span>
+    <span class="s">&#39;VLString&#39;</span><span class="p">,</span> <span class="s">&#39;Object&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">_python_desc</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;homogeneous list or tuple, &quot;</span>
+                <span class="s">&quot;integer, float, complex or bytes&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_is_python</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">))</span>
+
+<span class="n">_numpy_aliases</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">_numpy_desc</span> <span class="o">=</span> <span class="s">&quot;NumPy array, record or scalar&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_is_numpy</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">generic</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_numpy_contiguous</span><span class="p">(</span><span class="n">convfunc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorate `convfunc` to return a *contiguous* NumPy array.</span>
+
+<span class="sd">    Note: When arrays are 0-strided, the copy is avoided.  This allows</span>
+<span class="sd">    to use `array` to still carry info about the dtype and shape.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">conv_to_numpy</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+        <span class="n">nparr</span> <span class="o">=</span> <span class="n">convfunc</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="s">&#39;flags&#39;</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="ow">not</span> <span class="n">nparr</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">contiguous</span> <span class="ow">and</span>
+            <span class="nb">sum</span><span class="p">(</span><span class="n">nparr</span><span class="o">.</span><span class="n">strides</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">nparr</span> <span class="o">=</span> <span class="n">nparr</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c"># copying the array makes it contiguous</span>
+        <span class="k">return</span> <span class="n">nparr</span>
+    <span class="n">conv_to_numpy</span><span class="o">.</span><span class="n">__name__</span> <span class="o">=</span> <span class="n">convfunc</span><span class="o">.</span><span class="n">__name__</span>
+    <span class="n">conv_to_numpy</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">convfunc</span><span class="o">.</span><span class="n">__doc__</span>
+    <span class="k">return</span> <span class="n">conv_to_numpy</span>
+
+
+<span class="nd">@_numpy_contiguous</span>
+<span class="k">def</span> <span class="nf">_conv_numpy_to_numpy</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="c"># Passes contiguous arrays through and converts scalars into</span>
+    <span class="c"># scalar arrays.</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+
+
+<span class="nd">@_numpy_contiguous</span>
+<span class="k">def</span> <span class="nf">_conv_python_to_numpy</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_conv_numpy_to_python</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">():</span>
+        <span class="c"># Lists are the default for returning multidimensional objects</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># 0-dim or scalar case</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">array</span>
+
+<span class="c"># Now register everything related with *available* flavors.</span>
+<span class="n">_register_all</span><span class="p">()</span>
+
+
+<span class="c"># Main part</span>
+<span class="c"># =========</span>
+<span class="k">def</span> <span class="nf">_test</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Run ``doctest`` on this module.&quot;&quot;&quot;</span>
+
+    <span class="kn">import</span> <span class="nn">doctest</span>
+    <span class="n">doctest</span><span class="o">.</span><span class="n">testmod</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">_test</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

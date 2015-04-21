@@ -1,0 +1,380 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.earray &mdash; PyTables 3.2.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.earray</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c">########################################################################</span>
+<span class="c">#</span>
+<span class="c"># License: BSD</span>
+<span class="c"># Created: December 15, 2003</span>
+<span class="c"># Author: Francesc Alted - faltet@pytables.com</span>
+<span class="c">#</span>
+<span class="c"># $Id$</span>
+<span class="c">#</span>
+<span class="c">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Here is defined the EArray class.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="n">convert_to_np_atom2</span><span class="p">,</span> <span class="n">SizeType</span>
+<span class="kn">from</span> <span class="nn">tables.carray</span> <span class="kn">import</span> <span class="n">CArray</span>
+
+<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span><span class="p">,</span> <span class="n">previous_api_property</span>
+
+<span class="c"># default version for EARRAY objects</span>
+<span class="c"># obversion = &quot;1.0&quot;    # initial version</span>
+<span class="c"># obversion = &quot;1.1&quot;    # support for complex datatypes</span>
+<span class="c"># obversion = &quot;1.2&quot;    # This adds support for time datatypes.</span>
+<span class="c"># obversion = &quot;1.3&quot;    # This adds support for enumerated datatypes.</span>
+<span class="n">obversion</span> <span class="o">=</span> <span class="s">&quot;1.4&quot;</span>    <span class="c"># Numeric and numarray flavors are gone.</span>
+
+
+<div class="viewcode-block" id="EArray"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.EArray">[docs]</a><span class="k">class</span> <span class="nc">EArray</span><span class="p">(</span><span class="n">CArray</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class represents extendable, homogeneous datasets in an HDF5 file.</span>
+
+<span class="sd">    The main difference between an EArray and a CArray (see</span>
+<span class="sd">    :ref:`CArrayClassDescr`), from which it inherits, is that the former</span>
+<span class="sd">    can be enlarged along one of its dimensions, the *enlargeable</span>
+<span class="sd">    dimension*.  That means that the :attr:`Leaf.extdim` attribute (see</span>
+<span class="sd">    :class:`Leaf`) of any EArray instance will always be non-negative.</span>
+<span class="sd">    Multiple enlargeable dimensions might be supported in the future.</span>
+
+<span class="sd">    New rows can be added to the end of an enlargeable array by using the</span>
+<span class="sd">    :meth:`EArray.append` method.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parentnode</span>
+<span class="sd">        The parent :class:`Group` object.</span>
+
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           Renamed from *parentNode* to *parentnode*.</span>
+
+<span class="sd">    name : str</span>
+<span class="sd">        The name of this node in its parent group.</span>
+
+<span class="sd">    atom</span>
+<span class="sd">        An `Atom` instance representing the *type* and *shape*</span>
+<span class="sd">        of the atomic objects to be saved.</span>
+
+<span class="sd">    shape</span>
+<span class="sd">        The shape of the new array.  One (and only one) of</span>
+<span class="sd">        the shape dimensions *must* be 0.  The dimension being 0</span>
+<span class="sd">        means that the resulting `EArray` object can be extended</span>
+<span class="sd">        along it.  Multiple enlargeable dimensions are not supported</span>
+<span class="sd">        right now.</span>
+
+<span class="sd">    title</span>
+<span class="sd">        A description for this node (it sets the ``TITLE``</span>
+<span class="sd">        HDF5 attribute on disk).</span>
+
+<span class="sd">    filters</span>
+<span class="sd">        An instance of the `Filters` class that provides information</span>
+<span class="sd">        about the desired I/O filters to be applied during the life</span>
+<span class="sd">        of this object.</span>
+
+<span class="sd">    expectedrows</span>
+<span class="sd">        A user estimate about the number of row elements that will</span>
+<span class="sd">        be added to the growable dimension in the `EArray` node.</span>
+<span class="sd">        If not provided, the default value is ``EXPECTED_ROWS_EARRAY``</span>
+<span class="sd">        (see ``tables/parameters.py``).  If you plan to create either</span>
+<span class="sd">        a much smaller or a much bigger `EArray` try providing a guess;</span>
+<span class="sd">        this will optimize the HDF5 B-Tree creation and management</span>
+<span class="sd">        process time and the amount of memory used.</span>
+
+<span class="sd">    chunkshape</span>
+<span class="sd">        The shape of the data chunk to be read or written in a single</span>
+<span class="sd">        HDF5 I/O operation.  Filters are applied to those chunks of data.</span>
+<span class="sd">        The dimensionality of `chunkshape` must be the same as that of</span>
+<span class="sd">        `shape` (beware: no dimension should be 0 this time!).</span>
+<span class="sd">        If ``None``, a sensible value is calculated based on the</span>
+<span class="sd">        `expectedrows` parameter (which is recommended).</span>
+
+<span class="sd">    byteorder</span>
+<span class="sd">        The byteorder of the data *on disk*, specified as &#39;little&#39; or</span>
+<span class="sd">        &#39;big&#39;. If this is not specified, the byteorder is that of the</span>
+<span class="sd">        platform.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    See below a small example of the use of the `EArray` class.  The</span>
+<span class="sd">    code is available in ``examples/earray1.py``::</span>
+
+<span class="sd">        import tables</span>
+<span class="sd">        import numpy</span>
+
+<span class="sd">        fileh = tables.open_file(&#39;earray1.h5&#39;, mode=&#39;w&#39;)</span>
+<span class="sd">        a = tables.StringAtom(itemsize=8)</span>
+
+<span class="sd">        # Use ``a`` as the object type for the enlargeable array.</span>
+<span class="sd">        array_c = fileh.create_earray(fileh.root, &#39;array_c&#39;, a, (0,),</span>
+<span class="sd">                                      \&quot;Chars\&quot;)</span>
+<span class="sd">        array_c.append(numpy.array([&#39;a&#39;*2, &#39;b&#39;*4], dtype=&#39;S8&#39;))</span>
+<span class="sd">        array_c.append(numpy.array([&#39;a&#39;*6, &#39;b&#39;*8, &#39;c&#39;*10], dtype=&#39;S8&#39;))</span>
+
+<span class="sd">        # Read the string ``EArray`` we have created on disk.</span>
+<span class="sd">        for s in array_c:</span>
+<span class="sd">            print(&#39;array_c[%s] =&gt; %r&#39; % (array_c.nrow, s))</span>
+<span class="sd">        # Close the file.</span>
+<span class="sd">        fileh.close()</span>
+
+<span class="sd">    The output for the previous script is something like::</span>
+
+<span class="sd">        array_c[0] =&gt; &#39;aa&#39;</span>
+<span class="sd">        array_c[1] =&gt; &#39;bbbb&#39;</span>
+<span class="sd">        array_c[2] =&gt; &#39;aaaaaa&#39;</span>
+<span class="sd">        array_c[3] =&gt; &#39;bbbbbbbb&#39;</span>
+<span class="sd">        array_c[4] =&gt; &#39;cccccccc&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Class identifier.</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;EARRAY&#39;</span>
+
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+
+    <span class="c"># Special methods</span>
+    <span class="c"># ~~~~~~~~~~~~~~~</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">atom</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">chunkshape</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+
+        <span class="c"># Specific of EArray</span>
+        <span class="k">if</span> <span class="n">expectedrows</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">expectedrows</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;EXPECTED_ROWS_EARRAY&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_expectedrows</span> <span class="o">=</span> <span class="n">expectedrows</span>
+        <span class="sd">&quot;&quot;&quot;The expected number of rows to be stored in the array.&quot;&quot;&quot;</span>
+
+        <span class="c"># Call the parent (CArray) init code</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">EArray</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span>
+                                     <span class="n">filters</span><span class="p">,</span> <span class="n">chunkshape</span><span class="p">,</span> <span class="n">byteorder</span><span class="p">,</span> <span class="n">_log</span><span class="p">)</span>
+
+    <span class="c"># Public and private methods</span>
+    <span class="c"># ~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">def</span> <span class="nf">_g_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new array in file (specific part).&quot;&quot;&quot;</span>
+
+        <span class="c"># Pre-conditions and extdim computation</span>
+        <span class="n">zerodims</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">zerodims</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">zerodims</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">extdim</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                    <span class="s">&quot;Multiple enlargeable (0-)dimensions are not &quot;</span>
+                    <span class="s">&quot;supported.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;When creating EArrays, you need to set one of &quot;</span>
+                <span class="s">&quot;the dimensions of the Atom instance to zero.&quot;</span><span class="p">)</span>
+
+        <span class="c"># Finish the common part of the creation process</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_create_common</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_expectedrows</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_shape_append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nparr</span><span class="p">):</span>
+        <span class="s">&quot;Test that nparr shape is consistent with underlying EArray.&quot;</span>
+
+        <span class="c"># The arrays conforms self expandibility?</span>
+        <span class="n">myrank</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">narank</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nparr</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">myrank</span> <span class="o">!=</span> <span class="n">narank</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span><span class="s">&quot;the ranks of the appended object (</span><span class="si">%d</span><span class="s">) and the &quot;</span>
+                              <span class="s">&quot;``</span><span class="si">%s</span><span class="s">`` EArray (</span><span class="si">%d</span><span class="s">) differ&quot;</span><span class="p">)</span>
+                             <span class="o">%</span> <span class="p">(</span><span class="n">narank</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">myrank</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">myrank</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extdim</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nparr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span><span class="s">&quot;the shapes of the appended object and the &quot;</span>
+                                  <span class="s">&quot;``</span><span class="si">%s</span><span class="s">`` EArray differ in non-enlargeable &quot;</span>
+                                  <span class="s">&quot;dimension </span><span class="si">%d</span><span class="s">&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+
+    <span class="n">_checkShapeAppend</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_check_shape_append</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EArray.append"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.EArray.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a sequence of data to the end of the dataset.</span>
+
+<span class="sd">        The sequence must have the same type as the array; otherwise a</span>
+<span class="sd">        TypeError is raised. In the same way, the dimensions of the</span>
+<span class="sd">        sequence must conform to the shape of the array, that is, all</span>
+<span class="sd">        dimensions must match, with the exception of the enlargeable</span>
+<span class="sd">        dimension, which can be of any length (even 0!).  If the shape</span>
+<span class="sd">        of the sequence is invalid, a ValueError is raised.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_check_writable</span><span class="p">()</span>
+
+        <span class="c"># Convert the sequence into a NumPy object</span>
+        <span class="n">nparr</span> <span class="o">=</span> <span class="n">convert_to_np_atom2</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+        <span class="c"># Check if it has a consistent shape with underlying EArray</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_shape_append</span><span class="p">(</span><span class="n">nparr</span><span class="p">)</span>
+        <span class="c"># If the size of the nparr is zero, don&#39;t do anything else</span>
+        <span class="k">if</span> <span class="n">nparr</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_append</span><span class="p">(</span><span class="n">nparr</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_g_copy_with_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
+                           <span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">chunkshape</span><span class="p">,</span> <span class="n">_log</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Private part of Leaf.copy() for each kind of leaf.&quot;&quot;&quot;</span>
+
+        <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="c"># Build the new EArray object</span>
+        <span class="n">maindim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c"># The number of final rows</span>
+        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+        <span class="c"># Build the new EArray object</span>
+        <span class="nb">object</span> <span class="o">=</span> <span class="n">EArray</span><span class="p">(</span>
+            <span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="n">nrows</span><span class="p">,</span> <span class="n">chunkshape</span><span class="o">=</span><span class="n">chunkshape</span><span class="p">,</span>
+            <span class="n">_log</span><span class="o">=</span><span class="n">_log</span><span class="p">)</span>
+        <span class="c"># Now, fill the new earray with values from source</span>
+        <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span>
+        <span class="c"># The slices parameter for self.__getitem__</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">]</span>
+        <span class="c"># This is a hack to prevent doing unnecessary conversions</span>
+        <span class="c"># when copying buffers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="c"># Start the copy itself</span>
+        <span class="k">for</span> <span class="n">start2</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span><span class="p">):</span>
+            <span class="c"># Save the records on disk</span>
+            <span class="n">stop2</span> <span class="o">=</span> <span class="n">start2</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span>
+            <span class="k">if</span> <span class="n">stop2</span> <span class="o">&gt;</span> <span class="n">stop</span><span class="p">:</span>
+                <span class="n">stop2</span> <span class="o">=</span> <span class="n">stop</span>
+            <span class="c"># Set the proper slice in the extensible dimension</span>
+            <span class="n">slices</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start2</span><span class="p">,</span> <span class="n">stop2</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+            <span class="nb">object</span><span class="o">.</span><span class="n">_append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__getitem__</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">slices</span><span class="p">)))</span>
+        <span class="c"># Active the conversion again (default)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">nbytes</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">itemsize</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">nbytes</span><span class="p">)</span>
+
+    <span class="n">_g_copyWithStats</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_copy_with_stats</span><span class="p">)</span>
+
+<span class="c">## Local Variables:</span>
+<span class="c">## mode: python</span>
+<span class="c">## py-indent-offset: 4</span>
+<span class="c">## tab-width: 4</span>
+<span class="c">## fill-column: 72</span>
+<span class="c">## End:</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.0rc1 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>
