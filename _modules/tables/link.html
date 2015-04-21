@@ -1,6 +1,5 @@
 
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -9,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.link &mdash; PyTables 3.1.1 documentation</title>
+    <title>tables.link &mdash; PyTables 3.2.0-rc1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -18,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.1.1',
+        VERSION:     '3.2.0-rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.2.0-rc1 documentation" href="../../index.html" />
     <link rel="up" title="tables" href="../tables.html" /> 
   </head>
   <body>
@@ -49,7 +48,7 @@
         <li class="right" >
           <a href="../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.1.1 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.2.0-rc1 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../tables.html" accesskey="U">tables</a> &raquo;</li> 
@@ -209,8 +208,50 @@
     <span class="sd">&quot;&quot;&quot;Represents a soft link (aka symbolic link).</span>
 
 <span class="sd">    A soft link is a reference to another node in the *same* file hierarchy.</span>
-<span class="sd">    Getting access to the pointed node (this action is called *dereferrencing*)</span>
-<span class="sd">    is done via the __call__ special method (see below).</span>
+<span class="sd">    Provided that the target node exists, its attributes and methods can be</span>
+<span class="sd">    accessed directly from the softlink using the normal `.` syntax.</span>
+
+<span class="sd">    Softlinks also have the following public methods/attributes:</span>
+
+<span class="sd">        * `target`</span>
+<span class="sd">        * `dereference()`</span>
+<span class="sd">        * `copy()`</span>
+<span class="sd">        * `move()`</span>
+<span class="sd">        * `remove()`</span>
+<span class="sd">        * `rename()`</span>
+<span class="sd">        * `is_dangling()`</span>
+
+<span class="sd">    Note that these will override any correspondingly named methods/attributes</span>
+<span class="sd">    of the target node.</span>
+
+<span class="sd">    For backwards compatibility, it is also possible to obtain the target node</span>
+<span class="sd">    via the `__call__()` special method (this action is called *dereferencing*;</span>
+<span class="sd">    see below)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    ::</span>
+<span class="sd">        &gt;&gt;&gt; f = tables.open_file(&#39;/tmp/test_softlink.h5&#39;, &#39;w&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; a = f.create_array(&#39;/&#39;, &#39;A&#39;, np.arange(10))</span>
+<span class="sd">        &gt;&gt;&gt; link_a = f.create_soft_link(&#39;/&#39;, &#39;link_A&#39;, target=&#39;/A&#39;)</span>
+
+<span class="sd">        # transparent read/write access to a softlinked node</span>
+<span class="sd">        &gt;&gt;&gt; link_a[0] = -1</span>
+<span class="sd">        &gt;&gt;&gt; print(link_a[:], link_a.dtype)</span>
+<span class="sd">        (array([-1,  1,  2,  3,  4,  5,  6,  7,  8,  9]), dtype(&#39;int64&#39;))</span>
+
+<span class="sd">        # dereferencing a softlink using the __call__() method</span>
+<span class="sd">        &gt;&gt;&gt; print(link_a() is a)</span>
+<span class="sd">        True</span>
+
+<span class="sd">        # SoftLink.remove() overrides Array.remove()</span>
+<span class="sd">        &gt;&gt;&gt; link_a.remove()</span>
+<span class="sd">        &gt;&gt;&gt; print(link_a)</span>
+<span class="sd">        &lt;closed tables.link.SoftLink at 0x7febe97186e0&gt;</span>
+<span class="sd">        &gt;&gt;&gt; print(a[:], a.dtype)</span>
+<span class="sd">        (array([-1,  1,  2,  3,  4,  5,  6,  7,  8,  9]), dtype(&#39;int64&#39;))</span>
+
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -218,6 +259,14 @@
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;SOFTLINK&#39;</span>
 
     <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
+
+    <span class="c"># attributes with these names/prefixes are treated as attributes of the</span>
+    <span class="c"># SoftLink rather than the target node</span>
+    <span class="n">_link_attrnames</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;target&#39;</span><span class="p">,</span> <span class="s">&#39;dereference&#39;</span><span class="p">,</span> <span class="s">&#39;is_dangling&#39;</span><span class="p">,</span> <span class="s">&#39;copy&#39;</span><span class="p">,</span> <span class="s">&#39;move&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;remove&#39;</span><span class="p">,</span> <span class="s">&#39;rename&#39;</span><span class="p">,</span> <span class="s">&#39;__init__&#39;</span><span class="p">,</span> <span class="s">&#39;__str__&#39;</span><span class="p">,</span> <span class="s">&#39;__repr__&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;__class__&#39;</span><span class="p">,</span> <span class="s">&#39;__dict__&#39;</span><span class="p">)</span>
+    <span class="n">_link_attrprefixes</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_f_&#39;</span><span class="p">,</span> <span class="s">&#39;_c_&#39;</span><span class="p">,</span> <span class="s">&#39;_g_&#39;</span><span class="p">,</span> <span class="s">&#39;_v_&#39;</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="SoftLink.__call__"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.SoftLink.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Dereference `self.target` and return the object.</span>
@@ -234,13 +283,81 @@
 <span class="sd">            /another/path (Group) &#39;&#39;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span>
-        <span class="c"># Check for relative pathnames</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
-            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span><span class="o">.</span><span class="n">_g_join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span>
 </div>
+    <span class="k">def</span> <span class="nf">dereference</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span>
+            <span class="c"># Check for relative pathnames</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span><span class="o">.</span><span class="n">_g_join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">):</span>
+
+        <span class="c"># get attribute of the SoftLink itself</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">attrname</span> <span class="ow">in</span> <span class="n">SoftLink</span><span class="o">.</span><span class="n">_link_attrnames</span>
+            <span class="ow">or</span> <span class="n">attrname</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="ow">in</span> <span class="n">SoftLink</span><span class="o">.</span><span class="n">_link_attrprefixes</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">)</span>
+
+        <span class="c"># get attribute of the target node</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">tables</span><span class="o">.</span><span class="n">ClosedNodeError</span><span class="p">(</span><span class="s">&#39;the node object is closed&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_dangling</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">target_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c"># __getattribute__() fails to get children of Groups</span>
+                <span class="k">return</span> <span class="n">target_node</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="n">attrname</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="c"># some node classes (e.g. Array) don&#39;t implement __getattr__()</span>
+                <span class="k">return</span> <span class="n">target_node</span><span class="o">.</span><span class="n">__getattr__</span><span class="p">(</span><span class="n">attrname</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+
+        <span class="c"># set attribute of the SoftLink itself</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">attrname</span> <span class="ow">in</span> <span class="n">SoftLink</span><span class="o">.</span><span class="n">_link_attrnames</span>
+            <span class="ow">or</span> <span class="n">attrname</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="ow">in</span> <span class="n">SoftLink</span><span class="o">.</span><span class="n">_link_attrprefixes</span><span class="p">):</span>
+            <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c"># set attribute of the target node</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">tables</span><span class="o">.</span><span class="n">ClosedNodeError</span><span class="p">(</span><span class="s">&#39;the node object is closed&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_dangling</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;softlink target does not exist&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">attrname</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;__getitem__ must be defined in the SoftLink class in order for array</span>
+<span class="sd">        indexing syntax to work&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">tables</span><span class="o">.</span><span class="n">ClosedNodeError</span><span class="p">(</span><span class="s">&#39;the node object is closed&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_dangling</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;softlink target does not exist&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span><span class="o">.</span><span class="n">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;__setitem__ must be defined in the SoftLink class in order for array</span>
+<span class="sd">        indexing syntax to work&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">tables</span><span class="o">.</span><span class="n">ClosedNodeError</span><span class="p">(</span><span class="s">&#39;the node object is closed&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_dangling</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;softlink target does not exist&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_dangling</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="SoftLink.__str__"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.SoftLink.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return a short string representation of the link.</span>
 
@@ -256,16 +373,20 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">classname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
         <span class="c"># Check for relative pathnames</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
             <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parent</span><span class="o">.</span><span class="n">_g_join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="p">:</span>
-            <span class="n">dangling</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
+            <span class="n">closed</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="n">closed</span> <span class="o">=</span> <span class="s">&quot;closed &quot;</span>
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="p">:</span>
             <span class="n">dangling</span> <span class="o">=</span> <span class="s">&quot; (dangling)&quot;</span>
-        <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">) -&gt; </span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">dangling</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dangling</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">) -&gt; </span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">closed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">dangling</span><span class="p">)</span>
 
 </div></div>
 <div class="viewcode-block" id="ExternalLink"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.ExternalLink">[docs]</a><span class="k">class</span> <span class="nc">ExternalLink</span><span class="p">(</span><span class="n">linkextension</span><span class="o">.</span><span class="n">ExternalLink</span><span class="p">,</span> <span class="n">Link</span><span class="p">):</span>
@@ -425,7 +546,7 @@
         <li class="right" >
           <a href="../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.1.1 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.2.0-rc1 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../tables.html" >tables</a> &raquo;</li> 
@@ -435,7 +556,7 @@
 
     <div class="footer">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>

@@ -1,0 +1,405 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Threading &mdash; PyTables 3.2.0-rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '3.2.0-rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.0-rc1 documentation" href="../index.html" />
+    <link rel="up" title="PyTables Cookbook" href="index.html" />
+    <link rel="next" title="FAQ" href="../FAQ.html" />
+    <link rel="prev" title="In-memory HDF5 files" href="inmemory_hdf5_files.html" /> 
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../FAQ.html" title="FAQ"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="inmemory_hdf5_files.html" title="In-memory HDF5 files"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">PyTables 3.2.0-rc1 documentation</a> &raquo;</li>
+
+          <li><a href="index.html" accesskey="U">PyTables Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="threading">
+<h1>Threading<a class="headerlink" href="#threading" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>Several bug reports have been filed in the past by the users regarding
+problems related to the impossibility to use PyTables in multi-thread
+programs.</p>
+<p>The problem was mainly related to an internal registry that forced the
+sharing of HDF5 file handles across multiple threads.</p>
+<p>In PyTables 3.1.0 the code for file handles management has been completely
+redesigned (see the <em>Backward incompatible changes</em> section in
+<a class="reference internal" href="../release-notes/RELEASE_NOTES_v3.1.x.html"><em>Changes from 3.1.0 to 3.1.1</em></a>) to be more simple and
+transparent and to allow the use of PyTables in multi-thread programs.</p>
+<p>Citing the <a class="reference internal" href="../release-notes/RELEASE_NOTES_v3.1.x.html"><em>Changes from 3.1.0 to 3.1.1</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre>It is important to stress that the new implementation still has an
+internal registry (implementation detail) and it is still
+**not thread safe**.
+Just now a smart enough developer should be able to use PyTables in a
+muti-thread program without too much headaches.
+</pre></div>
+</div>
+</div>
+<div class="section" id="a-common-schema-for-concurrency">
+<h2>A common schema for concurrency<a class="headerlink" href="#a-common-schema-for-concurrency" title="Permalink to this headline">¶</a></h2>
+<p>Although it is probably not the most efficient or elegant solution to solve
+a certain class of problems, many users seems to like the possibility to
+load a portion of data and process it inside a <em>thread function</em> using
+multiple threads to process the entire dataset.</p>
+<p>Each thread is responsible of:</p>
+<ul class="simple">
+<li>opening the (same) HDF5 file for reading,</li>
+<li>load data from it and</li>
+<li>close the HDF5 file itself</li>
+</ul>
+<p>Each file handle is of exclusive use of the thread that opened it and
+file handles are never shared across threads.</p>
+<p>In order to do it in a safe way with PyTables some care should be used
+during the phase of opening and closing HDF5 files in order ensure the
+correct behaviour of the internal machinery used to manage HDF5 file handles.</p>
+</div>
+<div class="section" id="very-simple-solution">
+<h2>Very simple solution<a class="headerlink" href="#very-simple-solution" title="Permalink to this headline">¶</a></h2>
+<p>A very simple solution for this kind of scenario is to use a
+<tt class="xref py py-class docutils literal"><span class="pre">threading.Lock</span></tt> around part of the code that are considered critical
+e.g. the <a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><tt class="xref py py-func docutils literal"><span class="pre">open_file()</span></tt></a> function and the <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.close" title="tables.File.close"><tt class="xref py py-meth docutils literal"><span class="pre">File.close()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="n">lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">synchronized_open_file</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">lock</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">synchronized_close_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">lock</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <tt class="xref py py-func docutils literal"><span class="pre">synchronized_open_file()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">synchronized_close_file()</span></tt> can
+be used in the <em>thread function</em> to open and close the HDF5 file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tables</span> <span class="kn">as</span> <span class="nn">tb</span>
+
+<span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">inqueue</span><span class="p">,</span> <span class="n">outqueue</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">yslice</span> <span class="o">=</span> <span class="n">inqueue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="n">h5file</span> <span class="o">=</span> <span class="n">synchronized_open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">h5array</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">h5array</span><span class="p">[</span><span class="n">yslice</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+        <span class="n">psum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">outqueue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">outqueue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psum</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">synchronized_close_file</span><span class="p">(</span><span class="n">h5file</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally the main function of the program:</p>
+<ul class="simple">
+<li>instantiates the input and output <tt class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></tt>,</li>
+<li>starts all threads,</li>
+<li>sends the processing requests on the input <tt class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></tt></li>
+<li>collects results reading from the output <tt class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></tt></li>
+<li>performs finalization actions (<tt class="xref py py-meth docutils literal"><span class="pre">threading.Thread.join()</span></tt>)</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">queue</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tables</span> <span class="kn">as</span> <span class="nn">tb</span>
+
+<span class="n">SIZE</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">NTHREADS</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">FILENAME</span> <span class="o">=</span> <span class="s">&#39;simple_threading.h5&#39;</span>
+<span class="n">H5PATH</span> <span class="o">=</span> <span class="s">&#39;/array&#39;</span>
+
+<span class="k">def</span> <span class="nf">create_test_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">SIZE</span><span class="p">,</span> <span class="n">SIZE</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
+        <span class="n">h5file</span><span class="o">.</span><span class="n">create_array</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;array&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;Test Array&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">chunk_generator</span><span class="p">(</span><span class="n">data_size</span><span class="p">,</span> <span class="n">nchunks</span><span class="p">):</span>
+    <span class="n">chunk_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">data_size</span> <span class="o">/</span> <span class="n">nchunks</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data_size</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="n">chunk_size</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="c"># generate the test data</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">FILENAME</span><span class="p">):</span>
+        <span class="n">create_test_file</span><span class="p">(</span><span class="n">FILENAME</span><span class="p">)</span>
+
+    <span class="n">threads</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">inqueue</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+    <span class="n">outqueue</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+
+    <span class="c"># start all threads</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">NTHREADS</span><span class="p">):</span>
+        <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">=</span><span class="n">run</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">FILENAME</span><span class="p">,</span> <span class="n">H5PATH</span><span class="p">,</span> <span class="n">inqueue</span><span class="p">,</span> <span class="n">outqueue</span><span class="p">))</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="n">threads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
+
+    <span class="c"># push requests in the input queue</span>
+    <span class="k">for</span> <span class="n">yslice</span> <span class="ow">in</span> <span class="n">chunk_generator</span><span class="p">(</span><span class="n">SIZE</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">threads</span><span class="p">)):</span>
+        <span class="n">inqueue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">yslice</span><span class="p">)</span>
+
+    <span class="c"># collect results</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">mean_</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">threads</span><span class="p">)):</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">outqueue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">out</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mean_</span> <span class="o">+=</span> <span class="n">out</span>
+
+        <span class="n">mean_</span> <span class="o">/=</span> <span class="n">SIZE</span> <span class="o">*</span> <span class="n">SIZE</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
+            <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+    <span class="c"># print results</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Mean: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mean_</span><span class="p">))</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The program in the example computes the mean value of a potentially huge
+dataset splinting the computation across <tt class="xref py py-data docutils literal"><span class="pre">NTHREADS</span></tt> (5 in this case)
+threads.</p>
+<p>The complete and working code of this example (Python 3 is required) can be
+found in the <tt class="file docutils literal"><span class="pre">examples</span></tt> directory:
+<a class="reference download internal" href="../_downloads/simple_threading.py"><tt class="xref download docutils literal"><span class="pre">simple_threading.py</span></tt></a>.</p>
+<p>The approach presented in this section is very simple and readable but has
+the <strong>drawback</strong> that the user code have to be modified to replace
+<a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><tt class="xref py py-func docutils literal"><span class="pre">open_file()</span></tt></a> and <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.close" title="tables.File.close"><tt class="xref py py-meth docutils literal"><span class="pre">File.close()</span></tt></a> calls with their safe version
+(<tt class="xref py py-func docutils literal"><span class="pre">synchronized_open_file()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">synchronized_close_file()</span></tt>).</p>
+<p>Also, the solution showed in the example does not cover the entire PyTables
+API (e.g. although not recommended HDF5 files can be opened using the
+<a class="reference internal" href="../usersguide/libref/file_class.html#tables.File" title="tables.File"><tt class="xref py py-class docutils literal"><span class="pre">File</span></tt></a> constructor) and makes it impossible to use <em>pythonic</em>
+constructs like the <em>with</em> statement:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
+    <span class="n">do_something</span><span class="p">(</span><span class="n">h5file</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="monkey-patching-pytables">
+<h2>Monkey-patching PyTables<a class="headerlink" href="#monkey-patching-pytables" title="Permalink to this headline">¶</a></h2>
+<p>An alternative implementation with respect to the <a class="reference internal" href="#very-simple-solution">Very simple solution</a>
+presented in the previous section consists in monkey-patching the PyTables
+package to replace some of its components with a more thread-safe version of
+themselves:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">import</span> <span class="nn">tables</span> <span class="kn">as</span> <span class="nn">tb</span>
+<span class="kn">import</span> <span class="nn">tables.file</span> <span class="kn">as</span> <span class="nn">_tables_file</span>
+
+<span class="k">class</span> <span class="nc">ThreadsafeFileRegistry</span><span class="p">(</span><span class="n">_tables_file</span><span class="o">.</span><span class="n">_FileRegistry</span><span class="p">):</span>
+    <span class="n">lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">close_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">close_all</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">ThreadsafeFile</span><span class="p">(</span><span class="n">_tables_file</span><span class="o">.</span><span class="n">File</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">ThreadsafeFileRegistry</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">ThreadsafeFileRegistry</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="nd">@functools.wraps</span><span class="p">(</span><span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">synchronized_open_file</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">ThreadsafeFileRegistry</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_tables_file</span><span class="o">.</span><span class="n">_original_open_file</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<span class="c"># monkey patch the tables package</span>
+<span class="n">_tables_file</span><span class="o">.</span><span class="n">_original_open_file</span> <span class="o">=</span> <span class="n">_tables_file</span><span class="o">.</span><span class="n">open_file</span>
+<span class="n">_tables_file</span><span class="o">.</span><span class="n">open_file</span> <span class="o">=</span> <span class="n">synchronized_open_file</span>
+<span class="n">tb</span><span class="o">.</span><span class="n">open_file</span> <span class="o">=</span> <span class="n">synchronized_open_file</span>
+
+<span class="n">_tables_file</span><span class="o">.</span><span class="n">_original_File</span> <span class="o">=</span> <span class="n">_tables_file</span><span class="o">.</span><span class="n">File</span>
+<span class="n">_tables_file</span><span class="o">.</span><span class="n">File</span> <span class="o">=</span> <span class="n">ThreadsafeFile</span>
+<span class="n">tb</span><span class="o">.</span><span class="n">File</span> <span class="o">=</span> <span class="n">ThreadsafeFile</span>
+
+<span class="n">_tables_file</span><span class="o">.</span><span class="n">_open_files</span> <span class="o">=</span> <span class="n">ThreadsafeFileRegistry</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>At this point PyTables can be used transparently in example program presented
+in the previous section.
+In particular the standard PyTables API (including <em>with</em> statements) can be
+used in the <em>thread function</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">inqueue</span><span class="p">,</span> <span class="n">outqueue</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">yslice</span> <span class="o">=</span> <span class="n">inqueue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
+            <span class="n">h5array</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">h5array</span><span class="p">[</span><span class="n">yslice</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+        <span class="n">psum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">outqueue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">outqueue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psum</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The complete code of this version of the example can be found in the
+<tt class="file docutils literal"><span class="pre">examples</span></tt> folder:
+<a class="reference download internal" href="../_downloads/threading_monkeypatch.py"><tt class="xref download docutils literal"><span class="pre">simple_threading.py</span></tt></a>.
+Python 3 is required.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../index.html">
+          <img class="logo" src="../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Threading</a><ul>
+<li><a class="reference internal" href="#background">Background</a></li>
+<li><a class="reference internal" href="#a-common-schema-for-concurrency">A common schema for concurrency</a></li>
+<li><a class="reference internal" href="#very-simple-solution">Very simple solution</a></li>
+<li><a class="reference internal" href="#monkey-patching-pytables">Monkey-patching PyTables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="inmemory_hdf5_files.html"
+                        title="previous chapter">In-memory HDF5 files</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../FAQ.html"
+                        title="next chapter">FAQ</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/cookbook/threading.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../FAQ.html" title="FAQ"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="inmemory_hdf5_files.html" title="In-memory HDF5 files"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">PyTables 3.2.0-rc1 documentation</a> &raquo;</li>
+
+          <li><a href="index.html" >PyTables Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>

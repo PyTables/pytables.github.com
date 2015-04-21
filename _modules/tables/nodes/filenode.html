@@ -1,6 +1,5 @@
 
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -9,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.nodes.filenode &mdash; PyTables 3.1.1 documentation</title>
+    <title>tables.nodes.filenode &mdash; PyTables 3.2.0-rc1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -18,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '3.1.1',
+        VERSION:     '3.2.0-rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +30,7 @@
     <script type="text/javascript" src="../../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.1.1 documentation" href="../../../index.html" />
+    <link rel="top" title="PyTables 3.2.0-rc1 documentation" href="../../../index.html" />
     <link rel="up" title="tables" href="../../tables.html" /> 
   </head>
   <body>
@@ -49,7 +48,7 @@
         <li class="right" >
           <a href="../../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../../index.html">PyTables 3.1.1 documentation</a> &raquo;</li>
+    <li><a href="../../../index.html">PyTables 3.2.0-rc1 documentation</a> &raquo;</li>
 
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../tables.html" accesskey="U">tables</a> &raquo;</li> 
@@ -98,6 +97,7 @@
 
 <span class="kn">import</span> <span class="nn">io</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
@@ -348,7 +348,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_checkClosed</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_checkReadable</span><span class="p">()</span>
 
-        <span class="n">chunksize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">chunksize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">chunkshape</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
 
         <span class="c"># XXX: check</span>
         <span class="n">lsep</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
@@ -794,7 +794,10 @@
 <span class="sd">      Location of the filenode where the data shall be stored.  If</span>
 <span class="sd">      *name* is not given, and *where* is either a :class:`Group`</span>
 <span class="sd">      object or a string ending on ``/``, the leaf name will be set to</span>
-<span class="sd">      the file name of *filename*.</span>
+<span class="sd">      the file name of *filename*.  The *name* will be modified to</span>
+<span class="sd">      adhere to Python&#39;s natural naming convention; the original</span>
+<span class="sd">      filename will be preserved in the filenode&#39;s *_filename*</span>
+<span class="sd">      attribute.</span>
 
 <span class="sd">    overwrite</span>
 <span class="sd">      Whether or not a possibly existing filenode of the specified</span>
@@ -817,10 +820,21 @@
         <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&quot;The file &#39;</span><span class="si">%s</span><span class="s">&#39; is opened read-only&quot;</span> <span class="o">%</span> <span class="n">h5file</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
 
     <span class="c"># guess filenode&#39;s name if necessary</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">Group</span><span class="p">)</span> <span class="ow">or</span>
-                          <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">string_types</span><span class="p">)</span> <span class="ow">and</span>
-                           <span class="n">where</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)))):</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">Group</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">where</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">nodepath</span> <span class="o">=</span> <span class="n">where</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span>
+                <span class="n">where</span> <span class="o">=</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">nodepath</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">nodepath</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c"># sanitize name if necessary</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tables</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">_python_id_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">&#39;(?![a-zA-Z0-9_]).&#39;</span><span class="p">,</span> <span class="s">&quot;_&quot;</span><span class="p">,</span>
+                      <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">&#39;^(?![a-zA-Z_]).&#39;</span><span class="p">,</span> <span class="s">&quot;_&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
 
     <span class="n">new_h5file</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">File</span><span class="p">)</span>
     <span class="n">f</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">new_h5file</span> <span class="k">else</span> <span class="n">h5file</span>
@@ -840,11 +854,6 @@
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fd</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">fd</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">string_types</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">nodepath</span> <span class="o">=</span> <span class="n">where</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span>
-        <span class="n">where</span> <span class="o">=</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">nodepath</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">nodepath</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-
     <span class="c"># remove existing filenode if present</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">f</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
@@ -854,6 +863,7 @@
     <span class="c"># write file&#39;s contents to filenode</span>
     <span class="n">fnode</span> <span class="o">=</span> <span class="n">new_node</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
     <span class="n">fnode</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">fnode</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">fnode</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="c"># cleanup</span>
@@ -876,11 +886,14 @@
 <span class="sd">    filename</span>
 <span class="sd">      Path of the file where the contents of the filenode shall be</span>
 <span class="sd">      written to.  If *filename* points to a directory or ends with</span>
-<span class="sd">      ``/`` (``\`` on Windows), the filename will be set to the *name*</span>
-<span class="sd">      attribute of the read filenode.</span>
+<span class="sd">      ``/`` (``\`` on Windows), the filename will be set to the</span>
+<span class="sd">      *_filename* (if present; otherwise the *name*) attribute of the</span>
+<span class="sd">      read filenode.</span>
 
 <span class="sd">    where, name</span>
-<span class="sd">      Location of the filenode where the data shall be read from.</span>
+<span class="sd">      Location of the filenode where the data shall be read from.  If</span>
+<span class="sd">      no node *name* can be found at *where*, the first node at</span>
+<span class="sd">      *where* whose *_filename* attribute matches *name* will be read.</span>
 
 <span class="sd">    overwrite</span>
 <span class="sd">      Whether or not a possibly existing file of the specified</span>
@@ -893,11 +906,25 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">new_h5file</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">File</span><span class="p">)</span>
     <span class="n">f</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5file</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">new_h5file</span> <span class="k">else</span> <span class="n">h5file</span>
-    <span class="n">fnode</span> <span class="o">=</span> <span class="n">open_node</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">fnode</span> <span class="o">=</span> <span class="n">open_node</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">tables</span><span class="o">.</span><span class="n">NoSuchNodeError</span><span class="p">:</span>
+        <span class="n">fnode</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">walk_nodes</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">classname</span><span class="o">=</span><span class="s">&quot;EArray&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">_filename</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">fnode</span> <span class="o">=</span> <span class="n">open_node</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">fnode</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">tables</span><span class="o">.</span><span class="n">NoSuchNodeError</span><span class="p">(</span><span class="s">&quot;A filenode &#39;</span><span class="si">%s</span><span class="s">&#39; cannot be found at &quot;</span>
+                                         <span class="s">&quot;&#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">where</span><span class="p">))</span>
 
     <span class="c"># guess output filename if necessary</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="ow">or</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">):</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">fnode</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">fnode</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">_filename</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">fnode</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">new_h5file</span><span class="p">:</span>
@@ -973,7 +1000,7 @@
         <li class="right" >
           <a href="../../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../../index.html">PyTables 3.1.1 documentation</a> &raquo;</li>
+    <li><a href="../../../index.html">PyTables 3.2.0-rc1 documentation</a> &raquo;</li>
 
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
           <li><a href="../../tables.html" >tables</a> &raquo;</li> 
@@ -983,7 +1010,7 @@
 
     <div class="footer">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>
