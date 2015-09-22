@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.table &mdash; PyTables 3.2.1 documentation</title>
+    <title>tables.table &mdash; PyTables 3.2.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.2.1',
+        VERSION:     '3.2.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.2.1 documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.2.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body role="document">
@@ -48,7 +48,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.2.1 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.2.2 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
@@ -76,12 +76,14 @@
 
 <span class="sd">&quot;&quot;&quot;Here is defined the Table class.&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">operator</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="nb">reduce</span> <span class="k">as</span> <span class="n">_reduce</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span>
 <span class="kn">import</span> <span class="nn">numexpr</span>
@@ -1008,6 +1010,47 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">autoindex</span>
 
     <span class="n">_g_postInitHook</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_post_init_hook</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_calc_nrowsinbuf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the number of rows that fits on a PyTables buffer.&quot;&quot;&quot;</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span>
+        <span class="c"># Compute the nrowsinbuf</span>
+        <span class="n">rowsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span>
+        <span class="n">buffersize</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s">&#39;IO_BUFFER_SIZE&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">rowsize</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="n">buffersize</span> <span class="o">//</span> <span class="n">rowsize</span>
+            <span class="c"># The number of rows in buffer needs to be an exact multiple of</span>
+            <span class="c"># chunkshape[0] for queries using indexed columns.</span>
+            <span class="c"># Fixes #319 and probably #409 too.</span>
+            <span class="n">nrowsinbuf</span> <span class="o">-=</span> <span class="n">nrowsinbuf</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c"># tableextension.pyx performs an assertion</span>
+        <span class="c"># to make sure nrowsinbuf is greater than or</span>
+        <span class="c"># equal to the chunksize.</span>
+        <span class="c"># See gh-206 and gh-238</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">nrowsinbuf</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c"># Safeguard against row sizes being extremely large</span>
+        <span class="k">if</span> <span class="n">nrowsinbuf</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c"># If rowsize is too large, issue a Performance warning</span>
+            <span class="n">maxrowsize</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s">&#39;BUFFER_TIMES&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">buffersize</span>
+            <span class="k">if</span> <span class="n">rowsize</span> <span class="o">&gt;</span> <span class="n">maxrowsize</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s">The Table ``</span><span class="si">%s</span><span class="s">`` is exceeding the maximum recommended rowsize (</span><span class="si">%d</span><span class="s"> bytes);</span>
+<span class="s">be ready to see PyTables asking for *lots* of memory and possibly slow</span>
+<span class="s">I/O.  You may want to reduce the rowsize by trimming the value of</span>
+<span class="s">dimensions that are orthogonal (and preferably close) to the *main*</span>
+<span class="s">dimension of this leave.  Alternatively, in case you have specified a</span>
+<span class="s">very small/large chunksize, you may want to increase/decrease it.&quot;&quot;&quot;</span>
+                              <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">maxrowsize</span><span class="p">),</span>
+                              <span class="n">PerformanceWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">nrowsinbuf</span>
 
     <span class="k">def</span> <span class="nf">_getemptyarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="p">):</span>
         <span class="c"># Acts as a cache for empty arrays</span>
@@ -2168,6 +2211,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">is_idx</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
             <span class="c"># Index out of range protection</span>
             <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Index out of range&quot;</span><span class="p">)</span>
@@ -2237,6 +2282,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_check_writable</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">is_idx</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
             <span class="c"># Index out of range protection</span>
             <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Index out of range&quot;</span><span class="p">)</span>
@@ -3275,6 +3322,8 @@
         <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_table</span>
         <span class="n">nrows</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">nrows</span>
         <span class="k">if</span> <span class="n">is_idx</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
             <span class="c"># Index out of range protection</span>
             <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="n">nrows</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Index out of range&quot;</span><span class="p">)</span>
@@ -3332,6 +3381,8 @@
         <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_table</span>
         <span class="n">nrows</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">nrows</span>
         <span class="k">if</span> <span class="n">is_idx</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
             <span class="c"># Index out of range protection</span>
             <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="n">nrows</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Index out of range&quot;</span><span class="p">)</span>
@@ -3579,6 +3630,8 @@
             <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">is_idx</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
             <span class="c"># Index out of range protection</span>
             <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="n">table</span><span class="o">.</span><span class="n">nrows</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Index out of range&quot;</span><span class="p">)</span>
@@ -3651,6 +3704,8 @@
             <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">is_idx</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
             <span class="c"># Index out of range protection</span>
             <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="n">table</span><span class="o">.</span><span class="n">nrows</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&quot;Index out of range&quot;</span><span class="p">)</span>
@@ -3913,7 +3968,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.2.1 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.2.2 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
