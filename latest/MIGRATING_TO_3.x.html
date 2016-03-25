@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Migrating from PyTables 2.x to 3.x &mdash; PyTables 3.1.2dev documentation</title>
+    <title>Migrating from PyTables 2.x to 3.x &mdash; PyTables 3.2.2.dev0 documentation</title>
     
     <link rel="stylesheet" href="_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.1.2dev',
+        VERSION:     '3.2.2.dev0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="_static/toggle_sections.js"></script>
     <script type="text/javascript" src="_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.1.2dev documentation" href="index.html" />
+    <link rel="top" title="PyTables 3.2.2.dev0 documentation" href="index.html" />
     <link rel="up" title="PyTables Release Notes" href="release_notes.html" />
     <link rel="next" title="Migrating from PyTables 1.x to 2.x" href="MIGRATING_TO_2.x.html" />
     <link rel="prev" title="PyTables Release Notes" href="release_notes.html" /> 
@@ -56,7 +56,7 @@
         <li class="right" >
           <a href="release_notes.html" title="PyTables Release Notes"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="index.html">PyTables 3.1.2dev documentation</a> &raquo;</li>
+    <li><a href="index.html">PyTables 3.2.2.dev0 documentation</a> &raquo;</li>
 
           <li><a href="release_notes.html" accesskey="U">PyTables Release Notes</a> &raquo;</li> 
       </ul>
@@ -79,6 +79,8 @@
 </tr>
 <tr class="field-even field"><th class="field-name">Author:</th><td class="field-body">Anthony Scopatz</td>
 </tr>
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Thomas Provoost</td>
+</tr>
 </tbody>
 </table>
 <p>This document describes the major changes in PyTables in going from the
@@ -99,6 +101,19 @@ Python 2 &amp; 3.</p>
 Additionally, the <tt class="docutils literal"><span class="pre">tables.netcdf3</span></tt> module has been removed. Please refer
 to the <a class="reference external" href="http://code.google.com/p/netcdf4-python/">netcdf4-python</a> project for further support. Lastly, the older
 HDF5 1.6 API is no longer supported.  Please upgrade to HDF5 1.8+.</p>
+</div>
+<div class="section" id="unicode-all-the-strings">
+<h2>Unicode all the strings!<a class="headerlink" href="#unicode-all-the-strings" title="Permalink to this headline">¶</a></h2>
+<p>In Python 3, all strings are natively in Unicode. This introduces some
+difficulties, as the native HDF5 string format is not Unicode-compatible.
+To minimize explicit conversion troubles when writing, especially <a class="reference internal" href="#create-signatures"><em>when
+creating data sets from existing Python objects</em></a>, string
+objects are implicitly cast to non-Unicode for HDF5 storage. To make you
+aware of this, a warning is raised when this happens.</p>
+<p>This is certainly no true Unicode compatibility, but mainly for convenience
+with the pure-Unicode Python 3 string type. Any string that is not castable
+as ascii upon creation of your data set, will hence still raise an error.
+For true Unicode support, look into the <tt class="docutils literal"><span class="pre">VLUnicodeAtom</span></tt> class.</p>
 </div>
 <div class="section" id="major-api-changes">
 <h2>Major API Changes<a class="headerlink" href="#major-api-changes" title="Permalink to this headline">¶</a></h2>
@@ -144,9 +159,9 @@ optional arguments:
 a simple BASH script may be written to run <tt class="docutils literal"><span class="pre">pt2to3</span></tt> over an entire directory
 and all sub-directories:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
-<span class="k">for </span>f in <span class="k">$(</span>find .<span class="k">)</span>
+<span class="k">for</span> f in <span class="k">$(</span>find .<span class="k">)</span>
 <span class="k">do</span>
-<span class="k">    </span><span class="nb">echo</span> <span class="nv">$f</span>
+    <span class="nb">echo</span> <span class="nv">$f</span>
     pt2to3 <span class="nv">$f</span> &gt; temp.txt
     mv temp.txt <span class="nv">$f</span>
 <span class="k">done</span>
@@ -173,7 +188,7 @@ plan for the warning types:</p>
 is subject to change.</p>
 </div>
 <div class="section" id="consistent-create-xxx-signatures">
-<h3>Consistent <tt class="docutils literal"><span class="pre">create_xxx()</span></tt> Signatures<a class="headerlink" href="#consistent-create-xxx-signatures" title="Permalink to this headline">¶</a></h3>
+<span id="create-signatures"></span><h3>Consistent <tt class="docutils literal"><span class="pre">create_xxx()</span></tt> Signatures<a class="headerlink" href="#consistent-create-xxx-signatures" title="Permalink to this headline">¶</a></h3>
 <p>Also by popular demand, it is now possible to create all data sets (<tt class="docutils literal"><span class="pre">Array</span></tt>,
 <tt class="docutils literal"><span class="pre">CArray</span></tt>, <tt class="docutils literal"><span class="pre">EArray</span></tt>, <tt class="docutils literal"><span class="pre">VLArray</span></tt>, and <tt class="docutils literal"><span class="pre">Table</span></tt>) from existing Python objects.
 Constructors for these classes now accept either of the following keyword arguments:</p>
@@ -1421,6 +1436,7 @@ between these.</p>
 <li><a class="reference internal" href="#">Migrating from PyTables 2.x to 3.x</a><ul>
 <li><a class="reference internal" href="#python-3-at-last">Python 3 at Last!</a></li>
 <li><a class="reference internal" href="#numeric-numarray-netcdf3-hdf5-1-6-no-more">Numeric, Numarray, NetCDF3, &amp; HDF5 1.6 No More!</a></li>
+<li><a class="reference internal" href="#unicode-all-the-strings">Unicode all the strings!</a></li>
 <li><a class="reference internal" href="#major-api-changes">Major API Changes</a><ul>
 <li><a class="reference internal" href="#pep-8-compliance">PEP 8 Compliance</a></li>
 <li><a class="reference internal" href="#consistent-create-xxx-signatures">Consistent <tt class="docutils literal"><span class="pre">create_xxx()</span></tt> Signatures</a></li>
@@ -1479,7 +1495,7 @@ between these.</p>
         <li class="right" >
           <a href="release_notes.html" title="PyTables Release Notes"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="index.html">PyTables 3.1.2dev documentation</a> &raquo;</li>
+    <li><a href="index.html">PyTables 3.2.2.dev0 documentation</a> &raquo;</li>
 
           <li><a href="release_notes.html" >PyTables Release Notes</a> &raquo;</li> 
       </ul>
@@ -1488,7 +1504,7 @@ between these.</p>
 
     <div class="footer">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>

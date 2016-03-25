@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.index &mdash; PyTables 3.1.2dev documentation</title>
+    <title>tables.index &mdash; PyTables 3.2.2.dev0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.1.2dev',
+        VERSION:     '3.2.2.dev0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.1.2dev documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.2.2.dev0 documentation" href="../../index.html" />
     <link rel="up" title="tables" href="../tables.html" /> 
   </head>
   <body>
@@ -48,7 +48,7 @@
         <li class="right" >
           <a href="../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.1.2dev documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.2.2.dev0 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../tables.html" accesskey="U">tables</a> &raquo;</li> 
@@ -78,36 +78,40 @@
 <span class="sd">&quot;&quot;&quot;Here is defined the Index class.&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span><span class="p">,</span> <span class="n">clock</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">operator</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">tempfile</span>
-<span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span><span class="p">,</span> <span class="n">clock</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span>
 
-<span class="kn">from</span> <span class="nn">tables.idxutils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">calc_chunksize</span><span class="p">,</span> <span class="n">calcoptlevels</span><span class="p">,</span>
+<span class="kn">from</span> <span class="nn">.idxutils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">calc_chunksize</span><span class="p">,</span> <span class="n">calcoptlevels</span><span class="p">,</span>
                              <span class="n">get_reduction_level</span><span class="p">,</span> <span class="n">nextafter</span><span class="p">,</span> <span class="n">inftype</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">indexesextension</span>
-<span class="kn">from</span> <span class="nn">tables.node</span> <span class="kn">import</span> <span class="n">NotLoggedMixin</span>
-<span class="kn">from</span> <span class="nn">tables.atom</span> <span class="kn">import</span> <span class="n">UIntAtom</span><span class="p">,</span> <span class="n">Atom</span>
-<span class="kn">from</span> <span class="nn">tables.earray</span> <span class="kn">import</span> <span class="n">EArray</span>
-<span class="kn">from</span> <span class="nn">tables.carray</span> <span class="kn">import</span> <span class="n">CArray</span>
-<span class="kn">from</span> <span class="nn">tables.leaf</span> <span class="kn">import</span> <span class="n">Filters</span>
-<span class="kn">from</span> <span class="nn">tables.indexes</span> <span class="kn">import</span> <span class="n">CacheArray</span><span class="p">,</span> <span class="n">LastRowArray</span><span class="p">,</span> <span class="n">IndexArray</span>
-<span class="kn">from</span> <span class="nn">tables.group</span> <span class="kn">import</span> <span class="n">Group</span>
-<span class="kn">from</span> <span class="nn">tables.path</span> <span class="kn">import</span> <span class="n">join_path</span>
-<span class="kn">from</span> <span class="nn">tables.exceptions</span> <span class="kn">import</span> <span class="n">PerformanceWarning</span>
-<span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="n">is_idx</span><span class="p">,</span> <span class="n">idx2long</span><span class="p">,</span> <span class="n">lazyattr</span>
-<span class="kn">from</span> <span class="nn">tables.utilsextension</span> <span class="kn">import</span> <span class="p">(</span><span class="n">nan_aware_gt</span><span class="p">,</span> <span class="n">nan_aware_ge</span><span class="p">,</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">indexesextension</span>
+<span class="kn">from</span> <span class="nn">.node</span> <span class="kn">import</span> <span class="n">NotLoggedMixin</span>
+<span class="kn">from</span> <span class="nn">.atom</span> <span class="kn">import</span> <span class="n">UIntAtom</span><span class="p">,</span> <span class="n">Atom</span>
+<span class="kn">from</span> <span class="nn">.earray</span> <span class="kn">import</span> <span class="n">EArray</span>
+<span class="kn">from</span> <span class="nn">.carray</span> <span class="kn">import</span> <span class="n">CArray</span>
+<span class="kn">from</span> <span class="nn">.leaf</span> <span class="kn">import</span> <span class="n">Filters</span>
+<span class="kn">from</span> <span class="nn">.indexes</span> <span class="kn">import</span> <span class="n">CacheArray</span><span class="p">,</span> <span class="n">LastRowArray</span><span class="p">,</span> <span class="n">IndexArray</span>
+<span class="kn">from</span> <span class="nn">.group</span> <span class="kn">import</span> <span class="n">Group</span>
+<span class="kn">from</span> <span class="nn">.path</span> <span class="kn">import</span> <span class="n">join_path</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">PerformanceWarning</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">is_idx</span><span class="p">,</span> <span class="n">idx2long</span><span class="p">,</span> <span class="n">lazyattr</span>
+<span class="kn">from</span> <span class="nn">.utilsextension</span> <span class="kn">import</span> <span class="p">(</span><span class="n">nan_aware_gt</span><span class="p">,</span> <span class="n">nan_aware_ge</span><span class="p">,</span>
                                    <span class="n">nan_aware_lt</span><span class="p">,</span> <span class="n">nan_aware_le</span><span class="p">,</span>
                                    <span class="n">bisect_left</span><span class="p">,</span> <span class="n">bisect_right</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">tables.lrucacheextension</span> <span class="kn">import</span> <span class="n">ObjectCache</span>
+<span class="kn">from</span> <span class="nn">.lrucacheextension</span> <span class="kn">import</span> <span class="n">ObjectCache</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">range</span>
 
-<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span><span class="p">,</span> <span class="n">previous_api_property</span>
 
 
 <span class="c"># default version for INDEX objects</span>
@@ -122,12 +126,13 @@
 <span class="n">profile</span> <span class="o">=</span> <span class="bp">False</span>
 <span class="c"># profile = True  # Uncomment for profiling</span>
 <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="n">show_stats</span>
+    <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">show_stats</span>
 
 
 <span class="c"># The default method for sorting</span>
-<span class="n">defsort</span> <span class="o">=</span> <span class="s">&quot;quicksort&quot;</span>
-<span class="c"># defsort = &quot;mergesort&quot;</span>
+<span class="c"># defsort = &quot;quicksort&quot;</span>
+<span class="c"># Changing to mergesort to fix #441</span>
+<span class="n">defsort</span> <span class="o">=</span> <span class="s">&quot;mergesort&quot;</span>
 
 <span class="c"># Default policy for automatically updating indexes after a table</span>
 <span class="c"># append operation, or automatically reindexing after an</span>
@@ -164,7 +169,6 @@
     <span class="n">colpathname</span> <span class="o">=</span> <span class="s">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:])</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">tablepathname</span><span class="p">,</span> <span class="n">colpathname</span><span class="p">)</span>
 
-<span class="n">_tableColumnPathnameOfIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_table_column_pathname_of_index</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Index"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.index.Index">[docs]</a><span class="k">class</span> <span class="nc">Index</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">indexesextension</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
@@ -221,26 +225,31 @@
 
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;INDEX&#39;</span>
 
-    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
 
-    <span class="n">kind</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s">&#39;ultralight&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s">&#39;light&#39;</span><span class="p">,</span>
-                      <span class="mi">4</span><span class="p">:</span> <span class="s">&#39;medium&#39;</span><span class="p">,</span> <span class="mi">8</span><span class="p">:</span> <span class="s">&#39;full&#39;</span><span class="p">}[</span><span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">],</span>
-        <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s">&quot;The kind of this index.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">kind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;The kind of this index.&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s">&#39;ultralight&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s">&#39;light&#39;</span><span class="p">,</span>
+                <span class="mi">4</span><span class="p">:</span> <span class="s">&#39;medium&#39;</span><span class="p">,</span> <span class="mi">8</span><span class="p">:</span> <span class="s">&#39;full&#39;</span><span class="p">}[</span><span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">]</span>
 
-    <span class="n">filters</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_filters</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Index.filters"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.index.Index.filters">[docs]</a>    <span class="k">def</span> <span class="nf">filters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Filter properties for this index - see Filters in</span>
-<span class="sd">        :ref:`FiltersClassDescr`.&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="sd">        :ref:`FiltersClassDescr`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_filters</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dirty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+       <span class="sd">&quot;&quot;&quot;Whether the index is dirty or not.</span>
+<span class="sd">       Dirty indexes are out of sync with column data, so they exist but they</span>
+<span class="sd">       are not usable.</span>
+<span class="sd">       &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_getdirty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s">&#39;DIRTY&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">:</span>
-            <span class="c"># If there is no ``DIRTY`` attribute, index should be clean.</span>
-            <span class="k">return</span> <span class="bp">False</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">DIRTY</span>
+       <span class="c"># If there is no ``DIRTY`` attribute, index should be clean.</span>
+       <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="s">&#39;DIRTY&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_setdirty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dirty</span><span class="p">):</span>
+    <span class="nd">@dirty.setter</span>
+<div class="viewcode-block" id="Index.dirty"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.index.Index.dirty">[docs]</a>    <span class="k">def</span> <span class="nf">dirty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dirty</span><span class="p">):</span>
         <span class="n">wasdirty</span><span class="p">,</span> <span class="n">isdirty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirty</span><span class="p">,</span> <span class="nb">bool</span><span class="p">(</span><span class="n">dirty</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">DIRTY</span> <span class="o">=</span> <span class="n">dirty</span>
         <span class="c"># If an *actual* change in dirtiness happens,</span>
@@ -250,48 +259,43 @@
             <span class="n">conditioncache</span><span class="o">.</span><span class="n">nail</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">wasdirty</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">isdirty</span><span class="p">:</span>
             <span class="n">conditioncache</span><span class="o">.</span><span class="n">unnail</span><span class="p">()</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Index.column"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.index.Index.column">[docs]</a>    <span class="k">def</span> <span class="nf">column</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The Column (see :ref:`ColumnClassDescr`) instance for the indexed</span>
+<span class="sd">        column.&quot;&quot;&quot;</span>
 
-    <span class="n">dirty</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="n">_getdirty</span><span class="p">,</span> <span class="n">_setdirty</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="sd">&quot;&quot;&quot;Whether the index is dirty or not.</span>
-
-<span class="sd">        Dirty indexes are out of sync with column data, so they exist but they</span>
-<span class="sd">        are not usable.</span>
-<span class="sd">        &quot;&quot;&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_getcolumn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">tablepath</span><span class="p">,</span> <span class="n">columnpath</span> <span class="o">=</span> <span class="n">_table_column_pathname_of_index</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
         <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">tablepath</span><span class="p">)</span>
         <span class="n">column</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">_g_col</span><span class="p">(</span><span class="n">columnpath</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">column</span>
-
-    <span class="n">column</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getcolumn</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="sd">&quot;&quot;&quot;The Column (see :ref:`ColumnClassDescr`) instance for the indexed</span>
-<span class="sd">        column.&quot;&quot;&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_gettable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">tablepath</span><span class="p">,</span> <span class="n">columnpath</span> <span class="o">=</span> <span class="n">_table_column_pathname_of_index</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accessor for the `Table` object of this index.&quot;&quot;&quot;</span>
+        <span class="n">tablepath</span><span class="p">,</span> <span class="n">columnpath</span> <span class="o">=</span> <span class="n">_table_column_pathname_of_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
         <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">tablepath</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">table</span>
 
-    <span class="n">table</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_gettable</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-                     <span class="s">&quot;Accessor for the `Table` object of this index.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nblockssuperblock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;The number of blocks in a superblock.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span>
 
-    <span class="n">nblockssuperblock</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s">&quot;The number of blocks in a superblock.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nslicesblock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;The number of slices in a block.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span>
 
-    <span class="n">nslicesblock</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s">&quot;The number of slices in a block.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nchunkslice</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;The number of chunks in a slice.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span>
 
-    <span class="n">nchunkslice</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s">&quot;The number of chunks in a slice.&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_g_nsuperblocks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nsuperblocks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;The total number of superblocks in index.&quot;</span>
         <span class="c"># Last row should not be considered as a superblock</span>
         <span class="n">nelements</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelementsILR</span>
         <span class="n">nblocks</span> <span class="o">=</span> <span class="n">nelements</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span>
@@ -299,10 +303,9 @@
             <span class="n">nblocks</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="n">nblocks</span>
 
-    <span class="n">nsuperblocks</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_g_nsuperblocks</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-                            <span class="s">&quot;The total number of superblocks in index.&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_g_nblocks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nblocks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;The total number of blocks in index.&quot;</span>
         <span class="c"># Last row should not be considered as a block</span>
         <span class="n">nelements</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelementsILR</span>
         <span class="n">nblocks</span> <span class="o">=</span> <span class="n">nelements</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span>
@@ -310,34 +313,40 @@
             <span class="n">nblocks</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="n">nblocks</span>
 
-    <span class="n">nblocks</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_g_nblocks</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-                       <span class="s">&quot;The total number of blocks in index.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nslices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;The number of complete slices in index.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span>
 
-    <span class="n">nslices</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s">&quot;The number of complete slices in index.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nchunks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;The number of complete chunks in index.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span>
 
-    <span class="n">nchunks</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s">&quot;The number of complete chunks in index.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;The shape of this index (in slices and elements).&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">)</span>
 
-    <span class="n">shape</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">),</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s">&quot;The shape of this index (in slices and elements).&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">temp_required</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Whether a temporary file for indexes is required or not.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">nrows</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span>
 
-    <span class="n">temp_required</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indsize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">nrows</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">),</span>
-        <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s">&quot;Whether a temporary file for indexes is required or not.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">want_complete_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Whether we should try to build a completely sorted index or not.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span> <span class="o">==</span> <span class="mi">8</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span> <span class="o">==</span> <span class="mi">9</span>
 
-    <span class="n">want_complete_sort</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indsize</span> <span class="o">==</span> <span class="mi">8</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span> <span class="o">==</span> <span class="mi">9</span><span class="p">),</span>
-        <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s">&quot;Whether we should try to build a completely sorted index or not.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Index.is_csi"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.index.Index.is_csi">[docs]</a>    <span class="k">def</span> <span class="nf">is_csi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Whether the index is completely sorted or not.</span>
 
-    <span class="k">def</span> <span class="nf">_is_csi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           The *is_CSI* property has been renamed into *is_csi*.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c"># An index with 0 indexed elements is not a CSI one (by definition)</span>
             <span class="k">return</span> <span class="bp">False</span>
@@ -351,19 +360,7 @@
         <span class="c"># (the attribute &#39;is_csi&#39; will be set there)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compute_overlaps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">noverlaps</span> <span class="o">==</span> <span class="mi">0</span>
-
-    <span class="n">_is_CSI</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_is_csi</span><span class="p">)</span>
-
-    <span class="n">is_csi</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_is_csi</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="sd">&quot;&quot;&quot;Whether the index is completely sorted or not.</span>
-
-<span class="sd">        .. versionchanged:: 3.0</span>
-<span class="sd">           The *is_CSI* property has been renamed into *is_csi*.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span><span class="p">)</span>
-
-    <span class="n">is_CSI</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">is_csi</span><span class="p">)</span>
-
+</div>
     <span class="nd">@lazyattr</span>
     <span class="k">def</span> <span class="nf">nrowsinchunk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The number of rows that fits in a *table* chunk.&quot;&quot;&quot;</span>
@@ -460,7 +457,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">tprof</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="sd">&quot;&quot;&quot;Time counter for benchmarking purposes.&quot;&quot;&quot;</span>
 
-        <span class="kn">from</span> <span class="nn">tables.file</span> <span class="kn">import</span> <span class="n">open_file</span>
+        <span class="kn">from</span> <span class="nn">.file</span> <span class="kn">import</span> <span class="n">open_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_openFile</span> <span class="o">=</span> <span class="n">open_file</span>
         <span class="sd">&quot;&quot;&quot;The `open_file()` function, to avoid a circular import.&quot;&quot;&quot;</span>
 
@@ -479,8 +476,8 @@
             <span class="n">attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span>
             <span class="c"># Coerce NumPy scalars to Python scalars in order</span>
             <span class="c"># to avoid undesired upcasting operations.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">attrs</span><span class="o">.</span><span class="n">superblocksize</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">attrs</span><span class="o">.</span><span class="n">blocksize</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">attrs</span><span class="o">.</span><span class="n">superblocksize</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">attrs</span><span class="o">.</span><span class="n">blocksize</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">attrs</span><span class="o">.</span><span class="n">slicesize</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">attrs</span><span class="o">.</span><span class="n">chunksize</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">blocksizes</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">,</span>
@@ -620,7 +617,6 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp_required</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">create_temp</span><span class="p">()</span>
 
-    <span class="n">_g_postInitHook</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_post_init_hook</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">initial_append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xarr</span><span class="p">,</span> <span class="n">nrow</span><span class="p">,</span> <span class="n">reduction</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute an initial indices arrays for data to be indexed.&quot;&quot;&quot;</span>
@@ -663,7 +659,7 @@
             <span class="c"># Fill the idx with the bucket indices</span>
             <span class="n">offset</span> <span class="o">=</span> <span class="n">lbucket</span> <span class="o">-</span> <span class="p">((</span><span class="n">nrow</span> <span class="o">*</span> <span class="p">(</span><span class="n">slicesize</span> <span class="o">%</span> <span class="n">lbucket</span><span class="p">))</span> <span class="o">%</span> <span class="n">lbucket</span><span class="p">)</span>
             <span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">offset</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">slicesize</span><span class="p">,</span> <span class="n">lbucket</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">slicesize</span><span class="p">,</span> <span class="n">lbucket</span><span class="p">):</span>
                 <span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">lbucket</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">lbucket</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">lbucket</span>
             <span class="k">if</span> <span class="n">indsize</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="c"># Add a second offset in this case</span>
@@ -834,7 +830,6 @@
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="n">show_stats</span><span class="p">(</span><span class="s">&quot;Exiting appendLR&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
 
-    <span class="n">appendLastRow</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">append_last_row</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Optimize an index so as to allow faster searches.</span>
@@ -936,12 +931,12 @@
         <span class="n">sremain</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="n">iremain</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;u</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">)</span>
         <span class="n">starts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nslices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int_</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
             <span class="c"># Find the overlapping elements for slice i</span>
             <span class="n">sover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
             <span class="n">iover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;u</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">)</span>
             <span class="n">prev_end</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nslices</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nslices</span><span class="p">):</span>
                 <span class="n">stj</span> <span class="o">=</span> <span class="n">starts</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
                 <span class="k">if</span> <span class="p">((</span><span class="n">j</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span> <span class="ow">and</span> <span class="n">stj</span> <span class="o">==</span> <span class="n">ss</span><span class="p">)</span> <span class="ow">or</span>
                         <span class="p">(</span><span class="n">j</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span> <span class="ow">and</span> <span class="n">stj</span> <span class="o">==</span> <span class="n">nelementsLR</span><span class="p">)):</span>
@@ -1170,7 +1165,7 @@
         <span class="n">cs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span> <span class="o">//</span> <span class="n">reduction</span>
         <span class="n">ncs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchunkslice</span>
         <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmp</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nslices</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nslices</span><span class="p">):</span>
             <span class="c"># Copy sorted &amp; indices slices</span>
             <span class="nb">sorted</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">sorted</span><span class="p">[</span><span class="n">i</span><span class="p">][::</span><span class="n">reduction</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sorted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">sorted</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">sorted</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
@@ -1230,13 +1225,13 @@
         <span class="n">ncs</span> <span class="o">=</span> <span class="n">ncs2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchunkslice</span>
         <span class="n">self_nslices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span>
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
             <span class="n">ns</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">i</span>
             <span class="k">if</span> <span class="n">ns</span> <span class="o">==</span> <span class="n">self_nslices</span><span class="p">:</span>
                 <span class="c"># The number of complete chunks in the last row</span>
                 <span class="n">ncs2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelementsILR</span> <span class="o">//</span> <span class="n">cs</span>
             <span class="c"># Get slices in new order</span>
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">ncs2</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncs2</span><span class="p">):</span>
                 <span class="n">idx</span> <span class="o">=</span> <span class="n">neworder</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">ncs</span> <span class="o">+</span> <span class="n">j</span><span class="p">]</span>
                 <span class="n">ins</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">//</span> <span class="n">ncs</span>
                 <span class="n">inc</span> <span class="o">=</span> <span class="p">(</span><span class="n">idx</span> <span class="o">-</span> <span class="n">ins</span> <span class="o">*</span> <span class="n">ncs</span><span class="p">)</span> <span class="o">*</span> <span class="n">cs</span>
@@ -1278,7 +1273,7 @@
         <span class="n">ncb2</span> <span class="o">=</span> <span class="n">ncb</span>
         <span class="n">boundsobj</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">_f_get_child</span><span class="p">(</span><span class="n">boundsnames</span><span class="p">[</span><span class="n">mode</span><span class="p">])</span>
         <span class="n">can_cross_bbounds</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indsize</span> <span class="o">==</span> <span class="mi">8</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelementsILR</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">nblock</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nblocks</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">nblock</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nblocks</span><span class="p">):</span>
             <span class="c"># Protection for last block having less chunks than ncb</span>
             <span class="n">remainingchunks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchunks</span> <span class="o">-</span> <span class="n">nblock</span> <span class="o">*</span> <span class="n">ncb</span>
             <span class="k">if</span> <span class="n">remainingchunks</span> <span class="o">&lt;</span> <span class="n">ncb</span><span class="p">:</span>
@@ -1342,7 +1337,6 @@
         <span class="n">stepl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
         <span class="n">where</span><span class="o">.</span><span class="n">_g_write_slice</span><span class="p">(</span><span class="n">startl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">countl</span><span class="p">,</span> <span class="nb">buffer</span><span class="p">)</span>
 
-    <span class="n">read_sliceLR</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">read_slice_lr</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">reorder_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nslice</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">ssorted</span><span class="p">,</span> <span class="n">sindices</span><span class="p">,</span>
                       <span class="n">tmp_sorted</span><span class="p">,</span> <span class="n">tmp_indices</span><span class="p">):</span>
@@ -1431,7 +1425,7 @@
 
             <span class="n">nslice</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c"># Just in case the loop behind executes nothing</span>
             <span class="c"># Loop over the remainding slices in block</span>
-            <span class="k">for</span> <span class="n">nslice</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">sorted</span><span class="o">.</span><span class="n">nrows</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">nslice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">sorted</span><span class="o">.</span><span class="n">nrows</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">reorder_slice</span><span class="p">(</span><span class="n">nslice</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span>
                                    <span class="n">ssorted</span><span class="p">,</span> <span class="n">sindices</span><span class="p">,</span>
                                    <span class="n">tmp_sorted</span><span class="p">,</span> <span class="n">tmp_indices</span><span class="p">)</span>
@@ -1464,7 +1458,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="c"># Iterate over each block.  No data should cross block</span>
             <span class="c"># boundaries to avoid adressing problems with short indices.</span>
-            <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nblocks</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nblocks</span><span class="p">):</span>
                 <span class="c"># Bootstrap the process for reordering</span>
                 <span class="c"># Read the first slice in buffers</span>
                 <span class="n">nrow</span> <span class="o">=</span> <span class="n">nb</span> <span class="o">*</span> <span class="n">nsb</span>
@@ -1476,7 +1470,7 @@
                 <span class="k">if</span> <span class="n">lrb</span> <span class="o">&gt;</span> <span class="n">nslices</span><span class="p">:</span>
                     <span class="n">lrb</span> <span class="o">=</span> <span class="n">nslices</span>
                 <span class="n">nslice</span> <span class="o">=</span> <span class="n">nrow</span>   <span class="c"># Just in case the loop behind executes nothing</span>
-                <span class="k">for</span> <span class="n">nslice</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nrow</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">lrb</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">nslice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nrow</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">lrb</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">reorder_slice</span><span class="p">(</span><span class="n">nslice</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span>
                                        <span class="n">ssorted</span><span class="p">,</span> <span class="n">sindices</span><span class="p">,</span>
                                        <span class="n">tmp_sorted</span><span class="p">,</span> <span class="n">tmp_indices</span><span class="p">)</span>
@@ -1498,7 +1492,7 @@
         <span class="n">ncs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchunkslice</span>
         <span class="n">nss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span>
         <span class="n">nss2</span> <span class="o">=</span> <span class="n">nss</span>
-        <span class="k">for</span> <span class="n">sblock</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsuperblocks</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">sblock</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsuperblocks</span><span class="p">):</span>
             <span class="c"># Protection for last superblock having less slices than nss</span>
             <span class="n">remainingslices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span> <span class="o">-</span> <span class="n">sblock</span> <span class="o">*</span> <span class="n">nss</span>
             <span class="k">if</span> <span class="n">remainingslices</span> <span class="o">&lt;</span> <span class="n">nss</span><span class="p">:</span>
@@ -1523,7 +1517,7 @@
                 <span class="k">continue</span>
             <span class="n">ns</span> <span class="o">=</span> <span class="n">sblock</span> <span class="o">*</span> <span class="n">nss2</span>
             <span class="c"># Swap sorted and indices slices following the new order</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nss2</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nss2</span><span class="p">):</span>
                 <span class="n">idx</span> <span class="o">=</span> <span class="n">sranges_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                 <span class="c"># Swap sorted &amp; indices slices</span>
                 <span class="n">oi</span> <span class="o">=</span> <span class="n">ns</span> <span class="o">+</span> <span class="n">i</span>
@@ -1544,7 +1538,7 @@
                 <span class="n">tmp</span><span class="o">.</span><span class="n">zbounds2</span><span class="p">[</span><span class="n">j</span><span class="p">:</span><span class="n">jn</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">zbounds</span><span class="p">[</span><span class="n">xj</span><span class="p">:</span><span class="n">xjn</span><span class="p">]</span>
                 <span class="n">tmp</span><span class="o">.</span><span class="n">mbounds2</span><span class="p">[</span><span class="n">j</span><span class="p">:</span><span class="n">jn</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">mbounds</span><span class="p">[</span><span class="n">xj</span><span class="p">:</span><span class="n">xjn</span><span class="p">]</span>
             <span class="c"># tmp -&gt; originals</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nss2</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nss2</span><span class="p">):</span>
                 <span class="c"># Copy sorted &amp; indices slices</span>
                 <span class="n">oi</span> <span class="o">=</span> <span class="n">ns</span> <span class="o">+</span> <span class="n">i</span>
                 <span class="nb">sorted</span><span class="p">[</span><span class="n">oi</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_sorted</span><span class="p">[</span><span class="n">oi</span><span class="p">]</span>
@@ -1627,9 +1621,9 @@
         <span class="n">multiplicity</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nslices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;int_&quot;</span><span class="p">)</span>
         <span class="n">overlaps</span> <span class="o">=</span> <span class="n">multiplicity</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">starts</span> <span class="o">=</span> <span class="n">multiplicity</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
             <span class="n">prev_end</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nslices</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nslices</span><span class="p">):</span>
                 <span class="n">stj</span> <span class="o">=</span> <span class="n">starts</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
                 <span class="k">assert</span> <span class="n">stj</span> <span class="o">&lt;=</span> <span class="n">ss</span>
                 <span class="k">if</span> <span class="n">stj</span> <span class="o">==</span> <span class="n">ss</span><span class="p">:</span>
@@ -1715,8 +1709,8 @@
         <span class="n">soverlap</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="n">toverlap</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.</span>
         <span class="n">multiplicity</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nslices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;int_&quot;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nslices</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nslices</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">ranges</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
                     <span class="n">noverlaps</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="n">multiplicity</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -1775,7 +1769,7 @@
         <span class="n">tlen</span> <span class="o">=</span> <span class="n">stop</span> <span class="o">-</span> <span class="n">start</span>
         <span class="n">bstart</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">ilen</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">nrow</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nrow_start</span><span class="p">,</span> <span class="n">nrow_stop</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">nrow</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nrow_start</span><span class="p">,</span> <span class="n">nrow_stop</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">blen</span> <span class="o">=</span> <span class="n">ss</span> <span class="o">-</span> <span class="n">istart</span>
             <span class="k">if</span> <span class="n">ilen</span> <span class="o">+</span> <span class="n">blen</span> <span class="o">&gt;</span> <span class="n">tlen</span><span class="p">:</span>
                 <span class="n">blen</span> <span class="o">=</span> <span class="n">tlen</span> <span class="o">-</span> <span class="n">ilen</span>
@@ -1801,9 +1795,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_sorted_indices</span><span class="p">(</span><span class="s">&#39;sorted&#39;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
-</div>
-    <span class="n">readSorted</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">read_sorted</span><span class="p">)</span>
 
+</div>
 <div class="viewcode-block" id="Index.read_indices"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.index.Index.read_indices">[docs]</a>    <span class="k">def</span> <span class="nf">read_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the indices values of index in the specified range.</span>
 
@@ -1813,9 +1806,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_sorted_indices</span><span class="p">(</span><span class="s">&#39;indices&#39;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
-</div>
-    <span class="n">readIndices</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">read_indices</span><span class="p">)</span>
 
+</div>
     <span class="k">def</span> <span class="nf">_process_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a range specifc for the index usage.&quot;&quot;&quot;</span>
 
@@ -1823,7 +1815,7 @@
             <span class="c"># Special case for the behaviour of PyTables iterators</span>
             <span class="n">stop</span> <span class="o">=</span> <span class="n">idx2long</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">start</span> <span class="o">=</span> <span class="il">0L</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">start</span> <span class="o">=</span> <span class="n">idx2long</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">stop</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
@@ -1831,12 +1823,11 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">stop</span> <span class="o">=</span> <span class="n">idx2long</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">step</span> <span class="o">=</span> <span class="il">1L</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">step</span> <span class="o">=</span> <span class="n">idx2long</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
 
-    <span class="n">_processRange</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_process_range</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Index.__getitem__"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.index.Index.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the indices values of index in the specified range.</span>
@@ -1851,6 +1842,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">is_idx</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c"># To support negative values</span>
                 <span class="n">key</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span>
@@ -1921,7 +1914,7 @@
             <span class="c"># Reset the lengths array (not necessary for starts)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lengths</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="c"># Now, set the interesting rows</span>
-            <span class="k">for</span> <span class="n">nrow</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">startlengths</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">nrow</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">startlengths</span><span class="p">)):</span>
                 <span class="n">nrow2</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">length</span> <span class="o">=</span> <span class="n">startlengths</span><span class="p">[</span><span class="n">nrow</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">starts</span><span class="p">[</span><span class="n">nrow2</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">lengths</span><span class="p">[</span><span class="n">nrow2</span><span class="p">]</span> <span class="o">=</span> <span class="n">length</span>
@@ -1999,7 +1992,7 @@
 
         <span class="n">tlen</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="c"># Do the lookup for values fullfilling the conditions</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nslices</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nslices</span><span class="p">):</span>
             <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span> <span class="o">=</span> <span class="nb">sorted</span><span class="o">.</span><span class="n">_search_bin</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">starts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">stop</span> <span class="o">-</span> <span class="n">start</span>
@@ -2076,7 +2069,6 @@
             <span class="n">stop</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span>
 
-    <span class="n">searchLastRow</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">search_last_row</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">get_chunkmap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute a map with the interesting chunks in index.&quot;&quot;&quot;</span>
@@ -2091,14 +2083,14 @@
         <span class="n">lbucket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lbucket</span>
         <span class="n">indsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span>
         <span class="n">bucketsinblock</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">)</span> <span class="o">/</span> <span class="n">lbucket</span>
-        <span class="n">nchunks</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nelements</span><span class="p">)</span> <span class="o">/</span> <span class="n">lbucket</span><span class="p">))</span>
+        <span class="n">nchunks</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nelements</span><span class="p">)</span> <span class="o">/</span> <span class="n">lbucket</span><span class="p">))</span>
         <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nchunks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;bool&quot;</span><span class="p">)</span>
         <span class="n">reduction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduction</span>
         <span class="n">starts</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">reduction</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="n">stops</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lengths</span><span class="p">)</span> <span class="o">*</span> <span class="n">reduction</span>
         <span class="n">starts</span><span class="p">[</span><span class="n">starts</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>    <span class="c"># All negative values set to zero</span>
         <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span>
-        <span class="k">for</span> <span class="n">nslice</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">nslice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">):</span>
             <span class="n">start</span> <span class="o">=</span> <span class="n">starts</span><span class="p">[</span><span class="n">nslice</span><span class="p">]</span>
             <span class="n">stop</span> <span class="o">=</span> <span class="n">stops</span><span class="p">[</span><span class="n">nslice</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">stop</span> <span class="o">&gt;</span> <span class="n">start</span><span class="p">:</span>
@@ -2112,7 +2104,7 @@
                 <span class="k">elif</span> <span class="n">indsize</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                     <span class="c"># The chunkmap size cannot be never larger than &#39;int_&#39;</span>
                     <span class="n">idx</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s">&quot;int_&quot;</span><span class="p">)</span>
-                    <span class="n">offset</span> <span class="o">=</span> <span class="nb">long</span><span class="p">((</span><span class="n">nslice</span> <span class="o">//</span> <span class="n">nsb</span><span class="p">)</span> <span class="o">*</span> <span class="n">bucketsinblock</span><span class="p">)</span>
+                    <span class="n">offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">nslice</span> <span class="o">//</span> <span class="n">nsb</span><span class="p">)</span> <span class="o">*</span> <span class="n">bucketsinblock</span><span class="p">)</span>
                     <span class="n">idx</span> <span class="o">+=</span> <span class="n">offset</span>
                 <span class="k">elif</span> <span class="n">indsize</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="c"># The chunkmap size cannot be never larger than &#39;int_&#39;</span>
@@ -2125,7 +2117,7 @@
         <span class="k">if</span> <span class="n">lbucket</span> <span class="o">!=</span> <span class="n">nrowsinchunk</span><span class="p">:</span>
             <span class="c"># Map the &#39;coarse grain&#39; chunkmap into the &#39;true&#39; chunkmap</span>
             <span class="n">nelements</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span>
-            <span class="n">tnchunks</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">nelements</span><span class="p">)</span> <span class="o">/</span> <span class="n">nrowsinchunk</span><span class="p">))</span>
+            <span class="n">tnchunks</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">nelements</span><span class="p">)</span> <span class="o">/</span> <span class="n">nrowsinchunk</span><span class="p">))</span>
             <span class="n">tchunkmap</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">tnchunks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;bool&quot;</span><span class="p">)</span>
             <span class="n">ratio</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lbucket</span><span class="p">)</span> <span class="o">/</span> <span class="n">nrowsinchunk</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">chunkmap</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
@@ -2186,7 +2178,6 @@
 
         <span class="k">return</span> <span class="n">range_</span>
 
-    <span class="n">getLookupRange</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">get_lookup_range</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_f_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Remove this Index object.&quot;&quot;&quot;</span>
@@ -2222,7 +2213,6 @@
 <span class="s">  slicesize := </span><span class="si">%s</span><span class="s"></span>
 <span class="s">  blocksize := </span><span class="si">%s</span><span class="s"></span>
 <span class="s">  superblocksize := </span><span class="si">%s</span><span class="s"></span>
-<span class="s">  filters := </span><span class="si">%s</span><span class="s"></span>
 <span class="s">  dirty := </span><span class="si">%s</span><span class="s"></span>
 <span class="s">  byteorder := </span><span class="si">%r</span><span class="s">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">cpathname</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
@@ -2230,8 +2220,7 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirty</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">dirty</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span>
         <span class="n">retstr</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">  sorted := </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorted</span>
         <span class="n">retstr</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">  indices := </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span>
         <span class="n">retstr</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">  ranges := </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span>
@@ -2244,7 +2233,6 @@
 <span class="k">class</span> <span class="nc">IndexesDescG</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;DINDEX&#39;</span>
 
-    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_width_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
@@ -2254,25 +2242,25 @@
             <span class="s">&quot;and possibly slow I/O&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_max_group_width</span><span class="p">,</span>
             <span class="n">PerformanceWarning</span><span class="p">)</span>
 
-    <span class="n">_g_widthWarning</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_width_warning</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">IndexesTableG</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;TINDEX&#39;</span>
 
-    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_getauto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">auto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="s">&#39;AUTO_INDEX&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">default_auto_index</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">AUTO_INDEX</span>
 
-    <span class="k">def</span> <span class="nf">_setauto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auto</span><span class="p">):</span>
+    <span class="nd">@auto.setter</span>
+    <span class="k">def</span> <span class="nf">auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auto</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">AUTO_INDEX</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">auto</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_delauto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@auto.deleter</span>
+    <span class="k">def</span> <span class="nf">auto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">AUTO_INDEX</span>
-    <span class="n">auto</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getauto</span><span class="p">,</span> <span class="n">_setauto</span><span class="p">,</span> <span class="n">_delauto</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_width_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
@@ -2282,16 +2270,16 @@
             <span class="s">&quot;and possibly slow I/O&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_max_group_width</span><span class="p">,</span>
             <span class="n">PerformanceWarning</span><span class="p">)</span>
 
-    <span class="n">_g_widthWarning</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_width_warning</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_check_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_i_&#39;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s">&quot;names of index groups must start with ``_i_``: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
 
-    <span class="n">_g_checkName</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_check_name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_gettable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&quot;Accessor for the `Table` object of this `IndexesTableG` container.&quot;</span>
         <span class="n">names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span>
         <span class="n">tablename</span> <span class="o">=</span> <span class="n">names</span><span class="o">.</span><span class="n">pop</span><span class="p">()[</span><span class="mi">3</span><span class="p">:]</span>   <span class="c"># &quot;_i_&quot; is at the beginning</span>
         <span class="n">parentpathname</span> <span class="o">=</span> <span class="s">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
@@ -2299,17 +2287,12 @@
         <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">tablepathname</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">table</span>
 
-    <span class="n">table</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="n">_gettable</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s">&quot;Accessor for the `Table` object of this `IndexesTableG` container.&quot;</span><span class="p">)</span>
-
 
 <span class="k">class</span> <span class="nc">OldIndex</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This is meant to hide indexes of PyTables 1.x files.&quot;&quot;&quot;</span>
 
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s">&#39;CINDEX&#39;</span>
 
-    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s">&#39;_c_classid&#39;</span><span class="p">)</span>
 
 
 <span class="c">## Local Variables:</span>
@@ -2359,7 +2342,7 @@
         <li class="right" >
           <a href="../../np-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.1.2dev documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.2.2.dev0 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../tables.html" >tables</a> &raquo;</li> 
@@ -2369,7 +2352,7 @@
 
     <div class="footer">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>

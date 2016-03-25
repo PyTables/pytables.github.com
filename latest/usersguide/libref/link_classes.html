@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Link classes &mdash; PyTables 3.1.2dev documentation</title>
+    <title>Link classes &mdash; PyTables 3.2.2.dev0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.1.2dev',
+        VERSION:     '3.2.2.dev0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.1.2dev documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.2.2.dev0 documentation" href="../../index.html" />
     <link rel="up" title="Library Reference" href="../libref.html" />
     <link rel="next" title="Declarative classes" href="declarative_classes.html" />
     <link rel="prev" title="Homogenous storage classes" href="homogenous_storage.html" /> 
@@ -56,7 +56,7 @@
         <li class="right" >
           <a href="homogenous_storage.html" title="Homogenous storage classes"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.1.2dev documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.2.2.dev0 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >PyTables User&#8217;s Guide</a> &raquo;</li>
           <li><a href="../libref.html" accesskey="U">Library Reference</a> &raquo;</li> 
@@ -147,8 +147,47 @@ child nodes.</p>
 <em class="property">class </em><tt class="descclassname">tables.link.</tt><tt class="descname">SoftLink</tt><big>(</big><em>parentnode</em>, <em>name</em>, <em>target=None</em>, <em>_log=False</em><big>)</big><a class="reference internal" href="../../_modules/tables/link.html#SoftLink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.link.SoftLink" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a soft link (aka symbolic link).</p>
 <p>A soft link is a reference to another node in the <em>same</em> file hierarchy.
-Getting access to the pointed node (this action is called <em>dereferrencing</em>)
-is done via the __call__ special method (see below).</p>
+Provided that the target node exists, its attributes and methods can be
+accessed directly from the softlink using the normal <cite>.</cite> syntax.</p>
+<p>Softlinks also have the following public methods/attributes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>target</cite></li>
+<li><cite>dereference()</cite></li>
+<li><cite>copy()</cite></li>
+<li><cite>move()</cite></li>
+<li><cite>remove()</cite></li>
+<li><cite>rename()</cite></li>
+<li><cite>is_dangling()</cite></li>
+</ul>
+</div></blockquote>
+<p>Note that these will override any correspondingly named methods/attributes
+of the target node.</p>
+<p>For backwards compatibility, it is also possible to obtain the target node
+via the <cite>__call__()</cite> special method (this action is called <em>dereferencing</em>;
+see below)</p>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s">&#39;/tmp/test_softlink.h5&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_array</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link_a</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_soft_link</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;link_A&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s">&#39;/A&#39;</span><span class="p">)</span>
+
+<span class="go"># transparent read/write access to a softlinked node</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link_a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">link_a</span><span class="p">[:],</span> <span class="n">link_a</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<span class="go">(array([-1,  1,  2,  3,  4,  5,  6,  7,  8,  9]), dtype(&#39;int64&#39;))</span>
+
+<span class="go"># dereferencing a softlink using the __call__() method</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">link_a</span><span class="p">()</span> <span class="ow">is</span> <span class="n">a</span><span class="p">)</span>
+<span class="go">True</span>
+
+<span class="go"># SoftLink.remove() overrides Array.remove()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link_a</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">link_a</span><span class="p">)</span>
+<span class="go">&lt;closed tables.link.SoftLink at 0x7febe97186e0&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="p">[:],</span> <span class="n">a</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<span class="go">(array([-1,  1,  2,  3,  4,  5,  6,  7,  8,  9]), dtype(&#39;int64&#39;))</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <div class="section" id="softlink-special-methods">
@@ -331,7 +370,7 @@ external file.</p>
         <li class="right" >
           <a href="homogenous_storage.html" title="Homogenous storage classes"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.1.2dev documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.2.2.dev0 documentation</a> &raquo;</li>
 
           <li><a href="../index.html" >PyTables User&#8217;s Guide</a> &raquo;</li>
           <li><a href="../libref.html" >Library Reference</a> &raquo;</li> 
@@ -341,7 +380,7 @@ external file.</p>
 
     <div class="footer">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>
