@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tables.unimplemented &mdash; PyTables 3.2.2.dev0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.2.2.dev0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.cookie.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
+    <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="PyTables 3.2.2.dev0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.2.dev0 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tables.unimplemented</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1">########################################################################</span>
+<span class="c1">#</span>
+<span class="c1"># License: BSD</span>
+<span class="c1"># Created: January 14, 2004</span>
+<span class="c1"># Author:  Francesc Alted - faltet@pytables.com</span>
+<span class="c1">#</span>
+<span class="c1"># $Id$</span>
+<span class="c1">#</span>
+<span class="c1">########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;Here is defined the UnImplemented class.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">SizeType</span>
+<span class="kn">from</span> <span class="nn">.node</span> <span class="kn">import</span> <span class="n">Node</span>
+<span class="kn">from</span> <span class="nn">.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span>
+
+
+<div class="viewcode-block" id="UnImplemented"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.UnImplemented">[docs]</a><span class="k">class</span> <span class="nc">UnImplemented</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">UnImplemented</span><span class="p">,</span> <span class="n">Leaf</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class represents datasets not supported by PyTables in an HDF5</span>
+<span class="sd">    file.</span>
+
+<span class="sd">    When reading a generic HDF5 file (i.e. one that has not been created with</span>
+<span class="sd">    PyTables, but with some other HDF5 library based tool), chances are that</span>
+<span class="sd">    the specific combination of datatypes or dataspaces in some dataset might</span>
+<span class="sd">    not be supported by PyTables yet. In such a case, this dataset will be</span>
+<span class="sd">    mapped into an UnImplemented instance and the user will still be able to</span>
+<span class="sd">    access the complete object tree of the generic HDF5 file. The user will</span>
+<span class="sd">    also be able to *read and write the attributes* of the dataset, *access</span>
+<span class="sd">    some of its metadata*, and perform *certain hierarchy manipulation</span>
+<span class="sd">    operations* like deleting or moving (but not copying) the node. Of course,</span>
+<span class="sd">    the user will not be able to read the actual data on it.</span>
+
+<span class="sd">    This is an elegant way to allow users to work with generic HDF5 files</span>
+<span class="sd">    despite the fact that some of its datasets are not supported by</span>
+<span class="sd">    PyTables. However, if you are really interested in having full access to an</span>
+<span class="sd">    unimplemented dataset, please get in contact with the developer team.</span>
+
+<span class="sd">    This class does not have any public instance variables or methods, except</span>
+<span class="sd">    those inherited from the Leaf class (see :ref:`LeafClassDescr`).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Class identifier.</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;UNIMPLEMENTED&#39;</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the `UnImplemented` instance.&quot;&quot;&quot;</span>
+
+        <span class="c1"># UnImplemented objects always come from opening an existing node</span>
+        <span class="c1"># (they can not be created).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="sd">&quot;&quot;&quot;Is this the first time the node has been created?&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">=</span> <span class="n">SizeType</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;The length of the first dimension of the data.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="mi">0</span><span class="p">),)</span>
+        <span class="sd">&quot;&quot;&quot;The shape of the stored data.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The endianness of data in memory (&#39;big&#39;, &#39;little&#39; or</span>
+<span class="sd">        &#39;irrelevant&#39;).&quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">UnImplemented</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">,</span> <span class="n">object_id</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_open_unimplemented</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">=</span> <span class="n">SizeType</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">=</span> <span class="n">SizeType</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">object_id</span>
+
+    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do nothing.</span>
+
+<span class="sd">        This method does nothing, but a ``UserWarning`` is issued.</span>
+<span class="sd">        Please note that this method *does not return a new node*, but</span>
+<span class="sd">        ``None``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;UnImplemented node </span><span class="si">%r</span><span class="s2"> does not know how to copy itself; skipping&quot;</span>
+            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,))</span>
+        <span class="k">return</span> <span class="bp">None</span>  <span class="c1"># Can you see it?</span>
+
+    <span class="k">def</span> <span class="nf">_f_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do nothing.</span>
+
+<span class="sd">        This method does nothing, since `UnImplemented` nodes can not</span>
+<span class="sd">        be copied.  However, a ``UserWarning`` is issued.  Please note</span>
+<span class="sd">        that this method *does not return a new node*, but ``None``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># This also does nothing but warn.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">None</span>  <span class="c1"># Can you see it?</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span><span class="si">%s</span><span class="s2"></span>
+<span class="s2">  NOTE: &lt;The UnImplemented object represents a PyTables unimplemented</span>
+<span class="s2">         dataset present in the &#39;</span><span class="si">%s</span><span class="s2">&#39; HDF5 file.  If you want to see this</span>
+<span class="s2">         kind of HDF5 dataset implemented in PyTables, please contact the</span>
+<span class="s2">         developers.&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span></div>
+
+
+<span class="c1"># Classes reported as H5G_UNKNOWN by HDF5</span>
+<div class="viewcode-block" id="Unknown"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.Unknown">[docs]</a><span class="k">class</span> <span class="nc">Unknown</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class represents nodes reported as *unknown* by the underlying</span>
+<span class="sd">    HDF5 library.</span>
+
+<span class="sd">    This class does not have any public instance variables or methods, except</span>
+<span class="sd">    those inherited from the Node class.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Class identifier</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;UNKNOWN&#39;</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the `Unknown` instance.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Unknown</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_g_new</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_g_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Silently avoid doing copies of unknown nodes</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">_g_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="n">classname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="n">classname</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span><span class="si">%s</span><span class="s2"></span>
+<span class="s2">  NOTE: &lt;The Unknown object represents a node which is reported as</span>
+<span class="s2">         unknown by the underlying HDF5 library, but that might be</span>
+<span class="s2">         supported in more recent HDF5 versions.&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+
+<span class="c1"># These are listed here for backward compatibility with PyTables 0.9.x indexes</span>
+<span class="k">class</span> <span class="nc">OldIndexArray</span><span class="p">(</span><span class="n">UnImplemented</span><span class="p">):</span>
+    <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;IndexArray&#39;</span>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+        <p class="logo"><a href="../../index.html">
+          <img class="logo" src="../../_static/logo-pytables-small.png" alt="Logo"/>
+        </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../np-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">PyTables 3.2.2.dev0 documentation</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2011-2014, PyTables maintainers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+    <!-- cloud_sptheme 1.3 -->
+  </body>
+</html>
