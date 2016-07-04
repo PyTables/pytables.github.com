@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.atom &mdash; PyTables 3.2.2 documentation</title>
+    <title>tables.atom &mdash; PyTables 3.2.3 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.2.2',
+        VERSION:     '3.2.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.2.2 documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.2.3 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body role="document">
@@ -48,7 +48,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.2.2 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
@@ -82,6 +82,7 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">cPickle</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span>
 
@@ -633,9 +634,19 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">arg</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">))</span>
-                    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargspec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__init__</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="k">if</span> <span class="n">arg</span> <span class="o">!=</span> <span class="s1">&#39;self&#39;</span><span class="p">)</span>
+        <span class="c1"># @COMPATIBILITY: inspect.getargspec has been deprecated since</span>
+        <span class="c1">#                 Python 3.5</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># inspect.signature is new in Python 3.5</span>
+            <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__init__</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargspec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__init__</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">arg</span> <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="ow">is</span> <span class="n">p</span><span class="o">.</span><span class="n">POSITIONAL_OR_KEYWORD</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">arg</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">))</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">arg</span> <span class="o">!=</span> <span class="s1">&#39;self&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_is_equal_to_atom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Is this object equal to the given `atom`?&quot;&quot;&quot;</span>
@@ -1138,15 +1149,20 @@
 <span class="sd">    it to one specific row*, i.e. the :meth:`VLArray.append` method only</span>
 <span class="sd">    accepts one object when the base atom is of this type.</span>
 
-<span class="sd">    Like StringAtom, this class does not make assumptions on the encoding of</span>
-<span class="sd">    the string, and raw bytes are stored as is.  Unicode strings are supported</span>
-<span class="sd">    as long as no character is out of the ASCII set; otherwise, you will need</span>
-<span class="sd">    to *explicitly* convert them to strings before you can save them.  For full</span>
-<span class="sd">    Unicode support, using VLUnicodeAtom (see :ref:`VLUnicodeAtom`) is</span>
+<span class="sd">    This class stores bytestrings. It does not make assumptions on the</span>
+<span class="sd">    encoding of the string, and raw bytes are stored as is. To store a string</span>
+<span class="sd">    you will need to *explicitly* convert it to a bytestring before you can</span>
+<span class="sd">    save them::</span>
+
+<span class="sd">        &gt;&gt;&gt; s = &#39;A unicode string: hbar = \u210f&#39;</span>
+<span class="sd">        &gt;&gt;&gt; bytestring = s.encode(&#39;utf-8&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; VLArray.append(bytestring) # doctest: +SKIP</span>
+
+<span class="sd">    For full Unicode support, using VLUnicodeAtom (see :ref:`VLUnicodeAtom`) is</span>
 <span class="sd">    recommended.</span>
 
 <span class="sd">    Variable-length string atoms do not accept parameters and they cause the</span>
-<span class="sd">    reads of rows to always return Python strings.  You can regard vlstring</span>
+<span class="sd">    reads of rows to always return Python bytestrings.  You can regard vlstring</span>
 <span class="sd">    atoms as an easy way to save generic variable length strings.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1156,7 +1172,10 @@
     <span class="n">base</span> <span class="o">=</span> <span class="n">UInt8Atom</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_tobuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Storing non bytestrings in VLStringAtom is &quot;</span>
+                          <span class="s2">&quot;deprecated.&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;object is not a string: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">object_</span><span class="p">,))</span>
         <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">string_</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
 
@@ -1196,7 +1215,10 @@
         <span class="c1"># NumPy ticket #525).  Since ``_tobuffer()`` can&#39;t return an</span>
         <span class="c1"># array, we must override ``toarray()`` itself.</span>
         <span class="k">def</span> <span class="nf">toarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Storing bytestrings in VLUnicodeAtom is &quot;</span>
+                              <span class="s2">&quot;deprecated.&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;object is not a string: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">object_</span><span class="p">,))</span>
             <span class="n">ustr</span> <span class="o">=</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
             <span class="n">uarr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ustr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
@@ -1207,7 +1229,10 @@
         <span class="c1"># This works (and is used) only with UCS-4 builds of Python,</span>
         <span class="c1"># where the width of the internal representation of a</span>
         <span class="c1"># character matches that of the base atoms.</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Storing bytestrings in VLUnicodeAtom is &quot;</span>
+                          <span class="s2">&quot;deprecated.&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;object is not a string: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">object_</span><span class="p">,))</span>
         <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unicode_</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
 
@@ -1266,6 +1291,9 @@
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -1286,7 +1314,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.2.2 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
@@ -1295,7 +1323,7 @@
 
     <div class="footer" role="contentinfo">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>
