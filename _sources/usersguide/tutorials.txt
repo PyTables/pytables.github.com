@@ -169,7 +169,7 @@ Group and Table objects we have just created. If you want more information,
 just type the variable containing the File instance::
 
     >>> h5file
-    File(filename='tutorial1.h5', title='Test file', mode='w', root_uep='/', filters=Filters(complevel=0, shuffle=False, fletcher32=False))
+    File(filename='tutorial1.h5', title='Test file', mode='w', root_uep='/', filters=Filters(complevel=0, shuffle=False, bitshuffle=False, fletcher32=False))
     / (RootGroup) 'Test file'
     /detector (Group) 'Detector information'
     /detector/readout (Table(0,)) 'Readout example'
@@ -1064,6 +1064,10 @@ is meant to be used in table iterators. Look at the next example::
     to be both convenient and efficient. Please make sure to use it
     extensively.
 
+*Caveat emptor*: Currently, :meth:`Row.update` will not work (the table will
+not be updated) if the loop is broken with ``break`` statement. A possible
+workaround consists in manually flushing the row internal buffer by calling
+``row._flushModRows()`` just before the ``break`` statement.
 
 Modifying data in arrays
 ~~~~~~~~~~~~~~~~~~~~~~~~
