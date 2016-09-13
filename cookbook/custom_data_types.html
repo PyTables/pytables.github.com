@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using your own custom data types &mdash; PyTables 3.2.3 documentation</title>
+    <title>Using your own custom data types &mdash; PyTables 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '3.2.3',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.2.3 documentation" href="../index.html" />
+    <link rel="top" title="PyTables 3.3.0 documentation" href="../index.html" />
     <link rel="up" title="PyTables Cookbook" href="index.html" />
     <link rel="next" title="SimpleTable: simple wrapper around the Table object" href="simple_table.html" />
     <link rel="prev" title="Tailoring atexit hooks" href="tailoring_atexit_hooks.html" /> 
@@ -45,18 +45,12 @@
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="../np-modindex.html" title="Python Module Index"
-             >modules</a> &nbsp; &nbsp;</li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> &nbsp; &nbsp;</li>
-        <li class="right" >
           <a href="simple_table.html" title="SimpleTable: simple wrapper around the Table object"
              accesskey="N">next</a> &nbsp; &nbsp;</li>
         <li class="right" >
           <a href="tailoring_atexit_hooks.html" title="Tailoring atexit hooks"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.3.0 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">PyTables Cookbook</a> &raquo;</li> 
       </ul>
@@ -72,29 +66,29 @@
   <div class="section" id="using-your-own-custom-data-types">
 <h1>Using your own custom data types<a class="headerlink" href="#using-your-own-custom-data-types" title="Permalink to this headline">¶</a></h1>
 <p>You can make your own data types by subclassing Table (or other PyTables types,
-such as <a class="reference internal" href="../usersguide/libref/hierarchy_classes.html#tables.Leaf" title="tables.Leaf"><code class="xref py py-class docutils literal"><span class="pre">tables.Leaf</span></code></a>).
+such as <code class="xref py py-class docutils literal"><span class="pre">tables.Leaf</span></code>).
 This can be useful for storing a specialized type of data or presenting a
 customized API.</p>
 <p>Here&#8217;s one way to do it, taken from
 <a class="reference external" href="http://sourceforge.net/mailarchive/message.php?msg_id=200805250042.50653.pgmdevlist%40gmail.com">http://sourceforge.net/mailarchive/message.php?msg_id=200805250042.50653.pgmdevlist%40gmail.com</a></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="kn">as</span> <span class="nn">ma</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="k">as</span> <span class="nn">ma</span>
 
 <span class="kn">import</span> <span class="nn">tables</span>
-<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">File</span><span class="p">,</span> <span class="n">Table</span>
-<span class="kn">from</span> <span class="nn">tables.file</span> <span class="kn">import</span> <span class="n">_checkfilters</span>
+<span class="kn">from</span> <span class="nn">tables</span> <span class="k">import</span> <span class="n">File</span><span class="p">,</span> <span class="n">Table</span>
+<span class="kn">from</span> <span class="nn">tables.file</span> <span class="k">import</span> <span class="n">_checkfilters</span>
 
-<span class="kn">from</span> <span class="nn">tables.parameters</span> <span class="kn">import</span> <span class="n">EXPECTED_ROWS_TABLE</span>
+<span class="kn">from</span> <span class="nn">tables.parameters</span> <span class="k">import</span> <span class="n">EXPECTED_ROWS_TABLE</span>
 
 <span class="k">class</span> <span class="nc">MaskedTable</span><span class="p">(</span><span class="n">Table</span><span class="p">):</span>
     <span class="n">_c_classId</span> <span class="o">=</span> <span class="s1">&#39;MaskedTable&#39;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentNode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                 <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentNode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 
                  <span class="n">expectedrows</span><span class="o">=</span><span class="n">EXPECTED_ROWS_TABLE</span><span class="p">,</span>
-                 <span class="n">chunkshape</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
-        <span class="n">new</span> <span class="o">=</span> <span class="n">description</span> <span class="ow">is</span> <span class="bp">None</span>
+                 <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">new</span><span class="p">:</span>
             <span class="n">maskedarray</span> <span class="o">=</span> <span class="n">description</span>
             <span class="n">description</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">maskedarray</span><span class="o">.</span><span class="n">filled</span><span class="p">()</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span>
@@ -112,7 +106,7 @@ customized API.</p>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">new</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">maskedarray</span><span class="o">.</span><span class="n">shape</span>
 
-    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">Table</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
                           <span class="n">field</span><span class="o">=</span><span class="n">field</span><span class="p">)</span>
         <span class="n">newshape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">shape</span>
@@ -121,9 +115,9 @@ customized API.</p>
 
 
 <span class="k">def</span> <span class="nf">createMaskedTable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">maskedarray</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-                      <span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
-                      <span class="n">chunkshape</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                      <span class="n">createparents</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+                      <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+                      <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="n">parentNode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getOrCreatePath</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">createparents</span><span class="p">)</span>
 
     <span class="n">_checkfilters</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
@@ -142,14 +136,14 @@ customized API.</p>
     <span class="n">mtab</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">createMaskedTable</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span><span class="s1">&#39;random&#39;</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
 
     <span class="n">h5file</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-    <span class="k">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">mtab</span><span class="p">))</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">mtab</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">mtab</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">mtab</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
     <span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">openFile</span><span class="p">(</span><span class="s1">&#39;tester.hdf5&#39;</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
     <span class="n">mtab</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">random</span>
 
-    <span class="k">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">mtab</span><span class="p">))</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">mtab</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">mtab</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">mtab</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -184,9 +178,6 @@ customized API.</p>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -202,18 +193,12 @@ customized API.</p>
           <a href="../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="../np-modindex.html" title="Python Module Index"
-             >modules</a> &nbsp; &nbsp;</li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> &nbsp; &nbsp;</li>
-        <li class="right" >
           <a href="simple_table.html" title="SimpleTable: simple wrapper around the Table object"
              >next</a> &nbsp; &nbsp;</li>
         <li class="right" >
           <a href="tailoring_atexit_hooks.html" title="Tailoring atexit hooks"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
+    <li><a href="../index.html">PyTables 3.3.0 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >PyTables Cookbook</a> &raquo;</li> 
       </ul>
@@ -222,7 +207,7 @@ customized API.</p>
 
     <div class="footer" role="contentinfo">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>

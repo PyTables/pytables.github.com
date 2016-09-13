@@ -4,6 +4,7 @@ Migrating from PyTables 2.x to 3.x
 
 :Author: Antonio Valentino
 :Author: Anthony Scopatz
+:Author: Thomas Provoost
 
 This document describes the major changes in PyTables in going from the
 2.x to 3.x series and what you need to know when migrating downstream
@@ -14,7 +15,7 @@ Python 3 at Last!
 
 The PyTables 3.x series now ships with full compatibility for Python 3.1+.
 Additionally, we plan on maintaining compatibility with Python 2.7 for the
-foreseeable future.  Python 2.6 is no longer under actively supported but
+foreseeable future.  Python 2.6 is no longer supported but
 may work in most cases.  Note that the entire 3.x series now relies on
 numexpr v2.1+, which itself is the first version of numexpr support both
 Python 2 & 3.
@@ -27,6 +28,20 @@ Additionally, the ``tables.netcdf3`` module has been removed. Please refer
 to the `netcdf4-python`_ project for further support. Lastly, the older
 HDF5 1.6 API is no longer supported.  Please upgrade to HDF5 1.8+.
 
+Unicode all the strings!
+========================
+
+In Python 3, all strings are natively in Unicode. This introduces some 
+difficulties, as the native HDF5 string format is not Unicode-compatible. 
+To minimize explicit conversion troubles when writing, especially :ref:`when 
+creating data sets from existing Python objects <create-signatures>`, string 
+objects are implicitly cast to non-Unicode for HDF5 storage. To make you
+aware of this, a warning is raised when this happens.
+
+This is certainly no true Unicode compatibility, but mainly for convenience 
+with the pure-Unicode Python 3 string type. Any string that is not castable 
+as ascii upon creation of your data set, will hence still raise an error. 
+For true Unicode support, look into the ``VLUnicodeAtom`` class.
 
 Major API Changes
 =================
@@ -108,6 +123,8 @@ plan for the warning types:
 
 The current plan is to maintain the old APIs for at least 2 years, though this
 is subject to change.
+
+.. _create-signatures:
 
 Consistent ``create_xxx()`` Signatures
 ***************************************

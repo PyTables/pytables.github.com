@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.array &mdash; PyTables 3.2.3 documentation</title>
+    <title>tables.array &mdash; PyTables 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.2.3',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.2.3 documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.3.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body role="document">
@@ -48,7 +48,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.3.0 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
@@ -75,21 +75,23 @@
 <span class="c1">########################################################################</span>
 
 <span class="sd">&quot;&quot;&quot;Here is defined the Array class.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
 
 <span class="kn">import</span> <span class="nn">operator</span>
 <span class="kn">import</span> <span class="nn">sys</span>
-
 <span class="kn">import</span> <span class="nn">numpy</span>
 
-<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
-<span class="kn">from</span> <span class="nn">tables.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
-<span class="kn">from</span> <span class="nn">tables.flavor</span> <span class="kn">import</span> <span class="n">flavor_of</span><span class="p">,</span> <span class="n">array_as_internal</span><span class="p">,</span> <span class="n">internal_to_flavor</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
+<span class="kn">from</span> <span class="nn">.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
+<span class="kn">from</span> <span class="nn">.flavor</span> <span class="kn">import</span> <span class="n">flavor_of</span><span class="p">,</span> <span class="n">array_as_internal</span><span class="p">,</span> <span class="n">internal_to_flavor</span>
+<span class="kn">from</span> <span class="nn">.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">is_idx</span><span class="p">,</span> <span class="n">convert_to_np_atom2</span><span class="p">,</span> <span class="n">SizeType</span><span class="p">,</span> <span class="n">lazyattr</span><span class="p">,</span>
+                    <span class="n">byteorders</span><span class="p">,</span> <span class="n">quantize</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">is_idx</span><span class="p">,</span> <span class="n">convert_to_np_atom2</span><span class="p">,</span> <span class="n">SizeType</span><span class="p">,</span> <span class="n">lazyattr</span><span class="p">,</span>
-                          <span class="n">byteorders</span><span class="p">,</span> <span class="n">quantize</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">tables.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">range</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">zip</span>
+<span class="kn">import</span> <span class="nn">six</span>
 
-<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span><span class="p">,</span> <span class="n">previous_api_property</span>
 
 <span class="c1"># default version for ARRAY objects</span>
 <span class="c1"># obversion = &quot;1.0&quot;    # initial version</span>
@@ -100,7 +102,7 @@
 <span class="n">obversion</span> <span class="o">=</span> <span class="s2">&quot;2.4&quot;</span>    <span class="c1"># Numeric and numarray flavors are gone.</span>
 
 
-<div class="viewcode-block" id="Array"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array">[docs]</a><span class="k">class</span> <span class="nc">Array</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">Leaf</span><span class="p">):</span>
+<div class="viewcode-block" id="Array"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array">[docs]</a><span class="k">class</span> <span class="nc">Array</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">Leaf</span><span class="p">,</span> <span class="n">six</span><span class="o">.</span><span class="n">Iterator</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This class represents homogeneous datasets in an HDF5 file.</span>
 
 <span class="sd">    This class provides methods to write or read data to or from array objects</span>
@@ -152,9 +154,6 @@
     <span class="c1"># Class identifier.</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;ARRAY&#39;</span>
 
-    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s1">&#39;_c_classid&#39;</span><span class="p">)</span>
-    <span class="n">_v_objectId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s1">&#39;_v_objectid&#39;</span><span class="p">)</span>
-
     <span class="c1"># Lazy read-only attributes</span>
     <span class="c1"># `````````````````````````</span>
     <span class="nd">@lazyattr</span>
@@ -165,30 +164,30 @@
 
     <span class="c1"># Properties</span>
     <span class="c1"># ~~~~~~~~~~</span>
-    <span class="k">def</span> <span class="nf">_getnrows</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nrows</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;The number of rows in the array.&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
             <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># scalar case</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maindim</span><span class="p">]</span>
-    <span class="n">nrows</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="n">_getnrows</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s2">&quot;The number of rows in the array.&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_getrowsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rowsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;The size of the rows in bytes in dimensions orthogonal to *maindim*.&quot;</span>
         <span class="n">maindim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span>
         <span class="n">rowsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">size</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">maindim</span><span class="p">:</span>
                 <span class="n">rowsize</span> <span class="o">*=</span> <span class="n">dim</span>
         <span class="k">return</span> <span class="n">rowsize</span>
-    <span class="n">rowsize</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="n">_getrowsize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s2">&quot;The size of the rows in bytes in dimensions orthogonal to *maindim*.&quot;</span><span class="p">)</span>
 
-    <span class="n">size_in_memory</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size_in_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The size of this array&#39;s data in bytes when it is fully loaded into</span>
-<span class="sd">        memory.&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="sd">        memory.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span>
 
     <span class="c1"># Other methods</span>
     <span class="c1"># ~~~~~~~~~~~~~</span>
@@ -318,8 +317,6 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">enum</span></div>
 
-    <span class="n">getEnum</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">get_enum</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Array.iterrows"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array.iterrows">[docs]</a>    <span class="k">def</span> <span class="nf">iterrows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate over the rows of the array.</span>
 
@@ -392,9 +389,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_init</span> <span class="o">=</span> <span class="bp">True</span>  <span class="c1"># Sentinel</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">=</span> <span class="n">SizeType</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">)</span>    <span class="c1"># row number</span>
 
-    <span class="n">_initLoop</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_init_loop</span><span class="p">)</span>
-
-<div class="viewcode-block" id="Array.next"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the next element of the array during an iteration.</span>
 
 <span class="sd">        The element is returned as an object of the current flavor.</span>
@@ -429,7 +424,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span>    <span class="c1"># Scalar case</span></div>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span>    <span class="c1"># Scalar case</span>
 
     <span class="k">def</span> <span class="nf">_interpret_indexing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Internal routine used by __getitem__ and __setitem__&quot;&quot;&quot;</span>
@@ -450,7 +445,7 @@
             <span class="n">ellipsis</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Sentinel</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">Ellipsis</span><span class="p">)):</span>
                 <span class="n">ellipsis</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="k">for</span> <span class="n">diml</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">nkeys</span> <span class="o">-</span> <span class="n">dim</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">diml</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">nkeys</span> <span class="o">-</span> <span class="n">dim</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
                     <span class="n">startl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
                     <span class="n">stopl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">diml</span><span class="p">]</span>
                     <span class="n">stepl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
@@ -483,7 +478,7 @@
 
         <span class="c1"># Complete the other dimensions, if needed</span>
         <span class="k">if</span> <span class="n">dim</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">diml</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">diml</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
                 <span class="n">startl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="n">stopl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">diml</span><span class="p">]</span>
                 <span class="n">stepl</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
@@ -491,7 +486,7 @@
 
         <span class="c1"># Compute the shape for the container properly. Fixes #1288792</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
             <span class="c1"># The negative division operates differently with python scalars</span>
             <span class="c1"># and numpy scalars (which are similar to C conventions). See:</span>
             <span class="c1"># http://www.python.org/doc/faq/programming.html#why-does-22-10-return-3</span>
@@ -503,7 +498,7 @@
             <span class="c1"># Switch to `lrange` to allow long ranges (see #99).</span>
             <span class="c1"># use xrange, since it supports large integers as of Python 2.6</span>
             <span class="c1"># see github #181</span>
-            <span class="n">new_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="n">startl</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">stopl</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">stepl</span><span class="p">[</span><span class="n">dim</span><span class="p">]))</span>
+            <span class="n">new_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">startl</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">stopl</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">stepl</span><span class="p">[</span><span class="n">dim</span><span class="p">]))</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">new_dim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">stop_None</span><span class="p">[</span><span class="n">dim</span><span class="p">]):</span>
                 <span class="n">shape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_dim</span><span class="p">)</span>
 
@@ -527,7 +522,7 @@
             <span class="sd">&quot;&quot;&quot;Validate a list member for the given axis length.&quot;&quot;&quot;</span>
 
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">num</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Illegal index: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">num</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">num</span> <span class="o">&gt;</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
@@ -566,15 +561,15 @@
             <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">start</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">stop</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="n">stop</span> <span class="o">=</span> <span class="n">length</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">stop</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="n">step</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">step</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Step must be &gt;= 1 (got </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="n">step</span><span class="p">)</span>
@@ -638,7 +633,7 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">list_seen</span> <span class="o">=</span> <span class="bp">True</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">long</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span>
                         <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span>
                             <span class="n">numpy</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">))):</span>
                         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Only integer coordinates allowed.&quot;</span><span class="p">)</span>
@@ -662,7 +657,7 @@
                     <span class="n">corrected_idx</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mshape</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
                     <span class="n">reorder</span> <span class="o">=</span> <span class="p">(</span><span class="n">corrected_idx</span><span class="p">,</span> <span class="n">neworder</span><span class="p">)</span>
                     <span class="n">nexp</span> <span class="o">=</span> <span class="n">nexp</span><span class="p">[</span><span class="n">neworder</span><span class="p">]</span>
-                <span class="k">for</span> <span class="n">select_idx</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nexp</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">select_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nexp</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
                     <span class="c1"># This crazy piece of code performs a list selection</span>
                     <span class="c1"># using HDF5 hyperslabs.</span>
                     <span class="c1"># For each index, perform a &quot;NOTB&quot; selection on every</span>
@@ -685,8 +680,6 @@
 
         <span class="n">mshape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mshape</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">selection</span><span class="p">,</span> <span class="n">reorder</span><span class="p">,</span> <span class="n">mshape</span>
-
-    <span class="n">_fancySelection</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_fancy_selection</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Array.__getitem__"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.Array.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a row, a range of rows or a slice from the array.</span>
@@ -817,8 +810,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">nparr</span>
 
-    <span class="n">_checkShape</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_check_shape</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_read_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read a slice based on `startl`, `stopl` and `stepl`.&quot;&quot;&quot;</span>
 
@@ -832,8 +823,6 @@
             <span class="n">nparr</span> <span class="o">=</span> <span class="n">nparr</span><span class="p">[()]</span>
         <span class="k">return</span> <span class="n">nparr</span>
 
-    <span class="n">_readSlice</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_read_slice</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_read_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read a set of points defined by `coords`.&quot;&quot;&quot;</span>
 
@@ -844,8 +833,6 @@
         <span class="k">if</span> <span class="n">nparr</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
             <span class="n">nparr</span> <span class="o">=</span> <span class="n">nparr</span><span class="p">[()]</span>
         <span class="k">return</span> <span class="n">nparr</span>
-
-    <span class="n">_readCoords</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_read_coords</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_read_selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selection</span><span class="p">,</span> <span class="n">reorder</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read a `selection`.</span>
@@ -871,8 +858,6 @@
             <span class="n">nparr</span> <span class="o">=</span> <span class="n">nparr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">nparr</span>
 
-    <span class="n">_readSelection</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_read_selection</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_write_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">nparr</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Write `nparr` in a slice based on `startl`, `stopl` and `stepl`.&quot;&quot;&quot;</span>
 
@@ -880,16 +865,12 @@
         <span class="n">countl</span> <span class="o">=</span> <span class="p">((</span><span class="n">stopl</span> <span class="o">-</span> <span class="n">startl</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">stepl</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_write_slice</span><span class="p">(</span><span class="n">startl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">countl</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
 
-    <span class="n">_writeSlice</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_write_slice</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_write_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">nparr</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Write `nparr` values in points defined by `coords` coordinates.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">nparr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_shape</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">),))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_g_write_coords</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
-
-    <span class="n">_writeCoords</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_write_coords</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_write_selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selection</span><span class="p">,</span> <span class="n">reorder</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">nparr</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Write `nparr` in `selection`.</span>
@@ -909,12 +890,10 @@
             <span class="n">nparr</span> <span class="o">=</span> <span class="n">nparr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_write_selection</span><span class="p">(</span><span class="n">selection</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
 
-    <span class="n">_writeSelection</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_write_selection</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read the array from disk without slice or flavor processing.&quot;&quot;&quot;</span>
 
-        <span class="n">nrowstoread</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+        <span class="n">nrowstoread</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">shape</span><span class="p">:</span>
             <span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="n">nrowstoread</span>
@@ -1001,8 +980,6 @@
 
         <span class="k">return</span> <span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="n">nbytes</span><span class="p">)</span>
 
-    <span class="n">_g_copyWithStats</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_copy_with_stats</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;This provides more metainfo in addition to standard __str__&quot;&quot;&quot;</span>
 
@@ -1027,8 +1004,6 @@
 
     <span class="c1"># Class identifier.</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;IMAGE&#39;</span>
-
-    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s1">&#39;_c_classid&#39;</span><span class="p">)</span>
 </pre></div>
 
           </div>
@@ -1047,9 +1022,6 @@
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -1070,7 +1042,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.3.0 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
@@ -1079,7 +1051,7 @@
 
     <div class="footer" role="contentinfo">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>

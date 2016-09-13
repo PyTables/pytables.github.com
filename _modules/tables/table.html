@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.table &mdash; PyTables 3.2.3 documentation</title>
+    <title>tables.table &mdash; PyTables 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.2.3',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.2.3 documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.3.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body role="document">
@@ -48,7 +48,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.3.0 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
@@ -75,6 +75,7 @@
 <span class="c1">########################################################################</span>
 
 <span class="sd">&quot;&quot;&quot;Here is defined the Table class.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
 
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">operator</span>
@@ -88,33 +89,36 @@
 <span class="kn">import</span> <span class="nn">numpy</span>
 <span class="kn">import</span> <span class="nn">numexpr</span>
 
-<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">tableextension</span>
-<span class="kn">from</span> <span class="nn">tables.lrucacheextension</span> <span class="kn">import</span> <span class="n">ObjectCache</span><span class="p">,</span> <span class="n">NumCache</span>
-<span class="kn">from</span> <span class="nn">tables.atom</span> <span class="kn">import</span> <span class="n">Atom</span>
-<span class="kn">from</span> <span class="nn">tables.conditions</span> <span class="kn">import</span> <span class="n">compile_condition</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">tableextension</span>
+<span class="kn">from</span> <span class="nn">.lrucacheextension</span> <span class="kn">import</span> <span class="n">ObjectCache</span><span class="p">,</span> <span class="n">NumCache</span>
+<span class="kn">from</span> <span class="nn">.atom</span> <span class="kn">import</span> <span class="n">Atom</span>
+<span class="kn">from</span> <span class="nn">.conditions</span> <span class="kn">import</span> <span class="n">compile_condition</span>
 <span class="kn">from</span> <span class="nn">numexpr.necompiler</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">getType</span> <span class="k">as</span> <span class="n">numexpr_getType</span><span class="p">,</span> <span class="n">double</span><span class="p">,</span> <span class="n">is_cpu_amd_intel</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">numexpr.expressions</span> <span class="kn">import</span> <span class="n">functions</span> <span class="k">as</span> <span class="n">numexpr_functions</span>
-<span class="kn">from</span> <span class="nn">tables.flavor</span> <span class="kn">import</span> <span class="n">flavor_of</span><span class="p">,</span> <span class="n">array_as_internal</span><span class="p">,</span> <span class="n">internal_to_flavor</span>
-<span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="n">is_idx</span><span class="p">,</span> <span class="n">lazyattr</span><span class="p">,</span> <span class="n">SizeType</span><span class="p">,</span> <span class="n">NailedDict</span> <span class="k">as</span> <span class="n">CacheDict</span>
-<span class="kn">from</span> <span class="nn">tables.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span>
-<span class="kn">from</span> <span class="nn">tables.description</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">IsDescription</span><span class="p">,</span> <span class="n">Description</span><span class="p">,</span> <span class="n">Col</span><span class="p">,</span> <span class="n">descr_from_dtype</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">tables.exceptions</span> <span class="kn">import</span> <span class="p">(</span><span class="n">NodeError</span><span class="p">,</span> <span class="n">HDF5ExtError</span><span class="p">,</span> <span class="n">PerformanceWarning</span><span class="p">,</span>
-                               <span class="n">OldIndexWarning</span><span class="p">,</span> <span class="n">NoSuchNodeError</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">tables.utilsextension</span> <span class="kn">import</span> <span class="n">get_nested_field</span>
+<span class="kn">from</span> <span class="nn">.flavor</span> <span class="kn">import</span> <span class="n">flavor_of</span><span class="p">,</span> <span class="n">array_as_internal</span><span class="p">,</span> <span class="n">internal_to_flavor</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">is_idx</span><span class="p">,</span> <span class="n">lazyattr</span><span class="p">,</span> <span class="n">SizeType</span><span class="p">,</span> <span class="n">NailedDict</span> <span class="k">as</span> <span class="n">CacheDict</span>
+<span class="kn">from</span> <span class="nn">.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span>
+<span class="kn">from</span> <span class="nn">.description</span> <span class="kn">import</span> <span class="p">(</span><span class="n">IsDescription</span><span class="p">,</span> <span class="n">Description</span><span class="p">,</span> <span class="n">Col</span><span class="p">,</span> <span class="n">descr_from_dtype</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">NodeError</span><span class="p">,</span> <span class="n">HDF5ExtError</span><span class="p">,</span> <span class="n">PerformanceWarning</span><span class="p">,</span> <span class="n">OldIndexWarning</span><span class="p">,</span>
+    <span class="n">NoSuchNodeError</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.utilsextension</span> <span class="kn">import</span> <span class="n">get_nested_field</span>
 
-<span class="kn">from</span> <span class="nn">tables.path</span> <span class="kn">import</span> <span class="n">join_path</span><span class="p">,</span> <span class="n">split_path</span>
-<span class="kn">from</span> <span class="nn">tables.index</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">.path</span> <span class="kn">import</span> <span class="n">join_path</span><span class="p">,</span> <span class="n">split_path</span>
+<span class="kn">from</span> <span class="nn">.index</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">OldIndex</span><span class="p">,</span> <span class="n">default_index_filters</span><span class="p">,</span> <span class="n">default_auto_index</span><span class="p">,</span> <span class="n">Index</span><span class="p">,</span> <span class="n">IndexesDescG</span><span class="p">,</span>
     <span class="n">IndexesTableG</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">six</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">range</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">zip</span>
 
 <span class="n">profile</span> <span class="o">=</span> <span class="bp">False</span>
 <span class="c1"># profile = True  # Uncomment for profiling</span>
 <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="n">show_stats</span>
+    <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">show_stats</span>
 
-<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span><span class="p">,</span> <span class="n">previous_api_property</span>
 
 <span class="c1"># 2.2: Added support for complex types. Introduced in version 0.9.</span>
 <span class="c1"># 2.2.1: Added suport for time types.</span>
@@ -131,7 +135,7 @@
     <span class="kn">from</span> <span class="nn">numexpr.necompiler</span> <span class="kn">import</span> <span class="n">int_</span><span class="p">,</span> <span class="n">long_</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">int_</span> <span class="o">=</span> <span class="nb">int</span>
-    <span class="n">long_</span> <span class="o">=</span> <span class="nb">long</span>
+    <span class="n">long_</span> <span class="o">=</span> <span class="nb">int</span>
 
 <span class="c1"># Maps NumPy types to the types used by Numexpr.</span>
 <span class="n">_nxtype_from_nptype</span> <span class="o">=</span> <span class="p">{</span>
@@ -173,20 +177,15 @@
 <span class="k">def</span> <span class="nf">_index_name_of</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
     <span class="k">return</span> <span class="s1">&#39;_i_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_name</span>
 
-<span class="n">_indexNameOf</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_index_name_of</span><span class="p">)</span>
-
 
 <span class="k">def</span> <span class="nf">_index_pathname_of</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
     <span class="n">nodeParentPath</span> <span class="o">=</span> <span class="n">split_path</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">join_path</span><span class="p">(</span><span class="n">nodeParentPath</span><span class="p">,</span> <span class="n">_index_name_of</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
 
-<span class="n">_indexPathnameOf</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_index_pathname_of</span><span class="p">)</span>
-
 
 <span class="k">def</span> <span class="nf">_index_pathname_of_column</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">colpathname</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">join_path</span><span class="p">(</span><span class="n">_index_pathname_of</span><span class="p">(</span><span class="n">table</span><span class="p">),</span> <span class="n">colpathname</span><span class="p">)</span>
 
-<span class="n">_indexPathnameOfColumn</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_index_pathname_of_column</span><span class="p">)</span>
 
 <span class="c1"># The next are versions that work with just paths (i.e. we don&#39;t need</span>
 <span class="c1"># a node instance for using them, which can be critical in certain</span>
@@ -196,79 +195,14 @@
 <span class="k">def</span> <span class="nf">_index_name_of_</span><span class="p">(</span><span class="n">nodeName</span><span class="p">):</span>
     <span class="k">return</span> <span class="s1">&#39;_i_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">nodeName</span>
 
-<span class="n">_indexNameOf_</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_index_name_of_</span><span class="p">)</span>
-
 
 <span class="k">def</span> <span class="nf">_index_pathname_of_</span><span class="p">(</span><span class="n">nodePath</span><span class="p">):</span>
     <span class="n">nodeParentPath</span><span class="p">,</span> <span class="n">nodeName</span> <span class="o">=</span> <span class="n">split_path</span><span class="p">(</span><span class="n">nodePath</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">join_path</span><span class="p">(</span><span class="n">nodeParentPath</span><span class="p">,</span> <span class="n">_index_name_of_</span><span class="p">(</span><span class="n">nodeName</span><span class="p">))</span>
 
-<span class="n">_indexPathnameOf_</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_index_pathname_of_</span><span class="p">)</span>
-
 
 <span class="k">def</span> <span class="nf">_index_pathname_of_column_</span><span class="p">(</span><span class="n">tablePath</span><span class="p">,</span> <span class="n">colpathname</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">join_path</span><span class="p">(</span><span class="n">_index_pathname_of_</span><span class="p">(</span><span class="n">tablePath</span><span class="p">),</span> <span class="n">colpathname</span><span class="p">)</span>
-
-<span class="n">_indexPathnameOfColumn_</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_index_pathname_of_column_</span><span class="p">)</span>
-
-
-<span class="k">def</span> <span class="nf">_table__setautoindex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auto</span><span class="p">):</span>
-    <span class="n">auto</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">auto</span><span class="p">)</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">indexgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">_index_pathname_of</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
-    <span class="k">except</span> <span class="n">NoSuchNodeError</span><span class="p">:</span>
-        <span class="n">indexgroup</span> <span class="o">=</span> <span class="n">create_indexes_table</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-    <span class="n">indexgroup</span><span class="o">.</span><span class="n">auto</span> <span class="o">=</span> <span class="n">auto</span>
-    <span class="c1"># Update the cache in table instance as well</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span> <span class="o">=</span> <span class="n">auto</span>
-
-<span class="n">_table__setautoIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_table__setautoindex</span><span class="p">)</span>
-
-
-<span class="c1"># **************** WARNING! ***********************</span>
-<span class="c1"># This function can be called during the destruction time of a table</span>
-<span class="c1"># so measures have been taken so that it doesn&#39;t have to revive</span>
-<span class="c1"># another node (which can fool the LRU cache). The solution devised</span>
-<span class="c1"># has been to add a cache for autoindex (Table._autoindex), populate</span>
-<span class="c1"># it in creation time of the cache (which is a safe period) and then</span>
-<span class="c1"># update the cache whenever it changes.</span>
-<span class="c1"># This solves the error when running test_indexes.py ManyNodesTestCase.</span>
-<span class="c1"># F. Alted 2007-04-20</span>
-<span class="c1"># **************************************************</span>
-<span class="k">def</span> <span class="nf">_table__getautoindex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">indexgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">_index_pathname_of</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
-        <span class="k">except</span> <span class="n">NoSuchNodeError</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span> <span class="o">=</span> <span class="n">default_auto_index</span>  <span class="c1"># update cache</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span> <span class="o">=</span> <span class="n">indexgroup</span><span class="o">.</span><span class="n">auto</span>   <span class="c1"># update cache</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># The value is in cache, return it</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span>
-
-<span class="n">_table__getautoIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_table__getautoindex</span><span class="p">)</span>
-
-<span class="n">_table__autoindex</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-    <span class="n">_table__getautoindex</span><span class="p">,</span> <span class="n">_table__setautoindex</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-    <span class="sd">&quot;&quot;&quot;Automatically keep column indexes up to date?</span>
-
-<span class="sd">    Setting this value states whether existing indexes should be</span>
-<span class="sd">    automatically updated after an append operation or recomputed</span>
-<span class="sd">    after an index-invalidating operation (i.e. removal and</span>
-<span class="sd">    modification of rows).  The default is true.</span>
-
-<span class="sd">    This value gets into effect whenever a column is altered.  If you</span>
-<span class="sd">    don&#39;t have automatic indexing activated and you want to do an an</span>
-<span class="sd">    immediate update use `Table.flush_rows_to_index()`; for an immediate</span>
-<span class="sd">    reindexing of invalidated indexes, use `Table.reindex_dirty()`.</span>
-
-<span class="sd">    This value is persistent.</span>
-<span class="sd">    &quot;&quot;&quot;</span><span class="p">)</span>
-
-<span class="n">_table__autoIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_table__autoindex</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">restorecache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -297,7 +231,7 @@
 
     <span class="c1"># Get the values in expression that are not columns</span>
     <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">condvars</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="n">condvars</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
     <span class="c1"># Build a key for the sequence cache</span>
@@ -340,7 +274,7 @@
         <span class="k">if</span> <span class="n">index</span><span class="o">.</span><span class="n">reduction</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">ncoords</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># No values from index condition, thus the chunkmap should be empty</span>
             <span class="n">nrowsinchunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">nchunks</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">)</span> <span class="o">/</span> <span class="n">nrowsinchunk</span><span class="p">))</span>
+            <span class="n">nchunks</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">)</span> <span class="o">/</span> <span class="n">nrowsinchunk</span><span class="p">))</span>
             <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nchunks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;bool&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Get the chunkmap from the index</span>
@@ -364,16 +298,12 @@
         <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Exiting table_whereIndexed&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">chunkmap</span>
 
-<span class="n">_table__whereIndexed</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_table__where_indexed</span><span class="p">)</span>
-
 
 <span class="k">def</span> <span class="nf">create_indexes_table</span><span class="p">(</span><span class="n">table</span><span class="p">):</span>
     <span class="n">itgroup</span> <span class="o">=</span> <span class="n">IndexesTableG</span><span class="p">(</span>
         <span class="n">table</span><span class="o">.</span><span class="n">_v_parent</span><span class="p">,</span> <span class="n">_index_name_of</span><span class="p">(</span><span class="n">table</span><span class="p">),</span>
         <span class="s2">&quot;Indexes container for table &quot;</span> <span class="o">+</span> <span class="n">table</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">itgroup</span>
-
-<span class="n">createIndexesTable</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">create_indexes_table</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">create_indexes_descr</span><span class="p">(</span><span class="n">igroup</span><span class="p">,</span> <span class="n">dname</span><span class="p">,</span> <span class="n">iname</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
@@ -382,8 +312,6 @@
         <span class="s2">&quot;Indexes container for sub-description &quot;</span> <span class="o">+</span> <span class="n">dname</span><span class="p">,</span>
         <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">idgroup</span>
-
-<span class="n">createIndexesDescr</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">create_indexes_descr</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_column__create_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optlevel</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span>
@@ -479,8 +407,6 @@
 
     <span class="k">return</span> <span class="n">indexedrows</span>
 
-<span class="n">_column__createIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_column__create_index</span><span class="p">)</span>
-
 
 <span class="k">class</span> <span class="nc">_ColIndexes</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Provides a nice representation of column indexes.&quot;&quot;&quot;</span>
@@ -488,7 +414,7 @@
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gives a detailed Description column representation.&quot;&quot;&quot;</span>
 
-        <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;  </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s1">: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">()]</span>
+        <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;  </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s1">: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span>
         <span class="k">return</span> <span class="s1">&#39;{</span><span class="se">\n</span><span class="s1">  </span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;,</span><span class="se">\n</span><span class="s1">  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rep</span><span class="p">))</span>
 
 
@@ -652,9 +578,6 @@
     <span class="c1"># Class identifier.</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;TABLE&#39;</span>
 
-    <span class="n">_c_classId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s1">&#39;_c_classid&#39;</span><span class="p">)</span>
-    <span class="n">_v_objectId</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s1">&#39;_v_objectid&#39;</span><span class="p">)</span>
-
     <span class="c1"># Properties</span>
     <span class="c1"># ~~~~~~~~~~</span>
     <span class="nd">@lazyattr</span>
@@ -672,19 +595,22 @@
     <span class="c1"># Read-only shorthands</span>
     <span class="c1"># ````````````````````</span>
 
-    <span class="n">shape</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,),</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s2">&quot;The shape of this table.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;The shape of this table.&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,)</span>
 
-    <span class="n">rowsize</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">_v_dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s2">&quot;The size in bytes of each row in the table.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rowsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;The size in bytes of each row in the table.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">_v_dtype</span><span class="o">.</span><span class="n">itemsize</span>
 
-    <span class="n">size_in_memory</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size_in_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The size of this table&#39;s data in bytes when it is fully loaded into</span>
 <span class="sd">        memory.  This may be used in combination with size_on_disk to calculate</span>
-<span class="sd">        the compression ratio of the data.&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="sd">        the compression ratio of the data.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span>
 
     <span class="c1"># Lazy attributes</span>
     <span class="c1"># ```````````````</span>
@@ -700,14 +626,14 @@
 
         <span class="c1"># First, do a check to see whether we need to set default values</span>
         <span class="c1"># different from 0 or not.</span>
-        <span class="k">for</span> <span class="n">coldflt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coldflts</span><span class="o">.</span><span class="n">itervalues</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">coldflt</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">itervalues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coldflts</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coldflt</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="n">coldflt</span><span class="p">:</span>
                 <span class="k">break</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># No default different from 0 found.  Returning None.</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="n">wdflts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_container</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">colname</span><span class="p">,</span> <span class="n">coldflt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coldflts</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">colname</span><span class="p">,</span> <span class="n">coldflt</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coldflts</span><span class="p">):</span>
             <span class="n">ra</span> <span class="o">=</span> <span class="n">get_nested_field</span><span class="p">(</span><span class="n">wdflts</span><span class="p">,</span> <span class="n">colname</span><span class="p">)</span>
             <span class="n">ra</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">coldflt</span>
         <span class="k">return</span> <span class="n">wdflts</span>
@@ -724,45 +650,79 @@
 
     <span class="c1"># Index-related properties</span>
     <span class="c1"># ````````````````````````</span>
-    <span class="n">autoindex</span> <span class="o">=</span> <span class="n">_table__autoindex</span>
-    <span class="sd">&quot;&quot;&quot;Automatically keep column indexes up to date?</span>
 
-<span class="sd">    Setting this value states whether existing indexes should be automatically</span>
-<span class="sd">    updated after an append operation or recomputed after an index-invalidating</span>
-<span class="sd">    operation (i.e. removal and modification of rows). The default is true.</span>
+    <span class="c1"># **************** WARNING! ***********************</span>
+    <span class="c1"># This function can be called during the destruction time of a table</span>
+    <span class="c1"># so measures have been taken so that it doesn&#39;t have to revive</span>
+    <span class="c1"># another node (which can fool the LRU cache). The solution devised</span>
+    <span class="c1"># has been to add a cache for autoindex (Table._autoindex), populate</span>
+    <span class="c1"># it in creation time of the cache (which is a safe period) and then</span>
+    <span class="c1"># update the cache whenever it changes.</span>
+    <span class="c1"># This solves the error when running test_indexes.py ManyNodesTestCase.</span>
+    <span class="c1"># F. Alted 2007-04-20</span>
+    <span class="c1"># **************************************************</span>
 
-<span class="sd">    This value gets into effect whenever a column is altered. If you don&#39;t have</span>
-<span class="sd">    automatic indexing activated and you want to do an immediate update use</span>
-<span class="sd">    :meth:`Table.flush_rows_to_index`; for immediate reindexing of invalidated</span>
-<span class="sd">    indexes, use :meth:`Table.reindex_dirty`.</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">autoindex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Automatically keep column indexes up to date?</span>
 
-<span class="sd">    This value is persistent.</span>
+<span class="sd">        Setting this value states whether existing indexes should be</span>
+<span class="sd">        automatically updated after an append operation or recomputed</span>
+<span class="sd">        after an index-invalidating operation (i.e. removal and</span>
+<span class="sd">        modification of rows).  The default is true.</span>
 
-<span class="sd">    .. versionchanged:: 3.0</span>
-<span class="sd">       The *autoIndex* property has been renamed into *autoindex*.</span>
+<span class="sd">        This value gets into effect whenever a column is altered.  If you</span>
+<span class="sd">        don&#39;t have automatic indexing activated and you want to do an an</span>
+<span class="sd">        immediate update use `Table.flush_rows_to_index()`; for an immediate</span>
+<span class="sd">        reindexing of invalidated indexes, use `Table.reindex_dirty()`.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        This value is persistent.</span>
 
-    <span class="n">autoIndex</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s1">&#39;autoindex&#39;</span><span class="p">)</span>
+<span class="sd">        .. versionchanged:: 3.0</span>
+<span class="sd">           The *autoIndex* property has been renamed into *autoindex*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
-    <span class="n">indexedcolpathnames</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="p">[</span><span class="n">_colpname</span> <span class="k">for</span> <span class="n">_colpname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span>
-                      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="p">[</span><span class="n">_colpname</span><span class="p">]],</span>
-        <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="sd">&quot;&quot;&quot;List of pathnames of indexed columns in the table.&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">indexgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">_index_pathname_of</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+            <span class="k">except</span> <span class="n">NoSuchNodeError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span> <span class="o">=</span> <span class="n">default_auto_index</span>  <span class="c1"># update cache</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span> <span class="o">=</span> <span class="n">indexgroup</span><span class="o">.</span><span class="n">auto</span>   <span class="c1"># update cache</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># The value is in cache, return it</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span>
 
-    <span class="n">colindexes</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="n">_ColIndexes</span><span class="p">(</span>
+    <span class="nd">@autoindex.setter</span>
+    <span class="k">def</span> <span class="nf">autoindex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auto</span><span class="p">):</span>
+        <span class="n">auto</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">auto</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">indexgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">_index_pathname_of</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">NoSuchNodeError</span><span class="p">:</span>
+            <span class="n">indexgroup</span> <span class="o">=</span> <span class="n">create_indexes_table</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">indexgroup</span><span class="o">.</span><span class="n">auto</span> <span class="o">=</span> <span class="n">auto</span>
+        <span class="c1"># Update the cache in table instance as well</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span> <span class="o">=</span> <span class="n">auto</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">indexedcolpathnames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;List of pathnames of indexed columns in the table.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">_colpname</span> <span class="k">for</span> <span class="n">_colpname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="p">[</span><span class="n">_colpname</span><span class="p">]]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">colindexes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A dictionary with the indexes of the indexed columns.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_ColIndexes</span><span class="p">(</span>
             <span class="p">((</span><span class="n">_colpname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">_f_col</span><span class="p">(</span><span class="n">_colpname</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-             <span class="k">for</span> <span class="n">_colpname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span>
-             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="p">[</span><span class="n">_colpname</span><span class="p">])),</span>
-        <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="sd">&quot;&quot;&quot;A dictionary with the indexes of the indexed columns.&quot;&quot;&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">_colpname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="p">[</span><span class="n">_colpname</span><span class="p">]))</span>
 
-    <span class="n">_dirtyindexes</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition_cache</span><span class="o">.</span><span class="n">_nailcount</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="sd">&quot;&quot;&quot;Whether some index in table is dirty.&quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_dirtyindexes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Whether some index in table is dirty.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition_cache</span><span class="o">.</span><span class="n">_nailcount</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
     <span class="c1"># Other methods</span>
     <span class="c1"># ~~~~~~~~~~~~~</span>
@@ -920,7 +880,7 @@
 
         <span class="c1"># Check the chunkshape parameter</span>
         <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="n">chunkshape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">long</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
                 <span class="n">chunkshape</span> <span class="o">=</span> <span class="p">(</span><span class="n">chunkshape</span><span class="p">,)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">chunkshape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">)</span>
@@ -1009,8 +969,6 @@
             <span class="c1"># Put the autoindex value in a cache variable</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_autoindex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">autoindex</span>
 
-    <span class="n">_g_postInitHook</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_post_init_hook</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_calc_nrowsinbuf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculate the number of rows that fits on a PyTables buffer.&quot;&quot;&quot;</span>
 
@@ -1075,8 +1033,6 @@
                 <span class="k">for</span> <span class="n">colobj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">_f_walk</span><span class="p">(</span><span class="s1">&#39;Col&#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">colobj</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">type_</span><span class="p">]</span>
 
-    <span class="n">_getTypeColNames</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_get_type_col_names</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_get_enum_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return mapping from enumerated column names to `Enum` instances.&quot;&quot;&quot;</span>
 
@@ -1085,8 +1041,6 @@
             <span class="k">if</span> <span class="n">colobj</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;enum&#39;</span><span class="p">:</span>
                 <span class="n">enumMap</span><span class="p">[</span><span class="n">colobj</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">]</span> <span class="o">=</span> <span class="n">colobj</span><span class="o">.</span><span class="n">enum</span>
         <span class="k">return</span> <span class="n">enumMap</span>
-
-    <span class="n">_getEnumMap</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_get_enum_map</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a new table on disk.&quot;&quot;&quot;</span>
@@ -1192,9 +1146,8 @@
 
                 <span class="c1"># Set also the correct value in the desc._v_dflts dictionary</span>
                 <span class="k">for</span> <span class="n">descr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">_f_walk</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">&quot;Description&quot;</span><span class="p">):</span>
-                    <span class="n">names</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">_v_names</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)):</span>
-                        <span class="n">objcol</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">_v_colobjects</span><span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">descr</span><span class="o">.</span><span class="n">_v_names</span><span class="p">:</span>
+                        <span class="n">objcol</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">_v_colobjects</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
                         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">objcol</span><span class="p">,</span> <span class="n">Col</span><span class="p">):</span>
                             <span class="n">descr</span><span class="o">.</span><span class="n">_v_dflts</span><span class="p">[</span><span class="n">objcol</span><span class="o">.</span><span class="n">_v_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">objcol</span><span class="o">.</span><span class="n">dflt</span>
 
@@ -1246,8 +1199,6 @@
         <span class="c1"># Assign _v_dtype for this table</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">_v_dtype</span>
 
-    <span class="n">_cacheDescriptionData</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_cache_description_data</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_get_column_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colpathname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the instance of the column with the given `colpathname`.</span>
 
@@ -1261,8 +1212,6 @@
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;table ``</span><span class="si">%s</span><span class="s2">`` does not have a column named ``</span><span class="si">%s</span><span class="s2">``&quot;</span>
                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">colpathname</span><span class="p">))</span>
-
-    <span class="n">_getColumnInstance</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_get_column_instance</span><span class="p">)</span>
 
     <span class="n">_check_column</span> <span class="o">=</span> <span class="n">_get_column_instance</span>
 
@@ -1280,8 +1229,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_condition_cache</span><span class="o">.</span><span class="n">nail</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_enabled_indexing_in_queries</span> <span class="o">=</span> <span class="bp">False</span>
 
-    <span class="n">_disableIndexingInQueries</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_disable_indexing_in_queries</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_enable_indexing_in_queries</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Allow queries to use indexing.</span>
 
@@ -1293,8 +1240,6 @@
             <span class="k">return</span>  <span class="c1"># already enabled</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_condition_cache</span><span class="o">.</span><span class="n">unnail</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_enabled_indexing_in_queries</span> <span class="o">=</span> <span class="bp">True</span>
-
-    <span class="n">_enableIndexingInQueries</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_enable_indexing_in_queries</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_required_expr_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">,</span> <span class="n">uservars</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the variables required by the `expression`.</span>
@@ -1321,11 +1266,11 @@
 
         <span class="c1"># Get the names of variables used in the expression.</span>
         <span class="n">exprvarscache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exprvars_cache</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">expression</span> <span class="ow">in</span> <span class="n">exprvarscache</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">expression</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exprvarscache</span><span class="p">:</span>
             <span class="c1"># Protection against growing the cache too much</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exprvarscache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">256</span><span class="p">:</span>
                 <span class="c1"># Remove 10 (arbitrary) elements from the cache</span>
-                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">exprvarscache</span><span class="o">.</span><span class="n">keys</span><span class="p">()[:</span><span class="mi">10</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">exprvarscache</span><span class="o">.</span><span class="n">keys</span><span class="p">())[:</span><span class="mi">10</span><span class="p">]:</span>
                     <span class="k">del</span> <span class="n">exprvarscache</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
             <span class="n">cexpr</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="s1">&#39;&lt;string&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;eval&#39;</span><span class="p">)</span>
             <span class="n">exprvars</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">cexpr</span><span class="o">.</span><span class="n">co_names</span>
@@ -1393,14 +1338,12 @@
                     <span class="s2">&quot;not allowed in conditions&quot;</span> <span class="o">%</span> <span class="n">var</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># only non-column values are converted to arrays</span>
                 <span class="c1"># XXX: not 100% sure about this</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">six</span><span class="o">.</span><span class="n">text_type</span><span class="p">):</span>
                     <span class="n">val</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">val</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
             <span class="n">reqvars</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
         <span class="k">return</span> <span class="n">reqvars</span>
-
-    <span class="n">_requiredExprVars</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_required_expr_vars</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_condition_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the condition cache key for `condition` with `condvars`.</span>
@@ -1415,7 +1358,7 @@
         <span class="n">colnames</span><span class="p">,</span> <span class="n">varnames</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="c1"># Column paths and types for each of the previous variable.</span>
         <span class="n">colpaths</span><span class="p">,</span> <span class="n">vartypes</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="n">condvars</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="n">condvars</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;pathname&#39;</span><span class="p">):</span>  <span class="c1"># column</span>
                 <span class="n">colnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
                 <span class="n">colpaths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">pathname</span><span class="p">)</span>
@@ -1432,8 +1375,6 @@
         <span class="n">colpaths</span><span class="p">,</span> <span class="n">vartypes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">colpaths</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">vartypes</span><span class="p">)</span>
         <span class="n">condkey</span> <span class="o">=</span> <span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">colnames</span><span class="p">,</span> <span class="n">varnames</span><span class="p">,</span> <span class="n">colpaths</span><span class="p">,</span> <span class="n">vartypes</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">condkey</span>
-
-    <span class="n">_getConditionKey</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_get_condition_key</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_compile_condition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compile the `condition` and extract usable index conditions.</span>
@@ -1458,7 +1399,9 @@
         <span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">colnames</span><span class="p">,</span> <span class="n">varnames</span><span class="p">,</span> <span class="n">colpaths</span><span class="p">,</span> <span class="n">vartypes</span><span class="p">)</span> <span class="o">=</span> <span class="n">condkey</span>
 
         <span class="c1"># Extract more information from referenced columns.</span>
-        <span class="n">typemap</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">varnames</span><span class="p">,</span> <span class="n">vartypes</span><span class="p">))</span>  <span class="c1"># start with normal variables</span>
+
+        <span class="c1"># start with normal variables</span>
+        <span class="n">typemap</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">varnames</span><span class="p">,</span> <span class="n">vartypes</span><span class="p">)))</span>
         <span class="n">indexedcols</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">colnames</span><span class="p">:</span>
             <span class="n">col</span> <span class="o">=</span> <span class="n">condvars</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span>
@@ -1485,8 +1428,6 @@
         <span class="n">condcache</span><span class="p">[</span><span class="n">condkey</span><span class="p">]</span> <span class="o">=</span> <span class="n">compiled</span>
         <span class="k">return</span> <span class="n">compiled</span><span class="o">.</span><span class="n">with_replaced_vars</span><span class="p">(</span><span class="n">condvars</span><span class="p">)</span>
 
-    <span class="n">_compileCondition</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_compile_condition</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Table.will_query_use_indexing"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.will_query_use_indexing">[docs]</a>    <span class="k">def</span> <span class="nf">will_query_use_indexing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Will a query for the condition use indexing?</span>
 
@@ -1507,8 +1448,6 @@
         <span class="c1"># Return the columns in indexed expressions</span>
         <span class="n">idxcols</span> <span class="o">=</span> <span class="p">[</span><span class="n">condvars</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">pathname</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">compiled</span><span class="o">.</span><span class="n">index_variables</span><span class="p">]</span>
         <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">idxcols</span><span class="p">)</span></div>
-
-    <span class="n">willQueryUseIndexing</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">will_query_use_indexing</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.where"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.where">[docs]</a>    <span class="k">def</span> <span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
               <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -1673,9 +1612,7 @@
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">cstart</span><span class="p">,</span> <span class="n">cstop</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="n">field</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
 
-    <span class="n">readWhere</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">read_where</span><span class="p">)</span>
-
-<div class="viewcode-block" id="Table.append_where"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.append_where">[docs]</a>    <span class="k">def</span> <span class="nf">append_where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dstTable</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+<div class="viewcode-block" id="Table.append_where"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.append_where">[docs]</a>    <span class="k">def</span> <span class="nf">append_where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dstTable</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">condvars</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                      <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Append rows fulfilling the condition to the dstTable table.</span>
 
@@ -1702,15 +1639,17 @@
         <span class="n">colNames</span> <span class="o">=</span> <span class="p">[</span><span class="n">colName</span> <span class="k">for</span> <span class="n">colName</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span><span class="p">]</span>
         <span class="n">dstRow</span> <span class="o">=</span> <span class="n">dstTable</span><span class="o">.</span><span class="n">row</span>
         <span class="n">nrows</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">srcRow</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_where</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">condition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">srcRows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_where</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">srcRows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iterrows</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">srcRow</span> <span class="ow">in</span> <span class="n">srcRows</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">colName</span> <span class="ow">in</span> <span class="n">colNames</span><span class="p">:</span>
                 <span class="n">dstRow</span><span class="p">[</span><span class="n">colName</span><span class="p">]</span> <span class="o">=</span> <span class="n">srcRow</span><span class="p">[</span><span class="n">colName</span><span class="p">]</span>
             <span class="n">dstRow</span><span class="o">.</span><span class="n">append</span><span class="p">()</span>
             <span class="n">nrows</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">dstTable</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">nrows</span></div>
-
-    <span class="n">whereAppend</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">append_where</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.get_where_list"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.get_where_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_where_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
                        <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -1736,16 +1675,8 @@
             <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span></div>
 
-    <span class="n">getWhereList</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">get_where_list</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Table.itersequence"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.itersequence">[docs]</a>    <span class="k">def</span> <span class="nf">itersequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Iterate over a sequence of row coordinates.</span>
-
-<span class="sd">        Notes</span>
-<span class="sd">        -----</span>
-<span class="sd">        This iterator can be nested (see :meth:`Table.where` for an example).</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over a sequence of row coordinates.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="s1">&#39;__getitem__&#39;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">((</span><span class="s2">&quot;Wrong &#39;sequence&#39; parameter type. Only sequences &quot;</span>
@@ -1788,8 +1719,6 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;Field `</span><span class="si">%s</span><span class="s2">` must have associated a &#39;full&#39; index &quot;</span>
                 <span class="s2">&quot;in table `</span><span class="si">%s</span><span class="s2">`.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sortby</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
-
-    <span class="n">_check_sortby_CSI</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_check_sortby_csi</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.itersorted"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.itersorted">[docs]</a>    <span class="k">def</span> <span class="nf">itersorted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sortby</span><span class="p">,</span> <span class="n">checkCSI</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
                    <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -1849,8 +1778,6 @@
         <span class="n">coords</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">:</span><span class="n">step</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
 
-    <span class="n">readSorted</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">read_sorted</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Table.iterrows"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.iterrows">[docs]</a>    <span class="k">def</span> <span class="nf">iterrows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate over the table using a Row instance.</span>
 
@@ -1877,10 +1804,6 @@
 
 <span class="sd">            result = [ row[&#39;var2&#39;] for row in table.iterrows(step=5)</span>
 <span class="sd">                                                    if row[&#39;var1&#39;] &lt;= 20 ]</span>
-
-<span class="sd">        Notes</span>
-<span class="sd">        -----</span>
-<span class="sd">        This iterator can be nested (see :meth:`Table.where` for an example).</span>
 
 <span class="sd">        .. versionchanged:: 3.0</span>
 <span class="sd">           If the *start* parameter is provided and *stop* is None then the</span>
@@ -1918,10 +1841,6 @@
 <span class="sd">            result = [ row[&#39;var2&#39;] for row in table.iterrows()</span>
 <span class="sd">                                                    if row[&#39;var1&#39;] &lt;= 20 ]</span>
 
-<span class="sd">        Notes</span>
-<span class="sd">        -----</span>
-<span class="sd">        This iterator can be nested (see :meth:`Table.where` for an example).</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()</span></div>
@@ -1950,7 +1869,7 @@
                 <span class="k">return</span> <span class="n">nra</span>
             <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype_field</span><span class="p">)</span>
 
-        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="c1"># Compute the shape of the resulting column object</span>
@@ -2065,9 +1984,8 @@
                    <span class="s2">&quot;flavor is &#39;numpy&#39;, currently is {0}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-        <span class="c1">#(start, stop, step) = self._process_range_read(start, stop, step,</span>
-        <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
-                                                  <span class="n">warn_negstep</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
+                                                <span class="n">warn_negstep</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 
         <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span></div>
@@ -2106,8 +2024,6 @@
                 <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getemptyarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coldtypes</span><span class="p">[</span><span class="n">field</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">result</span>
 
-    <span class="n">_readCoordinates</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_read_coordinates</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Table.read_coordinates"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.read_coordinates">[docs]</a>    <span class="k">def</span> <span class="nf">read_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a set of rows given their indexes as a (record) array.</span>
 
@@ -2123,8 +2039,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span></div>
-
-    <span class="n">readCoordinates</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">read_coordinates</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.get_enum"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.get_enum">[docs]</a>    <span class="k">def</span> <span class="nf">get_enum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the enumerated type associated with the named column.</span>
@@ -2144,8 +2058,6 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
                 <span class="s2">&quot;column ``</span><span class="si">%s</span><span class="s2">`` of table ``</span><span class="si">%s</span><span class="s2">`` is not of an enumerated type&quot;</span>
                 <span class="o">%</span> <span class="p">(</span><span class="n">colname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">))</span></div>
-
-    <span class="n">getEnum</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">get_enum</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.col"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.col">[docs]</a>    <span class="k">def</span> <span class="nf">col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a column from the table.</span>
@@ -2318,8 +2230,6 @@
                 <span class="c1"># All the columns are dirty now</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_mark_columns_as_dirty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span><span class="p">)</span>
 
-    <span class="n">_saveBufferedRows</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_save_buffered_rows</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Table.append"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rows</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Append a sequence of rows to the end of the table.</span>
 
@@ -2401,7 +2311,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Object cannot be converted into a recarray &quot;</span>
                              <span class="s2">&quot;object compliant with table format &#39;</span><span class="si">%s</span><span class="s2">&#39;. &quot;</span>
                              <span class="s2">&quot;The error was: &lt;</span><span class="si">%s</span><span class="s2">&gt;&quot;</span> <span class="o">%</span>
-                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">_v_nested_descr</span><span class="p">,</span> <span class="n">exc</span><span class="p">))</span>
+                             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">_v_nested_descr</span><span class="p">,</span> <span class="n">exc</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">recarr</span>
 
@@ -2439,8 +2349,6 @@
 
         <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">lcoords</span><span class="p">)</span></div>
 
-    <span class="n">modifyCoordinates</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">modify_coordinates</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Table.modify_rows"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.modify_rows">[docs]</a>    <span class="k">def</span> <span class="nf">modify_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Modify a series of rows in the slice [start:stop:step].</span>
 
@@ -2475,7 +2383,7 @@
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;This modification will exceed the length of &quot;</span>
                              <span class="s2">&quot;the table. Giving up.&quot;</span><span class="p">)</span>
         <span class="c1"># Compute the number of rows to read.</span>
-        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">!=</span> <span class="n">nrows</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The value has different elements than the &quot;</span>
                              <span class="s2">&quot;specified range&quot;</span><span class="p">)</span>
@@ -2495,8 +2403,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_reindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">lenrows</span><span class="p">)</span></div>
-
-    <span class="n">modifyRows</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">modify_rows</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.modify_column"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.modify_column">[docs]</a>    <span class="k">def</span> <span class="nf">modify_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                       <span class="n">column</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">colname</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -2563,7 +2469,7 @@
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;This modification will exceed the length of &quot;</span>
                              <span class="s2">&quot;the table. Giving up.&quot;</span><span class="p">)</span>
         <span class="c1"># Compute the number of rows to read.</span>
-        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">column</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">nrows</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The value has not enough elements to fill-in &quot;</span>
                              <span class="s2">&quot;the specified range&quot;</span><span class="p">)</span>
@@ -2578,8 +2484,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_reindex</span><span class="p">([</span><span class="n">colname</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span></div>
-
-    <span class="n">modifyColumn</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">modify_column</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.modify_columns"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.modify_columns">[docs]</a>    <span class="k">def</span> <span class="nf">modify_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                        <span class="n">columns</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -2640,7 +2544,7 @@
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;This modification will exceed the length of &quot;</span>
                              <span class="s2">&quot;the table. Giving up.&quot;</span><span class="p">)</span>
         <span class="c1"># Compute the number of rows to read.</span>
-        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">recarray</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">nrows</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The value has not enough elements to fill-in &quot;</span>
                              <span class="s2">&quot;the specified range&quot;</span><span class="p">)</span>
@@ -2657,8 +2561,6 @@
 
         <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span></div>
 
-    <span class="n">modifyColumns</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">modify_columns</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Table.flush_rows_to_index"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.flush_rows_to_index">[docs]</a>    <span class="k">def</span> <span class="nf">flush_rows_to_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_lastrow</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add remaining rows in buffers to non-dirty indexes.</span>
 
@@ -2673,7 +2575,7 @@
             <span class="c1"># Update the number of unsaved indexed rows</span>
             <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indexedrows</span>
             <span class="n">nrows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unsaved_indexedrows</span>
-            <span class="k">for</span> <span class="p">(</span><span class="n">colname</span><span class="p">,</span> <span class="n">colindexed</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">colname</span><span class="p">,</span> <span class="n">colindexed</span><span class="p">)</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">colindexed</span><span class="p">:</span>
                     <span class="n">col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">_g_col</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">nrows</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">col</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">dirty</span><span class="p">:</span>
@@ -2682,8 +2584,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_unsaved_indexedrows</span> <span class="o">-=</span> <span class="n">rowsadded</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_indexedrows</span> <span class="o">+=</span> <span class="n">rowsadded</span>
         <span class="k">return</span> <span class="n">rowsadded</span></div>
-
-    <span class="n">flushRowsToIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">flush_rows_to_index</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_add_rows_to_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colname</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">nrows</span><span class="p">,</span> <span class="n">lastrow</span><span class="p">,</span> <span class="n">update</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add more elements to the existing index.&quot;&quot;&quot;</span>
@@ -2714,10 +2614,12 @@
             <span class="n">indexedrows</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">-</span> <span class="n">startLR</span>
         <span class="k">return</span> <span class="n">indexedrows</span>
 
-    <span class="n">_addRowsToIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_add_rows_to_index</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Table.remove_rows"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.remove_rows">[docs]</a>    <span class="k">def</span> <span class="nf">remove_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Remove a range of rows in the table.</span>
+
+<span class="sd">        If only start is supplied, that row and all following will be deleted.</span>
+<span class="sd">        If a range is supplied, i.e. both the start and stop parameters are</span>
+<span class="sd">        passed, all the rows in the range are removed.</span>
 
 <span class="sd">        .. versionchanged:: 3.0</span>
 <span class="sd">           The start, stop and step parameters now behave like in slice.</span>
@@ -2733,7 +2635,7 @@
 <span class="sd">        stop : int</span>
 <span class="sd">            Sets the last row to be removed to stop-1, i.e. the end point is</span>
 <span class="sd">            omitted (in the Python range() tradition). Negative values are also</span>
-<span class="sd">            accepted.</span>
+<span class="sd">            accepted. If None all rows after start will be removed.</span>
 <span class="sd">        step : int</span>
 <span class="sd">            The step size between rows to remove.</span>
 
@@ -2746,7 +2648,7 @@
 
 <span class="sd">            t.remove_rows(5, 10)</span>
 
-<span class="sd">        Removing all rows starting drom the 10th::</span>
+<span class="sd">        Removing all rows starting from the 10th::</span>
 
 <span class="sd">            t.remove_rows(10)</span>
 
@@ -2762,28 +2664,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
-        <span class="n">nrows</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">nrows</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;You are trying to delete all the rows &#39;</span>
-                                      <span class="s1">&#39;in table &quot;</span><span class="si">%s</span><span class="s1">&quot;. This is not supported &#39;</span>
-                                      <span class="s1">&#39;right now due to limitations on the &#39;</span>
-                                      <span class="s1">&#39;underlying HDF5 library. Sorry!&#39;</span> <span class="o">%</span>
-                                      <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
         <span class="n">nrows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remove_rows</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
         <span class="c1"># remove_rows is a invalidating index operation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span></div>
 
-    <span class="n">removeRows</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">remove_rows</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Table.remove_row"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.remove_row">[docs]</a>    <span class="k">def</span> <span class="nf">remove_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes a row from the table.</span>
-
-<span class="sd">        If only start is supplied, only this row is to be deleted.  If a range</span>
-<span class="sd">        is supplied, i.e. both the start and stop parameters are passed, all</span>
-<span class="sd">        the rows in the range are removed. A step parameter is not supported,</span>
-<span class="sd">        and it is not foreseen to be implemented anytime soon.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -2791,6 +2679,23 @@
 <span class="sd">            The index of the row to remove.</span>
 
 <span class="sd">        .. versionadded:: 3.0</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        Remove row 15::</span>
+
+<span class="sd">            table.remove_row(15)</span>
+
+<span class="sd">        Which is equivalent to::</span>
+
+<span class="sd">            table.remove_rows(15, 16)</span>
+
+<span class="sd">        .. warning::</span>
+
+<span class="sd">            This is not equivalent to::</span>
+
+<span class="sd">                table.remove_rows(15)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -2805,8 +2710,6 @@
         <span class="c1"># Update the new path in the Row instance, if cached.  Fixes #224.</span>
         <span class="k">if</span> <span class="s1">&#39;row&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s1">&#39;row&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tableextension</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
-    <span class="n">_g_updateDependent</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_update_dependent</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Move this node in the hierarchy.</span>
@@ -2857,8 +2760,6 @@
         <span class="n">colindexed</span><span class="p">[</span><span class="n">colpathname</span><span class="p">]</span> <span class="o">=</span> <span class="n">isindexed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">indexed</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">colindexed</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>  <span class="c1"># this is an OR :)</span>
 
-    <span class="n">_setColumnIndexing</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_set_column_indexing</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_mark_columns_as_dirty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colnames</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Mark column indexes in `colnames` as dirty.&quot;&quot;&quot;</span>
 
@@ -2870,8 +2771,6 @@
                 <span class="k">if</span> <span class="n">colindexed</span><span class="p">[</span><span class="n">colname</span><span class="p">]:</span>
                     <span class="n">col</span> <span class="o">=</span> <span class="n">cols</span><span class="o">.</span><span class="n">_g_col</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span>
                     <span class="n">col</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">dirty</span> <span class="o">=</span> <span class="bp">True</span>
-
-    <span class="n">_markColumnsAsDirty</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_mark_columns_as_dirty</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_reindex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colnames</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Re-index columns in `colnames` if automatic indexing is true.&quot;&quot;&quot;</span>
@@ -2891,13 +2790,11 @@
             <span class="c1"># The table caches for indexed queries are dirty now</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_dirtycache</span> <span class="o">=</span> <span class="bp">True</span>
 
-    <span class="n">_reIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_reindex</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_do_reindex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dirty</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Common code for `reindex()` and `reindex_dirty()`.&quot;&quot;&quot;</span>
 
         <span class="n">indexedrows</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">colname</span><span class="p">,</span> <span class="n">colindexed</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">colname</span><span class="p">,</span> <span class="n">colindexed</span><span class="p">)</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">colindexed</span><span class="p">:</span>
                 <span class="n">indexcol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">_g_col</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span>
                 <span class="n">indexedrows</span> <span class="o">=</span> <span class="n">indexcol</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="p">)</span>
@@ -2907,8 +2804,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_unsaved_indexedrows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">-</span> <span class="n">indexedrows</span>
 
         <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">indexedrows</span><span class="p">)</span>
-
-    <span class="n">_doReIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_do_reindex</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.reindex"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.reindex">[docs]</a>    <span class="k">def</span> <span class="nf">reindex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Recompute all the existing indexes in the table.</span>
@@ -2920,8 +2815,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span></div>
-
-    <span class="n">reIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">reindex</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.reindex_dirty"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.reindex_dirty">[docs]</a>    <span class="k">def</span> <span class="nf">reindex_dirty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Recompute the existing indexes in table, *if* they are dirty.</span>
@@ -2935,8 +2828,6 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span></div>
 
-    <span class="n">reIndexDirty</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">reindex_dirty</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_g_copy_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">object</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">sortby</span><span class="p">,</span> <span class="n">checkCSI</span><span class="p">):</span>
         <span class="s2">&quot;Copy rows from self to object&quot;</span>
         <span class="k">if</span> <span class="n">sortby</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
@@ -2949,7 +2840,7 @@
             <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="n">stop</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">sortby</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_sortby_csi</span><span class="p">(</span><span class="n">sortby</span><span class="p">,</span> <span class="n">checkCSI</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">start2</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">absstep</span> <span class="o">*</span> <span class="n">lenbuf</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">start2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">absstep</span> <span class="o">*</span> <span class="n">lenbuf</span><span class="p">):</span>
             <span class="n">stop2</span> <span class="o">=</span> <span class="n">start2</span> <span class="o">+</span> <span class="n">absstep</span> <span class="o">*</span> <span class="n">lenbuf</span>
             <span class="k">if</span> <span class="n">stop2</span> <span class="o">&gt;</span> <span class="n">stop</span><span class="p">:</span>
                 <span class="n">stop2</span> <span class="o">=</span> <span class="n">stop</span>
@@ -2963,15 +2854,13 @@
             <span class="nb">object</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
         <span class="nb">object</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
-    <span class="n">_g_copyRows</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_copy_rows</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_g_copy_rows_optim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">object</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Copy rows from self to object (optimized version)&quot;&quot;&quot;</span>
 
         <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span>
         <span class="nb">object</span><span class="o">.</span><span class="n">_open_append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_iobuf</span><span class="p">)</span>
         <span class="n">nrowsdest</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="n">nrows</span>
-        <span class="k">for</span> <span class="n">start2</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">start2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span><span class="p">):</span>
             <span class="c1"># Save the records on disk</span>
             <span class="n">stop2</span> <span class="o">=</span> <span class="n">start2</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">nrowsinbuf</span>
             <span class="k">if</span> <span class="n">stop2</span> <span class="o">&gt;</span> <span class="n">stop</span><span class="p">:</span>
@@ -2984,8 +2873,6 @@
             <span class="nb">object</span><span class="o">.</span><span class="n">_append_records</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span>
             <span class="n">nrowsdest</span> <span class="o">+=</span> <span class="n">nrows</span>
         <span class="nb">object</span><span class="o">.</span><span class="n">_close_append</span><span class="p">()</span>
-
-    <span class="n">_g_copyRows_optim</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_copy_rows_optim</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_prop_indexes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generate index in `other` table for every indexed column here.&quot;&quot;&quot;</span>
@@ -3001,8 +2888,6 @@
                         <span class="n">kind</span><span class="o">=</span><span class="n">oldcolindex</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">optlevel</span><span class="o">=</span><span class="n">oldcolindex</span><span class="o">.</span><span class="n">optlevel</span><span class="p">,</span>
                         <span class="n">filters</span><span class="o">=</span><span class="n">oldcolindex</span><span class="o">.</span><span class="n">filters</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
 
-    <span class="n">_g_propIndexes</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_prop_indexes</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_g_copy_with_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
                            <span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">chunkshape</span><span class="p">,</span> <span class="n">_log</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Private part of Leaf.copy() for each kind of leaf.&quot;&quot;&quot;</span>
@@ -3015,7 +2900,7 @@
         <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range_read</span><span class="p">(</span>
             <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">warn_negstep</span><span class="o">=</span><span class="n">sortby</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
         <span class="c1"># And the number of final rows</span>
-        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
         <span class="c1"># Create the new table and copy the selected data.</span>
         <span class="n">newtable</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
                          <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="n">nrows</span><span class="p">,</span>
@@ -3027,8 +2912,6 @@
         <span class="k">if</span> <span class="n">propindexes</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexed</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_g_prop_indexes</span><span class="p">(</span><span class="n">newtable</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">newtable</span><span class="p">,</span> <span class="n">nbytes</span><span class="p">)</span>
-
-    <span class="n">_g_copyWithStats</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_copy_with_stats</span><span class="p">)</span>
 
     <span class="c1"># This overloading of copy is needed here in order to document</span>
     <span class="c1"># the additional keywords for the Table case.</span>
@@ -3122,8 +3005,6 @@
         <span class="k">if</span> <span class="s1">&#39;_v_wdflts&#39;</span> <span class="ow">in</span> <span class="n">mydict</span><span class="p">:</span>
             <span class="k">del</span> <span class="n">mydict</span><span class="p">[</span><span class="s1">&#39;_v_wdflts&#39;</span><span class="p">]</span>
 
-    <span class="n">_g_preKillHook</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_pre_kill_hook</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_f_close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
             <span class="k">return</span>  <span class="c1"># the node is already closed</span>
@@ -3215,15 +3096,12 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_g_gettable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_v_table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;The parent Table instance (see :ref:`TableClassDescr`).&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__tableFile</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__tablePath</span><span class="p">)</span>
 
-    <span class="n">_v_table</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="n">_g_gettable</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="s2">&quot;The parent Table instance (see :ref:`TableClassDescr`).&quot;</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">desc</span><span class="p">):</span>
-
         <span class="n">myDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
         <span class="n">myDict</span><span class="p">[</span><span class="s1">&#39;_v__tableFile&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">_v_file</span>
         <span class="n">myDict</span><span class="p">[</span><span class="s1">&#39;_v__tablePath&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">_v_pathname</span>
@@ -3247,8 +3125,6 @@
         <span class="c1"># Update the locations in individual columns.</span>
         <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_colnames</span><span class="p">:</span>
             <span class="n">myDict</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span><span class="o">.</span><span class="n">_g_update_table_location</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
-
-    <span class="n">_g_updateTableLocation</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_update_table_location</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Cols.__len__"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Cols.__len__">[docs]</a>    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the number of top level columns in table.&quot;&quot;&quot;</span>
@@ -3274,8 +3150,8 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Parameter can only be an string. You passed &quot;</span>
                             <span class="s2">&quot;object: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">colname</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">((</span><span class="n">colname</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span>
-             <span class="ow">not</span> <span class="n">colname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_colpathnames</span><span class="p">)</span> <span class="ow">and</span>
-                <span class="ow">not</span> <span class="n">colname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_colnames</span><span class="p">):</span>
+             <span class="n">colname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_colpathnames</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="n">colname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_colnames</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">((</span><span class="s2">&quot;Cols accessor ``</span><span class="si">%s</span><span class="s2">.cols</span><span class="si">%s</span><span class="s2">`` does not have a &quot;</span>
                             <span class="s2">&quot;column named ``</span><span class="si">%s</span><span class="s2">``&quot;</span><span class="p">)</span>
                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__tablePath</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_desc</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span>
@@ -3505,14 +3381,16 @@
 
     <span class="c1"># Properties</span>
     <span class="c1"># ~~~~~~~~~~</span>
-    <span class="k">def</span> <span class="nf">_gettable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The parent Table instance (see :ref:`TableClassDescr`).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_table_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_path</span><span class="p">)</span>
 
-    <span class="n">table</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_gettable</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-                     <span class="sd">&quot;&quot;&quot;The parent Table instance (see</span>
-<span class="sd">                     :ref:`TableClassDescr`).&quot;&quot;&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_getindex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The Index instance (see :ref:`IndexClassDescr`) associated with this</span>
+<span class="sd">        column (None if the column is not indexed).&quot;&quot;&quot;</span>
         <span class="n">indexPath</span> <span class="o">=</span> <span class="n">_index_pathname_of_column_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pathname</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_table_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">indexPath</span><span class="p">)</span>
@@ -3520,36 +3398,30 @@
             <span class="n">index</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c1"># The column is not indexed</span>
         <span class="k">return</span> <span class="n">index</span>
 
-    <span class="n">index</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getindex</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-                     <span class="sd">&quot;&quot;&quot;The Index instance (see :ref:`IndexClassDescr`)</span>
-<span class="sd">                     associated with this column (None if the column is not</span>
-<span class="sd">                     indexed).&quot;&quot;&quot;</span><span class="p">)</span>
-
     <span class="nd">@lazyattr</span>
     <span class="k">def</span> <span class="nf">_itemtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="o">.</span><span class="n">_v_dtypes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">_getshape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;The shape of this column.&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">nrows</span><span class="p">,)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="o">.</span><span class="n">_v_dtypes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
 
-    <span class="n">shape</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getshape</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="s2">&quot;The shape of this column.&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_isindexed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_indexed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;True if the column is indexed, false otherwise.&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">True</span>
 
-    <span class="n">is_indexed</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_isindexed</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
-                          <span class="s2">&quot;True if the column is indexed, false otherwise.&quot;</span><span class="p">)</span>
-
-    <span class="n">maindim</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span>
-        <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">maindim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;&quot;The dimension along which iterators work. Its value is 0 (i.e. the</span>
-<span class="sd">        first dimension).&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="sd">        first dimension).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">0</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="p">):</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_table_file</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">_v_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_table_path</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">_v_pathname</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
@@ -3566,8 +3438,6 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_table_file</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">_v_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_table_path</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">_v_pathname</span>
-
-    <span class="n">_g_updateTableLocation</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_update_table_location</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Column.__len__"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column.__len__">[docs]</a>    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the number of elements in the column.</span>
@@ -3656,7 +3526,7 @@
         <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;IO_BUFFER_SIZE&#39;</span><span class="p">]</span> <span class="o">//</span> <span class="n">itemsize</span>
         <span class="n">buf</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">nrowsinbuf</span><span class="p">,</span> <span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_itemtype</span><span class="p">)</span>
         <span class="n">max_row</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">start_row</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">nrowsinbuf</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">start_row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">nrowsinbuf</span><span class="p">):</span>
             <span class="n">end_row</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">start_row</span> <span class="o">+</span> <span class="n">nrowsinbuf</span><span class="p">,</span> <span class="n">max_row</span><span class="p">)</span>
             <span class="n">buf_slice</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">end_row</span> <span class="o">-</span> <span class="n">start_row</span><span class="p">]</span>
             <span class="n">table</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">start_row</span><span class="p">,</span> <span class="n">end_row</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pathname</span><span class="p">,</span>
@@ -3772,7 +3642,7 @@
         <span class="n">kinds</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ultralight&#39;</span><span class="p">,</span> <span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="s1">&#39;medium&#39;</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kinds</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Kind must have any of these values: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">kinds</span><span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">optlevel</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">long</span><span class="p">))</span> <span class="ow">or</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">optlevel</span><span class="p">,</span> <span class="n">six</span><span class="o">.</span><span class="n">integer_types</span><span class="p">)</span> <span class="ow">or</span>
                 <span class="p">(</span><span class="n">optlevel</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">optlevel</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Optimization level must be an integer in the &quot;</span>
                              <span class="s2">&quot;range 0-9&quot;</span><span class="p">)</span>
@@ -3791,8 +3661,6 @@
         <span class="n">idxrows</span> <span class="o">=</span> <span class="n">_column__create_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optlevel</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span>
                                         <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">_blocksizes</span><span class="p">,</span> <span class="n">_verbose</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">idxrows</span><span class="p">)</span></div>
-
-    <span class="n">createIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">create_index</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Column.create_csindex"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column.create_csindex">[docs]</a>    <span class="k">def</span> <span class="nf">create_csindex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                        <span class="n">_blocksizes</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_testmode</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
@@ -3819,8 +3687,6 @@
             <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="n">optlevel</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="o">=</span><span class="n">tmp_dir</span><span class="p">,</span>
             <span class="n">_blocksizes</span><span class="o">=</span><span class="n">_blocksizes</span><span class="p">,</span> <span class="n">_testmode</span><span class="o">=</span><span class="n">_testmode</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="n">_verbose</span><span class="p">)</span></div>
 
-    <span class="n">createCSIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">create_csindex</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_do_reindex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dirty</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Common code for reindex() and reindex_dirty() codes.&quot;&quot;&quot;</span>
 
@@ -3845,8 +3711,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># The column is not intended for indexing</span>
 
-    <span class="n">_doReIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_do_reindex</span><span class="p">)</span>
-
 <div class="viewcode-block" id="Column.reindex"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column.reindex">[docs]</a>    <span class="k">def</span> <span class="nf">reindex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Recompute the index associated with this column.</span>
 
@@ -3858,8 +3722,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span></div>
-
-    <span class="n">reIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">reindex</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Column.reindex_dirty"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column.reindex_dirty">[docs]</a>    <span class="k">def</span> <span class="nf">reindex_dirty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Recompute the associated index only if it is dirty.</span>
@@ -3873,8 +3735,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span></div>
-
-    <span class="n">reIndexDirty</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">reindex_dirty</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Column.remove_index"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column.remove_index">[docs]</a>    <span class="k">def</span> <span class="nf">remove_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Remove the index associated with this column.</span>
@@ -3892,8 +3752,6 @@
             <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span>
             <span class="n">index</span><span class="o">.</span><span class="n">_f_remove</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">_set_column_indexing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pathname</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span></div>
-
-    <span class="n">removeIndex</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">remove_index</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Close this column.&quot;&quot;&quot;</span>
@@ -3945,9 +3803,6 @@
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -3968,7 +3823,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.3.0 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
@@ -3977,7 +3832,7 @@
 
     <div class="footer" role="contentinfo">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>

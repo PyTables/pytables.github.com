@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.tests.common &mdash; PyTables 3.2.3 documentation</title>
+    <title>tables.tests.common &mdash; PyTables 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '3.2.3',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.2.3 documentation" href="../../../index.html" />
+    <link rel="top" title="PyTables 3.3.0 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" /> 
   </head>
   <body role="document">
@@ -48,7 +48,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
+    <li><a href="../../../index.html">PyTables 3.3.0 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
@@ -77,6 +77,7 @@
 <span class="sd">&quot;&quot;&quot;Utilities for PyTables&#39; test suites.&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -85,6 +86,9 @@
 <span class="kn">import</span> <span class="nn">platform</span>
 <span class="kn">import</span> <span class="nn">tempfile</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">distutils.version</span> <span class="kn">import</span> <span class="n">LooseVersion</span>
+
+<span class="kn">from</span> <span class="nn">pkg_resources</span> <span class="kn">import</span> <span class="n">resource_filename</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">unittest2</span> <span class="kn">as</span> <span class="nn">unittest</span>
@@ -99,6 +103,11 @@
 
 <span class="kn">import</span> <span class="nn">tables</span>
 <span class="kn">from</span> <span class="nn">tables.utils</span> <span class="kn">import</span> <span class="n">detect_number_of_cores</span>
+<span class="kn">from</span> <span class="nn">tables.req_versions</span> <span class="kn">import</span> <span class="n">min_blosc_bitshuffle_version</span>
+
+<span class="n">hdf5_version</span> <span class="o">=</span> <span class="n">LooseVersion</span><span class="p">(</span><span class="n">tables</span><span class="o">.</span><span class="n">hdf5_version</span><span class="p">)</span>
+<span class="n">blosc_version</span> <span class="o">=</span> <span class="n">LooseVersion</span><span class="p">(</span><span class="n">tables</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+
 
 <span class="n">verbose</span> <span class="o">=</span> <span class="bp">False</span>
 <span class="sd">&quot;&quot;&quot;Show detailed output of the testing process.&quot;&quot;&quot;</span>
@@ -181,6 +190,10 @@
             <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">blosc_cinfo</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
         <span class="p">]</span>
         <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Blosc compressors:   </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc_cinfo</span><span class="p">))</span>
+        <span class="n">blosc_finfo</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;shuffle&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">min_blosc_bitshuffle_version</span><span class="p">:</span>
+            <span class="n">blosc_finfo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;bitshuffle&#39;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Blosc filters:       </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc_finfo</span><span class="p">))</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">from</span> <span class="nn">Cython</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">cython_version</span>
         <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Cython version:      </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">cython_version</span><span class="p">)</span>
@@ -200,6 +213,10 @@
 
     <span class="c1"># This should improve readability whan tests are run by CI tools</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
+
+
+<span class="k">def</span> <span class="nf">test_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">resource_filename</span><span class="p">(</span><span class="s1">&#39;tables.tests&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">verbosePrint</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">nonl</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
@@ -327,7 +344,7 @@
 
     <span class="k">class</span> <span class="nc">_AssertWarnsContext</span><span class="p">(</span><span class="n">_AssertRaisesBaseContext</span><span class="p">):</span>
         <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
                 <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;__warningregistry__&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">):</span>
                     <span class="n">v</span><span class="o">.</span><span class="n">__warningregistry__</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">warnings_manager</span> <span class="o">=</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
@@ -396,20 +413,6 @@
             <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Running </span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">methodName</span><span class="p">)</span>
             <span class="k">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">title</span><span class="p">)))</span>
 
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_testFilename</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns an absolute version of the `filename`, taking care of the</span>
-<span class="sd">        location of the calling test case class.&quot;&quot;&quot;</span>
-        <span class="n">modname</span> <span class="o">=</span> <span class="n">class_</span><span class="o">.</span><span class="n">__module__</span>
-        <span class="c1"># When the definitive switch to ``setuptools`` is made,</span>
-        <span class="c1"># this should definitely use the ``pkg_resouces`` API::</span>
-        <span class="c1">#</span>
-        <span class="c1">#   return pkg_resources.resource_filename(modname, filename)</span>
-        <span class="c1">#</span>
-        <span class="n">modfile</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">modname</span><span class="p">]</span><span class="o">.</span><span class="n">__file__</span>
-        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">modfile</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-
     <span class="c1"># COMPATIBILITY: assertWarns is new in Python 3.2</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">,</span> <span class="s1">&#39;assertWarns&#39;</span><span class="p">):</span>
         <span class="k">def</span> <span class="nf">assertWarns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_warning</span><span class="p">,</span> <span class="n">callable_obj</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
@@ -456,7 +459,6 @@
 
     <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TestFileMixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
-        <span class="c1">#self.h5fname = self._testFilename(self.testfname)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(),</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">)</span>
 
@@ -561,9 +563,6 @@
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -584,7 +583,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
+    <li><a href="../../../index.html">PyTables 3.3.0 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li> 
       </ul>
@@ -593,7 +592,7 @@
 
     <div class="footer" role="contentinfo">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>

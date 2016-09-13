@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>tables.description &mdash; PyTables 3.2.3 documentation</title>
+    <title>tables.description &mdash; PyTables 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/cloud.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.2.3',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="../../_static/toggle_sections.js"></script>
     <script type="text/javascript" src="../../_static/toggle_sidebar.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="PyTables 3.2.3 documentation" href="../../index.html" />
+    <link rel="top" title="PyTables 3.3.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body role="document">
@@ -48,7 +48,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.3.0 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
@@ -79,16 +79,19 @@
 <span class="c1"># Imports</span>
 <span class="c1"># =======</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span>
 
-<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="n">atom</span>
-<span class="kn">from</span> <span class="nn">tables.path</span> <span class="kn">import</span> <span class="n">check_name_validity</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">atom</span>
+<span class="kn">from</span> <span class="nn">.path</span> <span class="kn">import</span> <span class="n">check_name_validity</span>
 
-<span class="kn">from</span> <span class="nn">tables._past</span> <span class="kn">import</span> <span class="n">previous_api</span><span class="p">,</span> <span class="n">previous_api_property</span>
+<span class="kn">import</span> <span class="nn">six</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">zip</span>
+
 
 <span class="c1"># Public variables</span>
 <span class="c1"># ================</span>
@@ -113,7 +116,7 @@
 
 <span class="c1"># Column classes</span>
 <span class="c1"># ==============</span>
-<div class="viewcode-block" id="Col"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Col">[docs]</a><span class="k">class</span> <span class="nc">Col</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">Atom</span><span class="p">):</span>
+<div class="viewcode-block" id="Col"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Col">[docs]</a><span class="k">class</span> <span class="nc">Col</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">atom</span><span class="o">.</span><span class="n">Atom</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Defines a non-nested column.</span>
 
 <span class="sd">    Col instances are used as a means to declare the different properties of a</span>
@@ -153,9 +156,6 @@
 <span class="sd">        will be randomly selected.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># Avoid mangling atom class data.</span>
-    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="nb">type</span>
 
     <span class="n">_class_from_prefix</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># filled as column classes are created</span>
     <span class="sd">&quot;&quot;&quot;Maps column prefixes to column classes.&quot;&quot;&quot;</span>
@@ -312,12 +312,12 @@
 
     <span class="c1"># Abstract classes are not in the class map.</span>
     <span class="n">cprefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Int&#39;</span><span class="p">,</span> <span class="s1">&#39;UInt&#39;</span><span class="p">,</span> <span class="s1">&#39;Float&#39;</span><span class="p">,</span> <span class="s1">&#39;Time&#39;</span><span class="p">]</span>
-    <span class="k">for</span> <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">kdata</span><span class="p">)</span> <span class="ow">in</span> <span class="n">atom</span><span class="o">.</span><span class="n">atom_map</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">kdata</span><span class="p">)</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">atom_map</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">):</span>  <span class="c1"># atom class: non-fixed item size</span>
             <span class="n">atomclass</span> <span class="o">=</span> <span class="n">kdata</span>
             <span class="n">cprefixes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atomclass</span><span class="o">.</span><span class="n">prefix</span><span class="p">())</span>
         <span class="k">else</span><span class="p">:</span>  <span class="c1"># dictionary: fixed item size</span>
-            <span class="k">for</span> <span class="n">atomclass</span> <span class="ow">in</span> <span class="n">kdata</span><span class="o">.</span><span class="n">itervalues</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">atomclass</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">itervalues</span><span class="p">(</span><span class="n">kdata</span><span class="p">):</span>
                 <span class="n">cprefixes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atomclass</span><span class="o">.</span><span class="n">prefix</span><span class="p">())</span>
 
     <span class="c1"># Bottom-level complex classes are not in the type map, of course.</span>
@@ -499,10 +499,6 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">_v_colObjects</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s1">&#39;_v_colobjects&#39;</span><span class="p">)</span>
-    <span class="n">_v_nestedFormats</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s1">&#39;_v_nested_formats&#39;</span><span class="p">)</span>
-    <span class="n">_v_nestedNames</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s1">&#39;_v_nested_names&#39;</span><span class="p">)</span>
-    <span class="n">_v_nestedDesct</span> <span class="o">=</span> <span class="n">previous_api_property</span><span class="p">(</span><span class="s1">&#39;_v_nested_descr&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classdict</span><span class="p">,</span> <span class="n">nestedlvl</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
 
@@ -529,7 +525,7 @@
         <span class="n">cols_no_pos</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># just column names</span>
 
         <span class="c1"># Check for special variables and convert column descriptions</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="p">)</span> <span class="ow">in</span> <span class="n">classdict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="p">)</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="n">classdict</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_v_&#39;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">newdict</span><span class="p">:</span>
                     <span class="c1"># print(&quot;Warning!&quot;)</span>
@@ -646,9 +642,8 @@
         <span class="n">names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_names</span>
         <span class="n">fmts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_nested_formats</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_nested_names</span> <span class="o">=</span> <span class="n">names</span><span class="p">[:]</span>  <span class="c1"># Important to do a copy!</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_v_nested_descr</span> <span class="o">=</span> <span class="p">[(</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">fmts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">))]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)):</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_nested_descr</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">fmts</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
             <span class="n">new_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_colobjects</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_object</span><span class="p">,</span> <span class="n">Description</span><span class="p">):</span>
                 <span class="n">new_object</span><span class="o">.</span><span class="n">_g_set_nested_names_descr</span><span class="p">()</span>
@@ -658,7 +653,6 @@
                 <span class="c1"># set the _v_is_nested flag</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_v_is_nested</span> <span class="o">=</span> <span class="bp">True</span>
 
-    <span class="n">_g_setNestedNamesDescr</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_set_nested_names_descr</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_set_path_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the pathnames for arbitrary nested descriptions.</span>
@@ -722,7 +716,7 @@
                 <span class="c1"># children lists, a string signals that no more children</span>
                 <span class="c1"># remain to be processed, so we are done with the</span>
                 <span class="c1"># description at the top of the stack.</span>
-                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="n">six</span><span class="o">.</span><span class="n">string_types</span><span class="p">)</span>
                 <span class="c1"># Assign the computed set of descendent column paths.</span>
                 <span class="n">desc</span><span class="o">.</span><span class="n">_v_pathnames</span> <span class="o">=</span> <span class="n">cols</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -736,7 +730,6 @@
                     <span class="n">parentCols</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">colPaths</span><span class="p">)</span>
                 <span class="c1"># (Nothing is pushed, we are done with this description.)</span>
 
-    <span class="n">_g_setPathNames</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">_g_set_path_names</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Description._f_walk"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Description._f_walk">[docs]</a>    <span class="k">def</span> <span class="nf">_f_walk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;All&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate over nested columns.</span>
@@ -758,9 +751,8 @@
             <span class="nb">object</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># pop at the front so as to ensure the order</span>
             <span class="k">if</span> <span class="nb">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;All&quot;</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">]:</span>
                 <span class="k">yield</span> <span class="nb">object</span>  <span class="c1"># yield description</span>
-            <span class="n">names</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_names</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)):</span>
-                <span class="n">new_object</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_colobjects</span><span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_names</span><span class="p">:</span>
+                <span class="n">new_object</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="n">_v_colobjects</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_object</span><span class="p">,</span> <span class="n">Description</span><span class="p">):</span>
                     <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_object</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -802,10 +794,9 @@
         <span class="c1"># Return a new class with the &quot;columns&quot; attribute filled</span>
         <span class="k">return</span> <span class="nb">type</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">newdict</span><span class="p">)</span>
 
-<span class="n">metaIsDescription</span> <span class="o">=</span> <span class="n">previous_api</span><span class="p">(</span><span class="n">MetaIsDescription</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="IsDescription"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.IsDescription">[docs]</a><span class="k">class</span> <span class="nc">IsDescription</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="IsDescription"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.IsDescription">[docs]</a><span class="k">class</span> <span class="nc">IsDescription</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">MetaIsDescription</span><span class="p">,</span> <span class="nb">object</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Description of the structure of a table or nested column.</span>
 
 <span class="sd">    This class is designed to be used as an easy, yet meaningful way to</span>
@@ -847,9 +838,7 @@
 <span class="sd">        subclass is declared.  Please note that declared columns can no longer</span>
 <span class="sd">        be accessed as normal class variables after its creation.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">MetaIsDescription</span></div>
+<span class="sd">    &quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="descr_from_dtype"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.descr_from_dtype">[docs]</a><span class="k">def</span> <span class="nf">descr_from_dtype</span><span class="p">(</span><span class="n">dtype_</span><span class="p">):</span>
@@ -868,7 +857,7 @@
                     <span class="s2">&quot;are not supported yet, sorry&quot;</span><span class="p">)</span>
             <span class="n">fbyteorder</span> <span class="o">=</span> <span class="n">byteorder</span>
         <span class="c1"># Non-nested column</span>
-        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;biufSc&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;biufSUc&#39;</span><span class="p">:</span>
             <span class="n">col</span> <span class="o">=</span> <span class="n">Col</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">)</span>
         <span class="c1"># Nested column</span>
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;V&#39;</span> <span class="ow">and</span> <span class="n">dtype</span><span class="o">.</span><span class="n">shape</span> <span class="ow">in</span> <span class="p">[(),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)]:</span>
@@ -1040,9 +1029,6 @@
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -1063,7 +1049,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">PyTables 3.2.3 documentation</a> &raquo;</li>
+    <li><a href="../../index.html">PyTables 3.3.0 documentation</a> &raquo;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
@@ -1072,7 +1058,7 @@
 
     <div class="footer" role="contentinfo">
         &copy; Copyright 2011-2014, PyTables maintainers.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
     </div>
     <!-- cloud_sptheme 1.3 -->
   </body>
