@@ -37,7 +37,19 @@
         <link rel="search" title="Search" href="../search.html"/>
     <link rel="top" title="PyTables 3.4.2 documentation" href="../index.html"/>
         <link rel="up" title="PyTables User’s Guide" href="index.html"/>
-        <link rel="next" title="filenode - simulating a filesystem with PyTables" href="filenode.html"/> 
+        <link rel="next" title="filenode - simulating a filesystem with PyTables" href="filenode.html"/>
+ 
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-111342564-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-111342564-1');
+</script>
+
+
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -148,7 +160,7 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="index.html">PyTables User&#8217;s Guide</a> &raquo;</li>
+          <li><a href="index.html">PyTables User’s Guide</a> &raquo;</li>
         
       <li>Optimization tips</li>
     
@@ -172,8 +184,8 @@
   <div class="section" id="optimization-tips">
 <h1>Optimization tips<a class="headerlink" href="#optimization-tips" title="Permalink to this headline">¶</a></h1>
 <blockquote class="epigraph">
-<div><p>... durch planmässiges Tattonieren.</p>
-<p>[... through systematic, palpable experimentation.]</p>
+<div><p>… durch planmässiges Tattonieren.</p>
+<p>[… through systematic, palpable experimentation.]</p>
 <p class="attribution">&mdash;Johann Karl Friedrich Gauss [asked how he came upon his theorems]</p>
 </div></blockquote>
 <p>On this chapter, you will get deeper knowledge of PyTables internals.
@@ -197,7 +209,7 @@ etc. on entire chunks.</p>
 <p>HDF5 keeps a B-tree in memory that is used to map chunk structures on disk.
 The more chunks that are allocated for a dataset the larger the B-tree.
 Large B-trees take memory and cause file storage overhead as well as more
-disk I/O and higher contention forthe metadata cache.  Consequently, it&#8217;s
+disk I/O and higher contention forthe metadata cache.  Consequently, it’s
 important to balance between memory and I/O overhead (small B-trees) and time
 to access data (big B-trees).</p>
 <p>In the next couple of sections, you will discover how to inform PyTables
@@ -349,7 +361,7 @@ like this, keep reading.</p>
 <p>PyTables provides a way to accelerate data selections inside of a single
 table, through the use of the <a class="reference internal" href="libref/structured_storage.html#tablemethods-querying"><span class="std std-ref">Table methods - querying</span></a> iterator and
 related query methods. This mode of selecting data is called <em>in-kernel</em>.
-Let&#8217;s see an example of an <em>in-kernel</em> query based on the <em>regular</em> one
+Let’s see an example of an <em>in-kernel</em> query based on the <em>regular</em> one
 mentioned above:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;col2&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
             <span class="sd">&#39;&#39;&#39;(((col4 &gt;= lim1) &amp; (col4 &lt; lim2)) |</span>
@@ -460,20 +472,20 @@ be used. See below for examples where the optimizer can safely determine if
 an index, or series of indexes, can be used or not.</p>
 <p>Example conditions where an index can be used:</p>
 <ul class="simple">
-<li>var1 &gt;= &#8220;foo&#8221; (var1 is used)</li>
+<li>var1 &gt;= “foo” (var1 is used)</li>
 <li>var1 &gt;= mystr (var1 is used)</li>
-<li>(var1 &gt;= &#8220;foo&#8221;) &amp; (var4 &gt; 0.0) (var1 is used)</li>
-<li>(&#8220;bar&#8221; &lt;= var1) &amp; (var1 &lt; &#8220;foo&#8221;) (var1 is used)</li>
-<li>((&#8220;bar&#8221; &lt;= var1) &amp; (var1 &lt; &#8220;foo&#8221;)) &amp; (var4 &gt; 0.0) (var1 is used)</li>
-<li>(var1 &gt;= &#8220;foo&#8221;) &amp; (var3 &gt; 10) (var1 and var3 are used)</li>
-<li>(var1 &gt;= &#8220;foo&#8221;) | (var3 &gt; 10) (var1 and var3 are used)</li>
-<li>~(var1 &gt;= &#8220;foo&#8221;) | ~(var3 &gt; 10) (var1 and var3 are used)</li>
+<li>(var1 &gt;= “foo”) &amp; (var4 &gt; 0.0) (var1 is used)</li>
+<li>(“bar” &lt;= var1) &amp; (var1 &lt; “foo”) (var1 is used)</li>
+<li>((“bar” &lt;= var1) &amp; (var1 &lt; “foo”)) &amp; (var4 &gt; 0.0) (var1 is used)</li>
+<li>(var1 &gt;= “foo”) &amp; (var3 &gt; 10) (var1 and var3 are used)</li>
+<li>(var1 &gt;= “foo”) | (var3 &gt; 10) (var1 and var3 are used)</li>
+<li>~(var1 &gt;= “foo”) | ~(var3 &gt; 10) (var1 and var3 are used)</li>
 </ul>
 <p>Example conditions where an index can <em>not</em> be used:</p>
 <ul class="simple">
 <li>var4 &gt; 0.0 (var4 is not indexed)</li>
 <li>var1 != 0.0 (range has two pieces)</li>
-<li>~((&#8220;bar&#8221; &lt;= var1) &amp; (var1 &lt; &#8220;foo&#8221;)) &amp; (var4 &gt; 0.0) (negation of a complex boolean expression)</li>
+<li>~((“bar” &lt;= var1) &amp; (var1 &lt; “foo”)) &amp; (var4 &gt; 0.0) (negation of a complex boolean expression)</li>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -568,7 +580,7 @@ done.</p>
 <p class="caption"><span class="caption-text"><strong>Figure 11. Times for complex queries with a cold cache (mean of 5 first
 random queries) for different disk storage (SSD vs spinning disks).</strong></span></p>
 </div>
-<p>Finally, we should remark that SSD can&#8217;t compete with traditional spinning
+<p>Finally, we should remark that SSD can’t compete with traditional spinning
 disks in terms of capacity as they can only provide, for a similar cost,
 between 1/10th and 1/50th of the size of traditional disks.  It is here where
 the compression capabilities of PyTables can be very helpful because both
@@ -732,7 +744,7 @@ points it is actually better), Zlib makes speed drop to a half, while bzip2
 is performing very slow (up to 8x slower).</p>
 <p>Also, in the same <a class="reference internal" href="#comprreadnocachecomparison"><span class="std std-ref">Figure 16</span></a> you can
 notice some strange peaks in the speed that we might be tempted to attribute
-to libraries on which PyTables relies (HDF5, compressors...), or to PyTables
+to libraries on which PyTables relies (HDF5, compressors…), or to PyTables
 itself.
 However, <a class="reference internal" href="#comprreadcachecomparison"><span class="std std-ref">Figure 17</span></a> reveals that, if we put
 the file in the filesystem cache (by reading it several times before, for
@@ -763,7 +775,7 @@ one that achieves the worse compression ratio (although that may be just OK
 for many situations, specially when used with shuffling - see
 <a class="reference internal" href="#shufflingoptim"><span class="std std-ref">Shuffling (or how to make the compression process more effective)</span></a>).  bzip2 is the slowest, by large, in both compressing
 and decompressing, and besides, it does not achieve any better compression
-ratio than Zlib. Zlib represents a balance between them: it&#8217;s somewhat slow
+ratio than Zlib. Zlib represents a balance between them: it’s somewhat slow
 compressing (2x) and decompressing (3x) than LZO, but it normally achieves
 better compression ratios.</p>
 <p>Finally, by looking at the plots <a class="reference internal" href="#comprwritezlibcomparison"><span class="std std-ref">Figure 18</span></a>,
@@ -902,7 +914,7 @@ compress your data, just as PyTables does.</p>
 <p>Psyco (see <a class="reference internal" href="bibliography.html#psyco"><span class="std std-ref">[PSYCO]</span></a>) is a kind of specialized compiler for
 Python that typically accelerates Python applications with no change in
 source code. You can think of Psyco as a kind of just-in-time (JIT) compiler,
-a little bit like Java&#8217;s, that emits machine code on the fly instead of
+a little bit like Java’s, that emits machine code on the fly instead of
 interpreting your Python program step by step. The result is that your
 unmodified Python programs run faster.</p>
 <p>Psyco is very easy to install and use, so in most scenarios it is worth to
@@ -939,7 +951,7 @@ to look like:</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;myfile.h5&quot;</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>That&#8217;s all!  From now on, each time that you execute your Python script,
+<p>That’s all!  From now on, each time that you execute your Python script,
 Psyco will deploy its sophisticated algorithms so as to accelerate your
 calculations.</p>
 <p>You can see in the graphs <a class="reference internal" href="#psycowritecomparison"><span class="std std-ref">Figure 24</span></a> and
@@ -1008,8 +1020,8 @@ fits better your needs.</p>
 this benchmark is run twice for two different values of the LRU cache size,
 specifically 256 and 1024. You can see the results in
 <a class="reference internal" href="#optimization-table-1"><span class="std std-ref">table</span></a>.</p>
-<table border="1" class="docutils" id="id34">
-<span id="optimization-table-1"></span><caption><span class="caption-text"><strong>Retrieval speed and memory consumption depending on the number of nodes in LRU cache.</strong></span><a class="headerlink" href="#id34" title="Permalink to this table">¶</a></caption>
+<span id="optimization-table-1"></span><table border="1" class="docutils" id="id34">
+<caption><span class="caption-text"><strong>Retrieval speed and memory consumption depending on the number of nodes in LRU cache.</strong></span><a class="headerlink" href="#id34" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="32%" />
 <col width="16%" />
@@ -1033,7 +1045,7 @@ specifically 256 and 1024. You can see the results in
 <th class="head" colspan="2">Memory (MB)</th>
 <th class="head" colspan="2">Time (ms)</th>
 </tr>
-<tr class="row-odd"><th class="head">Node is coming from...</th>
+<tr class="row-odd"><th class="head">Node is coming from…</th>
 <th class="head">Cache size</th>
 <th class="head">256</th>
 <th class="head">1024</th>
@@ -1110,7 +1122,7 @@ numerical values could be a little bit different from the ones reported in
 </div>
 <div class="section" id="compacting-your-pytables-files">
 <h2>Compacting your PyTables files<a class="headerlink" href="#compacting-your-pytables-files" title="Permalink to this headline">¶</a></h2>
-<p>Let&#8217;s suppose that you have a file where you have made a lot of row deletions
+<p>Let’s suppose that you have a file where you have made a lot of row deletions
 on one or more tables, or deleted many leaves or even entire subtrees. These
 operations might leave <em>holes</em> (i.e. space that is not used anymore) in your
 files that may potentially affect not only the size of the files but, more
@@ -1215,7 +1227,7 @@ with recent versions of PyTables anymore.</td></tr>
       <script type="text/javascript" src="../_static/jquery.js"></script>
       <script type="text/javascript" src="../_static/underscore.js"></script>
       <script type="text/javascript" src="../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

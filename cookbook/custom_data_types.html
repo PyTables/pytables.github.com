@@ -38,7 +38,19 @@
     <link rel="top" title="PyTables 3.4.2 documentation" href="../index.html"/>
         <link rel="up" title="PyTables Cookbook" href="index.html"/>
         <link rel="next" title="SimpleTable: simple wrapper around the Table object" href="simple_table.html"/>
-        <link rel="prev" title="Tailoring atexit hooks" href="tailoring_atexit_hooks.html"/> 
+        <link rel="prev" title="Tailoring atexit hooks" href="tailoring_atexit_hooks.html"/>
+ 
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-111342564-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-111342564-1');
+</script>
+
+
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -100,7 +112,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="index.html#contents">Contents</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="hints_for_sql_users.html">Hints for SQL users</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2exe_howto.html">PyTables &amp; py2exe Howto (by Tommy Edvardsen)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="no_root_install.html">How to install PyTables when you&#8217;re not root (by Koen van de Sande)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="no_root_install.html">How to install PyTables when you're not root (by Koen van de Sande)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="tailoring_atexit_hooks.html">Tailoring <cite>atexit</cite> hooks</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Using your own custom data types</a></li>
 <li class="toctree-l3"><a class="reference internal" href="simple_table.html">SimpleTable: simple wrapper around the Table object</a></li>
@@ -189,11 +201,9 @@
 such as <a class="reference internal" href="../usersguide/libref/hierarchy_classes.html#tables.Leaf" title="tables.Leaf"><code class="xref py py-class docutils literal"><span class="pre">tables.Leaf</span></code></a>).
 This can be useful for storing a specialized type of data or presenting a
 customized API.</p>
-<p>Here&#8217;s one way to do it, taken from
-<a class="reference external" href="http://sourceforge.net/mailarchive/message.php?msg_id=200805250042.50653.pgmdevlist%40gmail.com">http://sourceforge.net/mailarchive/message.php?msg_id=200805250042.50653.pgmdevlist%40gmail.com</a></p>
+<p>Submitted by Kevin R. Thornton.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="k">as</span> <span class="nn">ma</span>
 
 <span class="kn">import</span> <span class="nn">tables</span>
 <span class="kn">from</span> <span class="nn">tables</span> <span class="k">import</span> <span class="n">File</span><span class="p">,</span> <span class="n">Table</span>
@@ -201,71 +211,80 @@ customized API.</p>
 
 <span class="kn">from</span> <span class="nn">tables.parameters</span> <span class="k">import</span> <span class="n">EXPECTED_ROWS_TABLE</span>
 
-<span class="k">class</span> <span class="nc">MaskedTable</span><span class="p">(</span><span class="n">Table</span><span class="p">):</span>
-    <span class="n">_c_classId</span> <span class="o">=</span> <span class="s1">&#39;MaskedTable&#39;</span>
+
+<span class="k">class</span> <span class="nc">DerivedFromTable</span><span class="p">(</span><span class="n">Table</span><span class="p">):</span>
+    <span class="n">_c_classId</span> <span class="o">=</span> <span class="s1">&#39;DerivedFromTable&#39;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentNode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-
                  <span class="n">expectedrows</span><span class="o">=</span><span class="n">EXPECTED_ROWS_TABLE</span><span class="p">,</span>
                  <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="n">new</span> <span class="o">=</span> <span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">new</span><span class="p">:</span>
-            <span class="n">maskedarray</span> <span class="o">=</span> <span class="n">description</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">maskedarray</span><span class="o">.</span><span class="n">filled</span><span class="p">()</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span>
-
-                                   <span class="n">ma</span><span class="o">.</span><span class="n">getmaskarray</span><span class="p">(</span><span class="n">maskedarray</span><span class="p">)</span><span class="o">.</span><span class="n">flat</span><span class="p">),</span>
-                                   <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;_data&#39;</span><span class="p">,</span><span class="n">maskedarray</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
-                                          <span class="p">(</span><span class="s1">&#39;_mask&#39;</span><span class="p">,</span><span class="nb">bool</span><span class="p">)])</span>
-        <span class="n">Table</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentNode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
-                       <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
-                       <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
-
-                       <span class="n">expectedrows</span><span class="o">=</span><span class="n">expectedrows</span><span class="p">,</span>
-                       <span class="n">chunkshape</span><span class="o">=</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="n">byteorder</span><span class="p">,</span>
-                       <span class="n">_log</span><span class="o">=</span><span class="n">_log</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">new</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">maskedarray</span><span class="o">.</span><span class="n">shape</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DerivedFromTable</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parentNode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                                          <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+                                          <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+                                          <span class="n">expectedrows</span><span class="o">=</span><span class="n">expectedrows</span><span class="p">,</span>
+                                          <span class="n">chunkshape</span><span class="o">=</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="n">byteorder</span><span class="p">,</span>
+                                          <span class="n">_log</span><span class="o">=</span><span class="n">_log</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;HERE!&quot;</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">Table</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
                           <span class="n">field</span><span class="o">=</span><span class="n">field</span><span class="p">)</span>
-        <span class="n">newshape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">shape</span>
-        <span class="k">return</span> <span class="n">ma</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;_data&#39;</span><span class="p">],</span>
-                        <span class="n">mask</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;_mask&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">newshape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
 
 
-<span class="k">def</span> <span class="nf">createMaskedTable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">maskedarray</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-                      <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
-                      <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                      <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="n">parentNode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getOrCreatePath</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">createparents</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">createDerivedFromTable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                           <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+                           <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">parentNode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_or_create_path</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">createparents</span><span class="p">)</span>
 
     <span class="n">_checkfilters</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">MaskedTable</span><span class="p">(</span><span class="n">parentNode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">maskedarray</span><span class="p">,</span>
-                       <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
-                       <span class="n">expectedrows</span><span class="o">=</span><span class="n">expectedrows</span><span class="p">,</span>
-                       <span class="n">chunkshape</span><span class="o">=</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="n">byteorder</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">DerivedFromTable</span><span class="p">(</span><span class="n">parentNode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+                            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+                            <span class="n">expectedrows</span><span class="o">=</span><span class="n">expectedrows</span><span class="p">,</span>
+                            <span class="n">chunkshape</span><span class="o">=</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="n">byteorder</span><span class="p">)</span>
 
 
-<span class="n">File</span><span class="o">.</span><span class="n">createMaskedTable</span> <span class="o">=</span> <span class="n">createMaskedTable</span>
+<span class="n">File</span><span class="o">.</span><span class="n">createDerivedFromTable</span> <span class="o">=</span> <span class="n">createDerivedFromTable</span>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">ma</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span><span class="n">mask</span><span class="o">=</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.7</span><span class="p">))</span>
-    <span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">openFile</span><span class="p">(</span><span class="s1">&#39;tester.hdf5&#39;</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
-    <span class="n">mtab</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">createMaskedTable</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span><span class="s1">&#39;random&#39;</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+    <span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">,(</span><span class="mi">50</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">),(</span><span class="s1">&#39;y&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)]</span>
+    <span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s1">&#39;tester.hdf5&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">mtab</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">createDerivedFromTable</span><span class="p">(</span><span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
 
     <span class="n">h5file</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">mtab</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">mtab</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="n">mtab_read</span> <span class="o">=</span> <span class="n">mtab</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
     <span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">openFile</span><span class="p">(</span><span class="s1">&#39;tester.hdf5&#39;</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">h5file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s1">&#39;tester.hdf5&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
     <span class="n">mtab</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">random</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">mtab</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">mtab</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="n">mtab_read2</span> <span class="o">=</span> <span class="n">mtab</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">mtab_read</span><span class="p">,</span> <span class="n">mtab_read2</span><span class="p">))</span>
 </pre></div>
 </div>
+<p>There is an issue that the DerivedFromTable read function will not be called
+when the file is re-opened. The notion that the H5 file contains a derived
+object gets lost. The output shows that the read function is only called before
+the function is closed:</p>
+<dl class="docutils">
+<dt>::</dt>
+<dd>&lt;class ‘__main__.DerivedFromTable’&gt;
+HERE!
+&lt;class ‘tables.table.Table’&gt;
+True
+Closing remaining open files:tester.hdf5…done</dd>
+</dl>
+<p>I ran into this because I wanted a custom read that returned a more complex
+object implemented in C++. Using pybind11, I’m easily able to write to a
+Table via a record array. I was hoping that I could read back in, construct the
+correct C++-based type, and return it. The example seems to suggest that this
+is not possible.</p>
 </div>
 
 
@@ -322,7 +341,7 @@ customized API.</p>
       <script type="text/javascript" src="../_static/jquery.js"></script>
       <script type="text/javascript" src="../_static/underscore.js"></script>
       <script type="text/javascript" src="../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
