@@ -188,7 +188,7 @@
 <span id="arrayclassdescr"></span><h2>The Array class<a class="headerlink" href="#the-array-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="tables.Array">
-<em class="property">class </em><code class="descclassname">tables.</code><code class="descname">Array</code><span class="sig-paren">(</span><em>parentnode</em>, <em>name</em>, <em>obj=None</em>, <em>title=''</em>, <em>byteorder=None</em>, <em>_log=True</em>, <em>_atom=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/array.html#Array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.Array" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">tables.</code><code class="descname">Array</code><span class="sig-paren">(</span><em>parentnode</em>, <em>name</em>, <em>obj=None</em>, <em>title=''</em>, <em>byteorder=None</em>, <em>_log=True</em>, <em>_atom=None</em>, <em>track_times=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/array.html#Array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.Array" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class represents homogeneous datasets in an HDF5 file.</p>
 <p>This class provides methods to write or read data to or from array objects
 in the file. This class does not allow you neither to enlarge nor compress
@@ -211,7 +211,7 @@ disk.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>parentnode</strong></p>
 <blockquote>
-<div><p>The parent <a class="reference internal" href="hierarchy_classes.html#tables.Group" title="tables.Group"><code class="xref py py-class docutils literal"><span class="pre">Group</span></code></a> object.</p>
+<div><p>The parent <a class="reference internal" href="hierarchy_classes.html#tables.Group" title="tables.Group"><code class="xref py py-class docutils literal notranslate"><span class="pre">Group</span></code></a> object.</p>
 <div class="versionchanged">
 <p><span class="versionmodified">Changed in version 3.0: </span>Renamed from <em>parentNode</em> to <em>parentnode</em></p>
 </div>
@@ -225,7 +225,7 @@ disk.</p>
 <div><p>The array or scalar to be saved.  Accepted types are NumPy
 arrays and scalars as well as native Python sequences and
 scalars, provided that values are regular (i.e. they are not
-like <code class="docutils literal"><span class="pre">[[1,2],2]</span></code>) and homogeneous (i.e. all the elements are
+like <code class="docutils literal notranslate"><span class="pre">[[1,2],2]</span></code>) and homogeneous (i.e. all the elements are
 of the same type).</p>
 <div class="versionchanged">
 <p><span class="versionmodified">Changed in version 3.0: </span>Renamed form <em>object</em> into <em>obj</em>.</p>
@@ -233,13 +233,25 @@ of the same type).</p>
 </div></blockquote>
 <p><strong>title</strong></p>
 <blockquote>
-<div><p>A description for this node (it sets the <code class="docutils literal"><span class="pre">TITLE</span></code> HDF5 attribute on
+<div><p>A description for this node (it sets the <code class="docutils literal notranslate"><span class="pre">TITLE</span></code> HDF5 attribute on
 disk).</p>
 </div></blockquote>
 <p><strong>byteorder</strong></p>
-<blockquote class="last">
+<blockquote>
 <div><p>The byteorder of the data <em>on disk</em>, specified as ‘little’ or ‘big’.
 If this is not specified, the byteorder is that of the given <cite>object</cite>.</p>
+</div></blockquote>
+<p><strong>track_times</strong></p>
+<blockquote class="last">
+<div><p>Whether time data associated with the leaf are recorded (object
+access time, raw data modification time, metadata change time, object
+birth time); default True.  Semantics of these times depend on their
+implementation in the HDF5 library: refer to documentation of the
+H5O_info_t data structure.  As of HDF5 1.8.15, only ctime (metadata
+change time) is implemented.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 3.4.</span></p>
+</div>
 </div></blockquote>
 </td>
 </tr>
@@ -252,47 +264,50 @@ If this is not specified, the byteorder is that of the given <cite>object</cite>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">attrs</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">attrs</span></code></td>
 <td>The associated <cite>AttributeSet</cite> instance.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">chunkshape</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">chunkshape</span></code></td>
 <td>The HDF5 chunk size for chunked leaves (a tuple).</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">dtype</span></code></td>
-<td>The NumPy <code class="docutils literal"><span class="pre">dtype</span></code> that most closely matches this array.</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">dtype</span></code></td>
+<td>The NumPy <code class="docutils literal notranslate"><span class="pre">dtype</span></code> that most closely matches this array.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">filters</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">filters</span></code></td>
 <td>Filter properties for this leaf.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">flavor</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">flavor</span></code></td>
 <td>The type of data object read from this leaf.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">maindim</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">maindim</span></code></td>
 <td>The dimension along which iterators work.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">name</span></code></td>
-<td>The name of this node in its parent group (This is an easier-to-write alias of <a class="reference internal" href="hierarchy_classes.html#tables.Node._v_name" title="tables.Node._v_name"><code class="xref py py-attr docutils literal"><span class="pre">Node._v_name</span></code></a>).</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></td>
+<td>The name of this node in its parent group (This is an easier-to-write alias of <a class="reference internal" href="hierarchy_classes.html#tables.Node._v_name" title="tables.Node._v_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Node._v_name</span></code></a>).</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">ndim</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndim</span></code></td>
 <td>The number of dimensions of the leaf data.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#tables.Array.nrows" title="tables.Array.nrows"><code class="xref py py-obj docutils literal"><span class="pre">nrows</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#tables.Array.nrows" title="tables.Array.nrows"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nrows</span></code></a></td>
 <td>The number of rows in the array.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">object_id</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">object_id</span></code></td>
 <td>A node identifier, which may change from run to run.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#tables.Array.rowsize" title="tables.Array.rowsize"><code class="xref py py-obj docutils literal"><span class="pre">rowsize</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#tables.Array.rowsize" title="tables.Array.rowsize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rowsize</span></code></a></td>
 <td>The size of the rows in bytes in dimensions orthogonal to <em>maindim</em>.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">size_in_memory</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">size_in_memory</span></code></td>
 <td>The size of this array’s data in bytes when it is fully loaded into memory.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">size_on_disk</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">size_on_disk</span></code></td>
 <td>The size of this leaf’s data in bytes as it is stored on disk.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">title</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">title</span></code></td>
 <td>A description of this node.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">track_times</span></code></td>
+<td>Whether timestamps for the leaf are recorded</td>
 </tr>
 </tbody>
 </table>
@@ -303,49 +318,49 @@ If this is not specified, the byteorder is that of the given <cite>object</cite>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">close</span></code>([flush])</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">close</span></code>([flush])</td>
 <td>Close this node in the tree.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">copy</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
 <td>Copy this node and return the new one.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">del_attr</span></code>(name)</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">del_attr</span></code>(name)</td>
 <td>Delete a PyTables attribute from this node.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">flush</span></code>()</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">flush</span></code>()</td>
 <td>Flush pending data to disk.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">get_attr</span></code>(name)</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_attr</span></code>(name)</td>
 <td>Get a PyTables attribute from this node.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#tables.Array.get_enum" title="tables.Array.get_enum"><code class="xref py py-obj docutils literal"><span class="pre">get_enum</span></code></a>()</td>
+<tr class="row-even"><td><a class="reference internal" href="#tables.Array.get_enum" title="tables.Array.get_enum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_enum</span></code></a>()</td>
 <td>Get the enumerated type associated with this array.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">isvisible</span></code>()</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">isvisible</span></code>()</td>
 <td>Is this node visible?</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#tables.Array.iterrows" title="tables.Array.iterrows"><code class="xref py py-obj docutils literal"><span class="pre">iterrows</span></code></a>([start,&nbsp;stop,&nbsp;step])</td>
+<tr class="row-even"><td><a class="reference internal" href="#tables.Array.iterrows" title="tables.Array.iterrows"><code class="xref py py-obj docutils literal notranslate"><span class="pre">iterrows</span></code></a>([start,&nbsp;stop,&nbsp;step])</td>
 <td>Iterate over the rows of the array.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">move</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">move</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
 <td>Move or rename this node.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">perform_selection</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">perform_selection</span></code></td>
 <td>Performs a selection using start/count/step in the given axis.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#tables.Array.read" title="tables.Array.read"><code class="xref py py-obj docutils literal"><span class="pre">read</span></code></a>([start,&nbsp;stop,&nbsp;step,&nbsp;out])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#tables.Array.read" title="tables.Array.read"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read</span></code></a>([start,&nbsp;stop,&nbsp;step,&nbsp;out])</td>
 <td>Get data in the array as an object of the current flavor.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">remove</span></code>()</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove</span></code>()</td>
 <td>Remove this node from the hierarchy.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">rename</span></code>(newname)</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">rename</span></code>(newname)</td>
 <td>Rename this node in place.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">set_attr</span></code>(name,&nbsp;value)</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_attr</span></code>(name,&nbsp;value)</td>
 <td>Set a PyTables attribute for this node.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">truncate</span></code>(size)</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">truncate</span></code>(size)</td>
 <td>Truncate the main dimension to be size rows.</td>
 </tr>
 </tbody>
@@ -399,11 +414,11 @@ type, a TypeError is raised.</p>
 flavor for each selected row in the array.  The returned rows are taken
 from the <em>main dimension</em>.</p>
 <p>If a range is not supplied, <em>all the rows</em> in the array are iterated
-upon - you can also use the <a class="reference internal" href="#tables.Array.__iter__" title="tables.Array.__iter__"><code class="xref py py-meth docutils literal"><span class="pre">Array.__iter__()</span></code></a> special method for
+upon - you can also use the <a class="reference internal" href="#tables.Array.__iter__" title="tables.Array.__iter__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Array.__iter__()</span></code></a> special method for
 that purpose.  If you only want to iterate over a given <em>range of rows</em>
 in the array, you may use the start, stop and step parameters.</p>
 <p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">arrayInstance</span><span class="o">.</span><span class="n">iterrows</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="mi">4</span><span class="p">)]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">arrayInstance</span><span class="o">.</span><span class="n">iterrows</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="mi">4</span><span class="p">)]</span>
 </pre></div>
 </div>
 <div class="versionchanged">
@@ -450,10 +465,10 @@ the output will be in the byteorder of that output buffer.</p>
 </div>
 <div class="section" id="array-special-methods">
 <h3>Array special methods<a class="headerlink" href="#array-special-methods" title="Permalink to this headline">¶</a></h3>
-<p>The following methods automatically trigger actions when an <a class="reference internal" href="#tables.Array" title="tables.Array"><code class="xref py py-class docutils literal"><span class="pre">Array</span></code></a>
-instance is accessed in a special way (e.g. <code class="docutils literal"><span class="pre">array[2:3,...,::2]</span></code> will be
+<p>The following methods automatically trigger actions when an <a class="reference internal" href="#tables.Array" title="tables.Array"><code class="xref py py-class docutils literal notranslate"><span class="pre">Array</span></code></a>
+instance is accessed in a special way (e.g. <code class="docutils literal notranslate"><span class="pre">array[2:3,...,::2]</span></code> will be
 equivalent to a call to
-<code class="docutils literal"><span class="pre">array.__getitem__((slice(2,</span> <span class="pre">3,</span> <span class="pre">None),</span> <span class="pre">Ellipsis,</span> <span class="pre">slice(None,</span> <span class="pre">None,</span> <span class="pre">2))))</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">array.__getitem__((slice(2,</span> <span class="pre">3,</span> <span class="pre">None),</span> <span class="pre">Ellipsis,</span> <span class="pre">slice(None,</span> <span class="pre">None,</span> <span class="pre">2))))</span></code>.</p>
 <dl class="method">
 <dt id="tables.Array.__getitem__">
 <code class="descclassname">Array.</code><code class="descname">__getitem__</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/array.html#Array.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.Array.__getitem__" title="Permalink to this definition">¶</a></dt>
@@ -467,7 +482,7 @@ certain axis is specified, is also supported.  Note that only one list
 per selection is supported right now.  Finally, NumPy-style point and
 boolean selections are supported as well.</p>
 <p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">array1</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>                       <span class="c1"># simple selection</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">array1</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>                       <span class="c1"># simple selection</span>
 <span class="n">array2</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">1000</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>                <span class="c1"># slice selection</span>
 <span class="n">array3</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">::</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">:]</span>    <span class="c1"># general slice selection</span>
 <span class="n">array4</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">],</span> <span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>    <span class="c1"># fancy selection</span>
@@ -481,14 +496,14 @@ boolean selections are supported as well.</p>
 <dt id="tables.Array.__iter__">
 <code class="descclassname">Array.</code><code class="descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/array.html#Array.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.Array.__iter__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Iterate over the rows of the array.</p>
-<p>This is equivalent to calling <a class="reference internal" href="#tables.Array.iterrows" title="tables.Array.iterrows"><code class="xref py py-meth docutils literal"><span class="pre">Array.iterrows()</span></code></a> with default
+<p>This is equivalent to calling <a class="reference internal" href="#tables.Array.iterrows" title="tables.Array.iterrows"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Array.iterrows()</span></code></a> with default
 arguments, i.e. it iterates over <em>all the rows</em> in the array.</p>
 <p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">array</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">array</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>Which is equivalent to:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">array</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">array</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -511,7 +526,7 @@ certain axis is specified, is also supported.  Note that only one list
 per selection is supported right now.  Finally, NumPy-style point and
 boolean selections are supported as well.</p>
 <p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">a1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">333</span>        <span class="c1"># assign an integer to a Integer Array row</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">333</span>        <span class="c1"># assign an integer to a Integer Array row</span>
 <span class="n">a2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;b&#39;</span>        <span class="c1"># assign a string to a string Array row</span>
 <span class="n">a3</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>        <span class="c1"># broadcast 5 to slice 1:4</span>
 <span class="n">a4</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;xXx&#39;</span>  <span class="c1"># broadcast &#39;xXx&#39; to slice 1:4:2</span>
@@ -531,7 +546,7 @@ boolean selections are supported as well.</p>
 <span id="carrayclassdescr"></span><h2>The CArray class<a class="headerlink" href="#the-carray-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="tables.CArray">
-<em class="property">class </em><code class="descclassname">tables.</code><code class="descname">CArray</code><span class="sig-paren">(</span><em>parentnode</em>, <em>name</em>, <em>atom=None</em>, <em>shape=None</em>, <em>title=''</em>, <em>filters=None</em>, <em>chunkshape=None</em>, <em>byteorder=None</em>, <em>_log=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/carray.html#CArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.CArray" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">tables.</code><code class="descname">CArray</code><span class="sig-paren">(</span><em>parentnode</em>, <em>name</em>, <em>atom=None</em>, <em>shape=None</em>, <em>title=''</em>, <em>filters=None</em>, <em>chunkshape=None</em>, <em>byteorder=None</em>, <em>_log=True</em>, <em>track_times=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/carray.html#CArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.CArray" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class represents homogeneous datasets in an HDF5 file.</p>
 <p>The difference between a CArray and a normal Array (see
 <a class="reference internal" href="#arrayclassdescr"><span class="std std-ref">The Array class</span></a>), from which it inherits, is that a CArray
@@ -546,7 +561,7 @@ Only those with different behavior are mentioned here.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>parentnode</strong></p>
 <blockquote>
-<div><p>The parent <a class="reference internal" href="hierarchy_classes.html#tables.Group" title="tables.Group"><code class="xref py py-class docutils literal"><span class="pre">Group</span></code></a> object.</p>
+<div><p>The parent <a class="reference internal" href="hierarchy_classes.html#tables.Group" title="tables.Group"><code class="xref py py-class docutils literal notranslate"><span class="pre">Group</span></code></a> object.</p>
 <div class="versionchanged">
 <p><span class="versionmodified">Changed in version 3.0: </span>Renamed from <em>parentNode</em> to <em>parentnode</em>.</p>
 </div>
@@ -566,7 +581,7 @@ the atomic objects to be saved.</p>
 </div></blockquote>
 <p><strong>title</strong></p>
 <blockquote>
-<div><p>A description for this node (it sets the <code class="docutils literal"><span class="pre">TITLE</span></code> HDF5
+<div><p>A description for this node (it sets the <code class="docutils literal notranslate"><span class="pre">TITLE</span></code> HDF5
 attribute on disk).</p>
 </div></blockquote>
 <p><strong>filters</strong></p>
@@ -580,14 +595,26 @@ during the life of this object.</p>
 <div><p>The shape of the data chunk to be read or written in a
 single HDF5 I/O operation.  Filters are applied to those
 chunks of data.  The dimensionality of <cite>chunkshape</cite> must
-be the same as that of <cite>shape</cite>.  If <code class="docutils literal"><span class="pre">None</span></code>, a sensible
+be the same as that of <cite>shape</cite>.  If <code class="docutils literal notranslate"><span class="pre">None</span></code>, a sensible
 value is calculated (which is recommended).</p>
 </div></blockquote>
 <p><strong>byteorder</strong></p>
-<blockquote class="last">
+<blockquote>
 <div><p>The byteorder of the data <em>on disk</em>, specified as ‘little’
 or ‘big’.  If this is not specified, the byteorder is that
 of the platform.</p>
+</div></blockquote>
+<p><strong>track_times</strong></p>
+<blockquote class="last">
+<div><p>Whether time data associated with the leaf are recorded (object
+access time, raw data modification time, metadata change time, object
+birth time); default True.  Semantics of these times depend on their
+implementation in the HDF5 library: refer to documentation of the
+H5O_info_t data structure.  As of HDF5 1.8.15, only ctime (metadata
+change time) is implemented.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 3.4.</span></p>
+</div>
 </div></blockquote>
 </td>
 </tr>
@@ -595,8 +622,8 @@ of the platform.</p>
 </table>
 <p class="rubric">Examples</p>
 <p>See below a small example of the use of the <cite>CArray</cite> class.
-The code is available in <code class="docutils literal"><span class="pre">examples/carray1.py</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span>
+The code is available in <code class="docutils literal notranslate"><span class="pre">examples/carray1.py</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span>
 <span class="kn">import</span> <span class="nn">tables</span>
 
 <span class="n">fileName</span> <span class="o">=</span> <span class="s1">&#39;carray1.h5&#39;</span>
@@ -620,7 +647,7 @@ The code is available in <code class="docutils literal"><span class="pre">exampl
 </pre></div>
 </div>
 <p>The output for the previous script is something like:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">carray1</span><span class="o">.</span><span class="n">h5</span> <span class="p">(</span><span class="n">File</span><span class="p">)</span> <span class="s1">&#39;&#39;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">carray1</span><span class="o">.</span><span class="n">h5</span> <span class="p">(</span><span class="n">File</span><span class="p">)</span> <span class="s1">&#39;&#39;</span>
 <span class="n">Last</span> <span class="n">modif</span><span class="o">.</span><span class="p">:</span> <span class="s1">&#39;Thu Apr 12 10:15:38 2007&#39;</span>
 <span class="n">Object</span> <span class="n">Tree</span><span class="p">:</span>
 <span class="o">/</span> <span class="p">(</span><span class="n">RootGroup</span><span class="p">)</span> <span class="s1">&#39;&#39;</span>
@@ -639,47 +666,50 @@ The code is available in <code class="docutils literal"><span class="pre">exampl
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">attrs</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">attrs</span></code></td>
 <td>The associated <cite>AttributeSet</cite> instance.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">chunkshape</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">chunkshape</span></code></td>
 <td>The HDF5 chunk size for chunked leaves (a tuple).</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">dtype</span></code></td>
-<td>The NumPy <code class="docutils literal"><span class="pre">dtype</span></code> that most closely matches this array.</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">dtype</span></code></td>
+<td>The NumPy <code class="docutils literal notranslate"><span class="pre">dtype</span></code> that most closely matches this array.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">filters</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">filters</span></code></td>
 <td>Filter properties for this leaf.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">flavor</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">flavor</span></code></td>
 <td>The type of data object read from this leaf.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">maindim</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">maindim</span></code></td>
 <td>The dimension along which iterators work.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">name</span></code></td>
-<td>The name of this node in its parent group (This is an easier-to-write alias of <a class="reference internal" href="hierarchy_classes.html#tables.Node._v_name" title="tables.Node._v_name"><code class="xref py py-attr docutils literal"><span class="pre">Node._v_name</span></code></a>).</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></td>
+<td>The name of this node in its parent group (This is an easier-to-write alias of <a class="reference internal" href="hierarchy_classes.html#tables.Node._v_name" title="tables.Node._v_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Node._v_name</span></code></a>).</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">ndim</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndim</span></code></td>
 <td>The number of dimensions of the leaf data.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">nrows</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">nrows</span></code></td>
 <td>The number of rows in the array.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">object_id</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">object_id</span></code></td>
 <td>A node identifier, which may change from run to run.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">rowsize</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">rowsize</span></code></td>
 <td>The size of the rows in bytes in dimensions orthogonal to <em>maindim</em>.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">size_in_memory</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">size_in_memory</span></code></td>
 <td>The size of this array’s data in bytes when it is fully loaded into memory.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">size_on_disk</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">size_on_disk</span></code></td>
 <td>The size of this leaf’s data in bytes as it is stored on disk.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">title</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">title</span></code></td>
 <td>A description of this node.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">track_times</span></code></td>
+<td>Whether timestamps for the leaf are recorded</td>
 </tr>
 </tbody>
 </table>
@@ -690,49 +720,49 @@ The code is available in <code class="docutils literal"><span class="pre">exampl
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">close</span></code>([flush])</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">close</span></code>([flush])</td>
 <td>Close this node in the tree.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">copy</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
 <td>Copy this node and return the new one.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">del_attr</span></code>(name)</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">del_attr</span></code>(name)</td>
 <td>Delete a PyTables attribute from this node.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">flush</span></code>()</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">flush</span></code>()</td>
 <td>Flush pending data to disk.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">get_attr</span></code>(name)</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_attr</span></code>(name)</td>
 <td>Get a PyTables attribute from this node.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">get_enum</span></code>()</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_enum</span></code>()</td>
 <td>Get the enumerated type associated with this array.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">isvisible</span></code>()</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">isvisible</span></code>()</td>
 <td>Is this node visible?</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">iterrows</span></code>([start,&nbsp;stop,&nbsp;step])</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">iterrows</span></code>([start,&nbsp;stop,&nbsp;step])</td>
 <td>Iterate over the rows of the array.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">move</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">move</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
 <td>Move or rename this node.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">perform_selection</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">perform_selection</span></code></td>
 <td>Performs a selection using start/count/step in the given axis.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">read</span></code>([start,&nbsp;stop,&nbsp;step,&nbsp;out])</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">read</span></code>([start,&nbsp;stop,&nbsp;step,&nbsp;out])</td>
 <td>Get data in the array as an object of the current flavor.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">remove</span></code>()</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove</span></code>()</td>
 <td>Remove this node from the hierarchy.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">rename</span></code>(newname)</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">rename</span></code>(newname)</td>
 <td>Rename this node in place.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">set_attr</span></code>(name,&nbsp;value)</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_attr</span></code>(name,&nbsp;value)</td>
 <td>Set a PyTables attribute for this node.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">truncate</span></code>(size)</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">truncate</span></code>(size)</td>
 <td>Truncate the main dimension to be size rows.</td>
 </tr>
 </tbody>
@@ -744,23 +774,23 @@ The code is available in <code class="docutils literal"><span class="pre">exampl
 <span id="earrayclassdescr"></span><h2>The EArray class<a class="headerlink" href="#the-earray-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="tables.EArray">
-<em class="property">class </em><code class="descclassname">tables.</code><code class="descname">EArray</code><span class="sig-paren">(</span><em>parentnode</em>, <em>name</em>, <em>atom=None</em>, <em>shape=None</em>, <em>title=''</em>, <em>filters=None</em>, <em>expectedrows=None</em>, <em>chunkshape=None</em>, <em>byteorder=None</em>, <em>_log=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/earray.html#EArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.EArray" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">tables.</code><code class="descname">EArray</code><span class="sig-paren">(</span><em>parentnode</em>, <em>name</em>, <em>atom=None</em>, <em>shape=None</em>, <em>title=''</em>, <em>filters=None</em>, <em>expectedrows=None</em>, <em>chunkshape=None</em>, <em>byteorder=None</em>, <em>_log=True</em>, <em>track_times=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/earray.html#EArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.EArray" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class represents extendable, homogeneous datasets in an HDF5 file.</p>
 <p>The main difference between an EArray and a CArray (see
 <a class="reference internal" href="#carrayclassdescr"><span class="std std-ref">The CArray class</span></a>), from which it inherits, is that the former
 can be enlarged along one of its dimensions, the <em>enlargeable
-dimension</em>.  That means that the <a class="reference internal" href="hierarchy_classes.html#tables.Leaf.extdim" title="tables.Leaf.extdim"><code class="xref py py-attr docutils literal"><span class="pre">Leaf.extdim</span></code></a> attribute (see
-<a class="reference internal" href="hierarchy_classes.html#tables.Leaf" title="tables.Leaf"><code class="xref py py-class docutils literal"><span class="pre">Leaf</span></code></a>) of any EArray instance will always be non-negative.
+dimension</em>.  That means that the <a class="reference internal" href="hierarchy_classes.html#tables.Leaf.extdim" title="tables.Leaf.extdim"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Leaf.extdim</span></code></a> attribute (see
+<a class="reference internal" href="hierarchy_classes.html#tables.Leaf" title="tables.Leaf"><code class="xref py py-class docutils literal notranslate"><span class="pre">Leaf</span></code></a>) of any EArray instance will always be non-negative.
 Multiple enlargeable dimensions might be supported in the future.</p>
 <p>New rows can be added to the end of an enlargeable array by using the
-<a class="reference internal" href="#tables.EArray.append" title="tables.EArray.append"><code class="xref py py-meth docutils literal"><span class="pre">EArray.append()</span></code></a> method.</p>
+<a class="reference internal" href="#tables.EArray.append" title="tables.EArray.append"><code class="xref py py-meth docutils literal notranslate"><span class="pre">EArray.append()</span></code></a> method.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>parentnode</strong></p>
 <blockquote>
-<div><p>The parent <a class="reference internal" href="hierarchy_classes.html#tables.Group" title="tables.Group"><code class="xref py py-class docutils literal"><span class="pre">Group</span></code></a> object.</p>
+<div><p>The parent <a class="reference internal" href="hierarchy_classes.html#tables.Group" title="tables.Group"><code class="xref py py-class docutils literal notranslate"><span class="pre">Group</span></code></a> object.</p>
 <div class="versionchanged">
 <p><span class="versionmodified">Changed in version 3.0: </span>Renamed from <em>parentNode</em> to <em>parentnode</em>.</p>
 </div>
@@ -784,7 +814,7 @@ right now.</p>
 </div></blockquote>
 <p><strong>title</strong></p>
 <blockquote>
-<div><p>A description for this node (it sets the <code class="docutils literal"><span class="pre">TITLE</span></code>
+<div><p>A description for this node (it sets the <code class="docutils literal notranslate"><span class="pre">TITLE</span></code>
 HDF5 attribute on disk).</p>
 </div></blockquote>
 <p><strong>filters</strong></p>
@@ -797,8 +827,8 @@ of this object.</p>
 <blockquote>
 <div><p>A user estimate about the number of row elements that will
 be added to the growable dimension in the <cite>EArray</cite> node.
-If not provided, the default value is <code class="docutils literal"><span class="pre">EXPECTED_ROWS_EARRAY</span></code>
-(see <code class="docutils literal"><span class="pre">tables/parameters.py</span></code>).  If you plan to create either
+If not provided, the default value is <code class="docutils literal notranslate"><span class="pre">EXPECTED_ROWS_EARRAY</span></code>
+(see <code class="docutils literal notranslate"><span class="pre">tables/parameters.py</span></code>).  If you plan to create either
 a much smaller or a much bigger <cite>EArray</cite> try providing a guess;
 this will optimize the HDF5 B-Tree creation and management
 process time and the amount of memory used.</p>
@@ -809,14 +839,26 @@ process time and the amount of memory used.</p>
 HDF5 I/O operation.  Filters are applied to those chunks of data.
 The dimensionality of <cite>chunkshape</cite> must be the same as that of
 <cite>shape</cite> (beware: no dimension should be 0 this time!).
-If <code class="docutils literal"><span class="pre">None</span></code>, a sensible value is calculated based on the
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, a sensible value is calculated based on the
 <cite>expectedrows</cite> parameter (which is recommended).</p>
 </div></blockquote>
 <p><strong>byteorder</strong></p>
-<blockquote class="last">
+<blockquote>
 <div><p>The byteorder of the data <em>on disk</em>, specified as ‘little’ or
 ‘big’. If this is not specified, the byteorder is that of the
 platform.</p>
+</div></blockquote>
+<p><strong>track_times</strong></p>
+<blockquote class="last">
+<div><p>Whether time data associated with the leaf are recorded (object
+access time, raw data modification time, metadata change time, object
+birth time); default True.  Semantics of these times depend on their
+implementation in the HDF5 library: refer to documentation of the
+H5O_info_t data structure.  As of HDF5 1.8.15, only ctime (metadata
+change time) is implemented.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 3.4.</span></p>
+</div>
 </div></blockquote>
 </td>
 </tr>
@@ -824,8 +866,8 @@ platform.</p>
 </table>
 <p class="rubric">Examples</p>
 <p>See below a small example of the use of the <cite>EArray</cite> class.  The
-code is available in <code class="docutils literal"><span class="pre">examples/earray1.py</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span>
+code is available in <code class="docutils literal notranslate"><span class="pre">examples/earray1.py</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span>
 <span class="kn">import</span> <span class="nn">numpy</span>
 
 <span class="n">fileh</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s1">&#39;earray1.h5&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
@@ -845,7 +887,7 @@ code is available in <code class="docutils literal"><span class="pre">examples/e
 </pre></div>
 </div>
 <p>The output for the previous script is something like:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">array_c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="s1">&#39;aa&#39;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">array_c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="s1">&#39;aa&#39;</span>
 <span class="n">array_c</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="s1">&#39;bbbb&#39;</span>
 <span class="n">array_c</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="s1">&#39;aaaaaa&#39;</span>
 <span class="n">array_c</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="s1">&#39;bbbbbbbb&#39;</span>
@@ -859,47 +901,50 @@ code is available in <code class="docutils literal"><span class="pre">examples/e
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">attrs</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">attrs</span></code></td>
 <td>The associated <cite>AttributeSet</cite> instance.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">chunkshape</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">chunkshape</span></code></td>
 <td>The HDF5 chunk size for chunked leaves (a tuple).</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">dtype</span></code></td>
-<td>The NumPy <code class="docutils literal"><span class="pre">dtype</span></code> that most closely matches this array.</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">dtype</span></code></td>
+<td>The NumPy <code class="docutils literal notranslate"><span class="pre">dtype</span></code> that most closely matches this array.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">filters</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">filters</span></code></td>
 <td>Filter properties for this leaf.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">flavor</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">flavor</span></code></td>
 <td>The type of data object read from this leaf.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">maindim</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">maindim</span></code></td>
 <td>The dimension along which iterators work.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">name</span></code></td>
-<td>The name of this node in its parent group (This is an easier-to-write alias of <a class="reference internal" href="hierarchy_classes.html#tables.Node._v_name" title="tables.Node._v_name"><code class="xref py py-attr docutils literal"><span class="pre">Node._v_name</span></code></a>).</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></td>
+<td>The name of this node in its parent group (This is an easier-to-write alias of <a class="reference internal" href="hierarchy_classes.html#tables.Node._v_name" title="tables.Node._v_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Node._v_name</span></code></a>).</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">ndim</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndim</span></code></td>
 <td>The number of dimensions of the leaf data.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">nrows</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">nrows</span></code></td>
 <td>The number of rows in the array.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">object_id</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">object_id</span></code></td>
 <td>A node identifier, which may change from run to run.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">rowsize</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">rowsize</span></code></td>
 <td>The size of the rows in bytes in dimensions orthogonal to <em>maindim</em>.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">size_in_memory</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">size_in_memory</span></code></td>
 <td>The size of this array’s data in bytes when it is fully loaded into memory.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">size_on_disk</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">size_on_disk</span></code></td>
 <td>The size of this leaf’s data in bytes as it is stored on disk.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">title</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">title</span></code></td>
 <td>A description of this node.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">track_times</span></code></td>
+<td>Whether timestamps for the leaf are recorded</td>
 </tr>
 </tbody>
 </table>
@@ -910,52 +955,52 @@ code is available in <code class="docutils literal"><span class="pre">examples/e
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#tables.EArray.append" title="tables.EArray.append"><code class="xref py py-obj docutils literal"><span class="pre">append</span></code></a>(sequence)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#tables.EArray.append" title="tables.EArray.append"><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code></a>(sequence)</td>
 <td>Add a sequence of data to the end of the dataset.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">close</span></code>([flush])</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">close</span></code>([flush])</td>
 <td>Close this node in the tree.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">copy</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
 <td>Copy this node and return the new one.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">del_attr</span></code>(name)</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">del_attr</span></code>(name)</td>
 <td>Delete a PyTables attribute from this node.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">flush</span></code>()</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">flush</span></code>()</td>
 <td>Flush pending data to disk.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">get_attr</span></code>(name)</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_attr</span></code>(name)</td>
 <td>Get a PyTables attribute from this node.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">get_enum</span></code>()</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_enum</span></code>()</td>
 <td>Get the enumerated type associated with this array.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">isvisible</span></code>()</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">isvisible</span></code>()</td>
 <td>Is this node visible?</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">iterrows</span></code>([start,&nbsp;stop,&nbsp;step])</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">iterrows</span></code>([start,&nbsp;stop,&nbsp;step])</td>
 <td>Iterate over the rows of the array.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">move</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">move</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
 <td>Move or rename this node.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">perform_selection</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">perform_selection</span></code></td>
 <td>Performs a selection using start/count/step in the given axis.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">read</span></code>([start,&nbsp;stop,&nbsp;step,&nbsp;out])</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">read</span></code>([start,&nbsp;stop,&nbsp;step,&nbsp;out])</td>
 <td>Get data in the array as an object of the current flavor.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">remove</span></code>()</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove</span></code>()</td>
 <td>Remove this node from the hierarchy.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">rename</span></code>(newname)</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">rename</span></code>(newname)</td>
 <td>Rename this node in place.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">set_attr</span></code>(name,&nbsp;value)</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_attr</span></code>(name,&nbsp;value)</td>
 <td>Set a PyTables attribute for this node.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">truncate</span></code>(size)</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">truncate</span></code>(size)</td>
 <td>Truncate the main dimension to be size rows.</td>
 </tr>
 </tbody>
@@ -982,7 +1027,7 @@ of the sequence is invalid, a ValueError is raised.</p>
 <span id="vlarrayclassdescr"></span><h2>The VLArray class<a class="headerlink" href="#the-vlarray-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="tables.VLArray">
-<em class="property">class </em><code class="descclassname">tables.</code><code class="descname">VLArray</code><span class="sig-paren">(</span><em>parentnode</em>, <em>name</em>, <em>atom=None</em>, <em>title=''</em>, <em>filters=None</em>, <em>expectedrows=None</em>, <em>chunkshape=None</em>, <em>byteorder=None</em>, <em>_log=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/vlarray.html#VLArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.VLArray" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">tables.</code><code class="descname">VLArray</code><span class="sig-paren">(</span><em>parentnode</em>, <em>name</em>, <em>atom=None</em>, <em>title=''</em>, <em>filters=None</em>, <em>expectedrows=None</em>, <em>chunkshape=None</em>, <em>byteorder=None</em>, <em>_log=True</em>, <em>track_times=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/vlarray.html#VLArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.VLArray" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class represents variable length (ragged) arrays in an HDF5 file.</p>
 <p>Instances of this class represent array objects in the object tree
 with the property that their rows can have a <em>variable</em> number of
@@ -1013,7 +1058,7 @@ for more details on the topic.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>parentnode</strong></p>
 <blockquote>
-<div><p>The parent <a class="reference internal" href="hierarchy_classes.html#tables.Group" title="tables.Group"><code class="xref py py-class docutils literal"><span class="pre">Group</span></code></a> object.</p>
+<div><p>The parent <a class="reference internal" href="hierarchy_classes.html#tables.Group" title="tables.Group"><code class="xref py py-class docutils literal notranslate"><span class="pre">Group</span></code></a> object.</p>
 <div class="versionchanged">
 <p><span class="versionmodified">Changed in version 3.0: </span>Renamed from <em>parentNode</em> to <em>parentnode</em>.</p>
 </div>
@@ -1029,7 +1074,7 @@ objects to be saved.</p>
 </div></blockquote>
 <p><strong>title</strong></p>
 <blockquote>
-<div><p>A description for this node (it sets the <code class="docutils literal"><span class="pre">TITLE</span></code> HDF5 attribute on
+<div><p>A description for this node (it sets the <code class="docutils literal notranslate"><span class="pre">TITLE</span></code> HDF5 attribute on
 disk).</p>
 </div></blockquote>
 <p><strong>filters</strong></p>
@@ -1041,8 +1086,8 @@ desired I/O filters to be applied during the life of this object.</p>
 <blockquote>
 <div><p>A user estimate about the number of row elements that will
 be added to the growable dimension in the <cite>VLArray</cite> node.
-If not provided, the default value is <code class="docutils literal"><span class="pre">EXPECTED_ROWS_VLARRAY</span></code>
-(see <code class="docutils literal"><span class="pre">tables/parameters.py</span></code>).  If you plan to create either
+If not provided, the default value is <code class="docutils literal notranslate"><span class="pre">EXPECTED_ROWS_VLARRAY</span></code>
+(see <code class="docutils literal notranslate"><span class="pre">tables/parameters.py</span></code>).  If you plan to create either
 a much smaller or a much bigger <cite>VLArray</cite> try providing a guess;
 this will optimize the HDF5 B-Tree creation and management
 process time and the amount of memory used.</p>
@@ -1054,13 +1099,25 @@ process time and the amount of memory used.</p>
 <blockquote>
 <div><p>The shape of the data chunk to be read or written in a single HDF5 I/O
 operation.  Filters are applied to those chunks of data.  The
-dimensionality of <cite>chunkshape</cite> must be 1.  If <code class="docutils literal"><span class="pre">None</span></code>, a sensible
+dimensionality of <cite>chunkshape</cite> must be 1.  If <code class="docutils literal notranslate"><span class="pre">None</span></code>, a sensible
 value is calculated (which is recommended).</p>
 </div></blockquote>
 <p><strong>byteorder</strong></p>
 <blockquote>
 <div><p>The byteorder of the data <em>on disk</em>, specified as ‘little’ or ‘big’.
 If this is not specified, the byteorder is that of the platform.</p>
+</div></blockquote>
+<p><strong>track_times</strong></p>
+<blockquote>
+<div><p>Whether time data associated with the leaf are recorded (object
+access time, raw data modification time, metadata change time, object
+birth time); default True.  Semantics of these times depend on their
+implementation in the HDF5 library: refer to documentation of the
+H5O_info_t data structure.  As of HDF5 1.8.15, only ctime (metadata
+change time) is implemented.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 3.4.</span></p>
+</div>
 </div></blockquote>
 <p><strong>.. versionchanged:: 3.0</strong></p>
 <blockquote class="last">
@@ -1072,8 +1129,8 @@ If this is not specified, the byteorder is that of the platform.</p>
 </table>
 <p class="rubric">Examples</p>
 <p>See below a small example of the use of the VLArray class.  The code is
-available in <code class="file docutils literal"><span class="pre">examples/vlarray1.py</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span>
+available in <code class="file docutils literal notranslate"><span class="pre">examples/vlarray1.py</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span>
 <span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="o">*</span>
 
 <span class="c1"># Create a VLArray:</span>
@@ -1115,7 +1172,7 @@ available in <code class="file docutils literal"><span class="pre">examples/vlar
 </pre></div>
 </div>
 <p>The output for the previous script is something like:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">--&gt;</span> <span class="n">ragged</span> <span class="n">array</span> <span class="n">of</span> <span class="n">ints</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--&gt;</span> <span class="n">ragged</span> <span class="n">array</span> <span class="n">of</span> <span class="n">ints</span>
 <span class="n">vlarray1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">--&gt;</span> <span class="p">[</span><span class="mi">5</span> <span class="mi">6</span><span class="p">]</span>
 <span class="n">vlarray1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">--&gt;</span> <span class="p">[</span><span class="mi">5</span> <span class="mi">6</span> <span class="mi">7</span><span class="p">]</span>
 <span class="n">vlarray1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">--&gt;</span> <span class="p">[</span><span class="mi">5</span> <span class="mi">6</span> <span class="mi">9</span> <span class="mi">8</span><span class="p">]</span>
@@ -1172,44 +1229,47 @@ Python list, not to the list itself.</p>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">attrs</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">attrs</span></code></td>
 <td>The associated <cite>AttributeSet</cite> instance.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">chunkshape</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">chunkshape</span></code></td>
 <td>The HDF5 chunk size for chunked leaves (a tuple).</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">dtype</span></code></td>
-<td>The NumPy <code class="docutils literal"><span class="pre">dtype</span></code> that most closely matches this array.</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">dtype</span></code></td>
+<td>The NumPy <code class="docutils literal notranslate"><span class="pre">dtype</span></code> that most closely matches this array.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">filters</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">filters</span></code></td>
 <td>Filter properties for this leaf.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#tables.VLArray.flavor" title="tables.VLArray.flavor"><code class="xref py py-obj docutils literal"><span class="pre">flavor</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#tables.VLArray.flavor" title="tables.VLArray.flavor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flavor</span></code></a></td>
 <td>The type of data object read from this leaf.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">maindim</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">maindim</span></code></td>
 <td>The dimension along which iterators work.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">name</span></code></td>
-<td>The name of this node in its parent group (This is an easier-to-write alias of <a class="reference internal" href="hierarchy_classes.html#tables.Node._v_name" title="tables.Node._v_name"><code class="xref py py-attr docutils literal"><span class="pre">Node._v_name</span></code></a>).</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></td>
+<td>The name of this node in its parent group (This is an easier-to-write alias of <a class="reference internal" href="hierarchy_classes.html#tables.Node._v_name" title="tables.Node._v_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Node._v_name</span></code></a>).</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">ndim</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndim</span></code></td>
 <td>The number of dimensions of the leaf data.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">object_id</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">object_id</span></code></td>
 <td>A node identifier, which may change from run to run.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">shape</span></code></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">shape</span></code></td>
 <td>The shape of the stored array.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#tables.VLArray.size_in_memory" title="tables.VLArray.size_in_memory"><code class="xref py py-obj docutils literal"><span class="pre">size_in_memory</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#tables.VLArray.size_in_memory" title="tables.VLArray.size_in_memory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">size_in_memory</span></code></a></td>
 <td>The size of this array’s data in bytes when it is fully loaded into memory.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#tables.VLArray.size_on_disk" title="tables.VLArray.size_on_disk"><code class="xref py py-obj docutils literal"><span class="pre">size_on_disk</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#tables.VLArray.size_on_disk" title="tables.VLArray.size_on_disk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">size_on_disk</span></code></a></td>
 <td>The HDF5 library does not include a function to determine size_on_disk for variable-length arrays.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">title</span></code></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">title</span></code></td>
 <td>A description of this node.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">track_times</span></code></td>
+<td>Whether timestamps for the leaf are recorded</td>
 </tr>
 </tbody>
 </table>
@@ -1220,52 +1280,52 @@ Python list, not to the list itself.</p>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#tables.VLArray.append" title="tables.VLArray.append"><code class="xref py py-obj docutils literal"><span class="pre">append</span></code></a>(sequence)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#tables.VLArray.append" title="tables.VLArray.append"><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code></a>(sequence)</td>
 <td>Add a sequence of data to the end of the dataset.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">close</span></code>([flush])</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">close</span></code>([flush])</td>
 <td>Close this node in the tree.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">copy</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
 <td>Copy this node and return the new one.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">del_attr</span></code>(name)</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">del_attr</span></code>(name)</td>
 <td>Delete a PyTables attribute from this node.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">flush</span></code>()</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">flush</span></code>()</td>
 <td>Flush pending data to disk.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">get_attr</span></code>(name)</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_attr</span></code>(name)</td>
 <td>Get a PyTables attribute from this node.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#tables.VLArray.get_enum" title="tables.VLArray.get_enum"><code class="xref py py-obj docutils literal"><span class="pre">get_enum</span></code></a>()</td>
+<tr class="row-odd"><td><a class="reference internal" href="#tables.VLArray.get_enum" title="tables.VLArray.get_enum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_enum</span></code></a>()</td>
 <td>Get the enumerated type associated with this array.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#tables.VLArray.get_row_size" title="tables.VLArray.get_row_size"><code class="xref py py-obj docutils literal"><span class="pre">get_row_size</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#tables.VLArray.get_row_size" title="tables.VLArray.get_row_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_row_size</span></code></a></td>
 <td>Return the total size in bytes of all the elements contained in a given row.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">isvisible</span></code>()</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">isvisible</span></code>()</td>
 <td>Is this node visible?</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#tables.VLArray.iterrows" title="tables.VLArray.iterrows"><code class="xref py py-obj docutils literal"><span class="pre">iterrows</span></code></a>([start,&nbsp;stop,&nbsp;step])</td>
+<tr class="row-even"><td><a class="reference internal" href="#tables.VLArray.iterrows" title="tables.VLArray.iterrows"><code class="xref py py-obj docutils literal notranslate"><span class="pre">iterrows</span></code></a>([start,&nbsp;stop,&nbsp;step])</td>
 <td>Iterate over the rows of the array.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">move</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">move</span></code>([newparent,&nbsp;newname,&nbsp;overwrite,&nbsp;…])</td>
 <td>Move or rename this node.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#tables.VLArray.read" title="tables.VLArray.read"><code class="xref py py-obj docutils literal"><span class="pre">read</span></code></a>([start,&nbsp;stop,&nbsp;step])</td>
+<tr class="row-even"><td><a class="reference internal" href="#tables.VLArray.read" title="tables.VLArray.read"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read</span></code></a>([start,&nbsp;stop,&nbsp;step])</td>
 <td>Get data in the array as a list of objects of the current flavor.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">remove</span></code>()</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove</span></code>()</td>
 <td>Remove this node from the hierarchy.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">rename</span></code>(newname)</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">rename</span></code>(newname)</td>
 <td>Rename this node in place.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">set_attr</span></code>(name,&nbsp;value)</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_attr</span></code>(name,&nbsp;value)</td>
 <td>Set a PyTables attribute for this node.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">truncate</span></code>(size)</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">truncate</span></code>(size)</td>
 <td>Truncate the main dimension to be size rows.</td>
 </tr>
 </tbody>
@@ -1329,11 +1389,11 @@ type, a TypeError is raised.</p>
 <p>This method returns an iterator yielding an object of the current
 flavor for each selected row in the array.</p>
 <p>If a range is not supplied, <em>all the rows</em> in the array are iterated
-upon. You can also use the <a class="reference internal" href="#tables.VLArray.__iter__" title="tables.VLArray.__iter__"><code class="xref py py-meth docutils literal"><span class="pre">VLArray.__iter__()</span></code></a> special method for
+upon. You can also use the <a class="reference internal" href="#tables.VLArray.__iter__" title="tables.VLArray.__iter__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VLArray.__iter__()</span></code></a> special method for
 that purpose.  If you only want to iterate over a given <em>range of rows</em>
 in the array, you may use the start, stop and step parameters.</p>
 <p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">vlarray</span><span class="o">.</span><span class="n">iterrows</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">vlarray</span><span class="o">.</span><span class="n">iterrows</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">[</span><span class="si">%d</span><span class="s1">]--&gt; </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">vlarray</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">vlarray</span><span class="o">.</span><span class="n">nrow</span><span class="p">,</span> <span class="n">row</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -1377,7 +1437,7 @@ start nor stop, then <em>all the rows</em> in the array are selected.</p>
 </div>
 <div class="section" id="vlarray-special-methods">
 <h3>VLArray special methods<a class="headerlink" href="#vlarray-special-methods" title="Permalink to this headline">¶</a></h3>
-<p>The following methods automatically trigger actions when a <a class="reference internal" href="#tables.VLArray" title="tables.VLArray"><code class="xref py py-class docutils literal"><span class="pre">VLArray</span></code></a>
+<p>The following methods automatically trigger actions when a <a class="reference internal" href="#tables.VLArray" title="tables.VLArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">VLArray</span></code></a>
 instance is accessed in a special way (e.g., vlarray[2:5] will be equivalent
 to a call to vlarray.__getitem__(slice(2, 5, None)).</p>
 <dl class="method">
@@ -1395,7 +1455,7 @@ boolean values, only the coordinates where key is True are returned.
 Note that for the latter to work it is necessary that key list would
 contain exactly as many rows as the array has.</p>
 <p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">a_row</span> <span class="o">=</span> <span class="n">vlarray</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a_row</span> <span class="o">=</span> <span class="n">vlarray</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
 <span class="n">a_list</span> <span class="o">=</span> <span class="n">vlarray</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">1000</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
 <span class="n">a_list2</span> <span class="o">=</span> <span class="n">vlarray</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]]</span>   <span class="c1"># get list of coords</span>
 <span class="n">a_list3</span> <span class="o">=</span> <span class="n">vlarray</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">]]</span>  <span class="c1"># negative values accepted</span>
@@ -1408,14 +1468,14 @@ contain exactly as many rows as the array has.</p>
 <dt id="tables.VLArray.__iter__">
 <code class="descclassname">VLArray.</code><code class="descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/tables/vlarray.html#VLArray.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tables.VLArray.__iter__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Iterate over the rows of the array.</p>
-<p>This is equivalent to calling <a class="reference internal" href="#tables.VLArray.iterrows" title="tables.VLArray.iterrows"><code class="xref py py-meth docutils literal"><span class="pre">VLArray.iterrows()</span></code></a> with default
+<p>This is equivalent to calling <a class="reference internal" href="#tables.VLArray.iterrows" title="tables.VLArray.iterrows"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VLArray.iterrows()</span></code></a> with default
 arguments, i.e. it iterates over <em>all the rows</em> in the array.</p>
 <p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">vlarray</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">vlarray</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>Which is equivalent to:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">vlarray</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">vlarray</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1442,14 +1502,14 @@ that key list would contain exactly as many rows as the table has.</p>
 pseudo-atom, there is a problem: you can only update values
 with <em>exactly</em> the same size in bytes than the original row.
 This is very difficult to meet with object pseudo-atoms,
-because <code class="xref py py-mod docutils literal"><span class="pre">pickle</span></code> applied on a Python object does not
+because <code class="xref py py-mod docutils literal notranslate"><span class="pre">pickle</span></code> applied on a Python object does not
 guarantee to return the same number of bytes than over another
 object, even if they are of the same class.
 This effectively limits the kinds of objects than can be
 updated in variable-length arrays.</p>
 </div>
 <p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">vlarray</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlarray</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">vlarray</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlarray</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span>
 <span class="n">vlarray</span><span class="p">[</span><span class="mi">99</span><span class="p">]</span> <span class="o">=</span> <span class="n">arange</span><span class="p">(</span><span class="mi">96</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span>
 
 <span class="c1"># Negative values for the index are supported.</span>

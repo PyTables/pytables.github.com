@@ -289,6 +289,16 @@
 <span class="sd">        The byteorder of the data *on disk*, specified as &#39;little&#39; or &#39;big&#39;.</span>
 <span class="sd">        If this is not specified, the byteorder is that of the platform.</span>
 
+<span class="sd">    track_times</span>
+<span class="sd">        Whether time data associated with the leaf are recorded (object</span>
+<span class="sd">        access time, raw data modification time, metadata change time, object</span>
+<span class="sd">        birth time); default True.  Semantics of these times depend on their</span>
+<span class="sd">        implementation in the HDF5 library: refer to documentation of the</span>
+<span class="sd">        H5O_info_t data structure.  As of HDF5 1.8.15, only ctime (metadata</span>
+<span class="sd">        change time) is implemented.</span>
+
+<span class="sd">        .. versionadded:: 3.4</span>
+
 <span class="sd">    .. versionchanged:: 3.0</span>
 <span class="sd">       The *expectedsizeinMB* parameter has been replaced by *expectedrows*.</span>
 
@@ -435,7 +445,7 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
                  <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">_log</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                 <span class="n">_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">track_times</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="sd">&quot;&quot;&quot;The object version of this array.&quot;&quot;&quot;</span>
@@ -522,7 +532,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_v_chunkshape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">chunkshape</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">VLArray</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">new</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span>
-                                      <span class="n">byteorder</span><span class="p">,</span> <span class="n">_log</span><span class="p">)</span>
+                                      <span class="n">byteorder</span><span class="p">,</span> <span class="n">_log</span><span class="p">,</span> <span class="n">track_times</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">VLArray</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_g_post_init_hook</span><span class="p">()</span>
@@ -677,8 +687,8 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s1">&#39;enum&#39;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;array ``</span><span class="si">%s</span><span class="s2">`` is not of an enumerated type&quot;</span>
                             <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">enum</span></div>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">enum</span>
 
 <div class="viewcode-block" id="VLArray.append"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add a sequence of data to the end of the dataset.</span>
@@ -715,8 +725,8 @@
             <span class="n">nobjects</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">nparr</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_append</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="n">nobjects</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">+=</span> <span class="mi">1</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_append</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="n">nobjects</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">+=</span> <span class="mi">1</span>
 
 <div class="viewcode-block" id="VLArray.iterrows"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.iterrows">[docs]</a>    <span class="k">def</span> <span class="nf">iterrows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate over the rows of the array.</span>
@@ -746,8 +756,8 @@
 
         <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
             <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_init_loop</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_loop</span><span class="p">()</span></div>
+        <span class="k">return</span> <span class="bp">self</span>
 
 <div class="viewcode-block" id="VLArray.__iter__"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate over the rows of the array.</span>
@@ -775,8 +785,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="c1"># and initialize the loop</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_init_loop</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="bp">self</span></div>
+</div>
+        <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">_init_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialization for the __iter__ iterator.&quot;&quot;&quot;</span>
@@ -807,8 +817,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_startb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stopb</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">]</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listarr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">]</span>
 
 <div class="viewcode-block" id="VLArray.__getitem__"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a row or a range of rows from the array.</span>
@@ -858,8 +868,8 @@
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_point_selection</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span></div>
+        <span class="k">else</span><span class="p">:</span></div>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
 
     <span class="k">def</span> <span class="nf">_assign_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Assign the `values` to the positions stated in `coords`.&quot;&quot;&quot;</span>
@@ -963,8 +973,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
 
-        <span class="c1"># Do the assignment row by row</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_assign_values</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+        <span class="c1"># Do the assignment row by row</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_assign_values</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     <span class="c1"># Accessor for the _read_array method in superclass</span>
 <div class="viewcode-block" id="VLArray.read"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
@@ -997,14 +1007,14 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Convert the list to the right flavor</span>
             <span class="n">flavor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span>
-            <span class="n">outlistarr</span> <span class="o">=</span> <span class="p">[</span><span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span> <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">listarr</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">outlistarr</span></div>
+            <span class="n">outlistarr</span> <span class="o">=</span> <span class="p">[</span><span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span> <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">listarr</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="n">outlistarr</span>
 
     <span class="k">def</span> <span class="nf">_read_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read rows specified in `coords`.&quot;&quot;&quot;</span>
         <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">:</span>
-            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">coord</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">coord</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">rows</span>
 
     <span class="k">def</span> <span class="nf">_g_copy_with_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
@@ -1051,8 +1061,8 @@
 <span class="s2">  atom = </span><span class="si">%r</span><span class="s2"></span>
 <span class="s2">  byteorder = </span><span class="si">%r</span><span class="s2"></span>
 <span class="s2">  nrows = </span><span class="si">%s</span><span class="s2"></span>
-<span class="s2">  flavor = </span><span class="si">%r</span><span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span></div>
+<span class="s2">  flavor = </span><span class="si">%r</span><span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span></div>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span>
 </pre></div>
 
            </div>

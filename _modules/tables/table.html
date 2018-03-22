@@ -614,6 +614,15 @@
 <span class="sd">        this is not specified, the byteorder is that of the platform, unless</span>
 <span class="sd">        you passed a recarray as the `description`, in which case the recarray</span>
 <span class="sd">        byteorder will be chosen.</span>
+<span class="sd">    track_times</span>
+<span class="sd">        Whether time data associated with the leaf are recorded (object</span>
+<span class="sd">        access time, raw data modification time, metadata change time, object</span>
+<span class="sd">        birth time); default True.  Semantics of these times depend on their</span>
+<span class="sd">        implementation in the HDF5 library: refer to documentation of the</span>
+<span class="sd">        H5O_info_t data structure.  As of HDF5 1.8.15, only ctime (metadata</span>
+<span class="sd">        change time) is implemented.</span>
+
+<span class="sd">        .. versionadded:: 3.4</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
@@ -846,7 +855,7 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">expectedrows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                 <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">track_times</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span> <span class="o">=</span> <span class="n">new</span> <span class="o">=</span> <span class="n">description</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="sd">&quot;&quot;&quot;Is this the first time the node has been created?&quot;&quot;&quot;</span>
@@ -1011,7 +1020,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_v_chunkshape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">chunkshape</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">new</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span>
-                                    <span class="n">byteorder</span><span class="p">,</span> <span class="n">_log</span><span class="p">)</span>
+                                    <span class="n">byteorder</span><span class="p">,</span> <span class="n">_log</span><span class="p">,</span> <span class="n">track_times</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># We are putting here the index-related issues</span>
@@ -1563,8 +1572,8 @@
         <span class="n">condvars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_required_expr_vars</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">compiled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compile_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">)</span>
         <span class="c1"># Return the columns in indexed expressions</span>
-        <span class="n">idxcols</span> <span class="o">=</span> <span class="p">[</span><span class="n">condvars</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">pathname</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">compiled</span><span class="o">.</span><span class="n">index_variables</span><span class="p">]</span>
-        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">idxcols</span><span class="p">)</span></div>
+        <span class="n">idxcols</span> <span class="o">=</span> <span class="p">[</span><span class="n">condvars</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">pathname</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">compiled</span><span class="o">.</span><span class="n">index_variables</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">idxcols</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.where"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.where">[docs]</a>    <span class="k">def</span> <span class="nf">where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
               <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1660,8 +1669,8 @@
 <span class="sd">           The start, stop and step parameters now behave like in slice.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_where</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_where</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Low-level counterpart of `self.where()`.&quot;&quot;&quot;</span>
@@ -1726,8 +1735,8 @@
                 <span class="n">inc_seq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">alltrue</span><span class="p">(</span>
                     <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">cstart</span><span class="p">,</span> <span class="n">cstop</span><span class="p">)</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coords</span><span class="p">))</span>
                 <span class="k">if</span> <span class="n">inc_seq</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">cstart</span><span class="p">,</span> <span class="n">cstop</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="n">field</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">cstart</span><span class="p">,</span> <span class="n">cstop</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="n">field</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.append_where"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.append_where">[docs]</a>    <span class="k">def</span> <span class="nf">append_where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dstTable</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">condvars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                      <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1765,8 +1774,8 @@
                 <span class="n">dstRow</span><span class="p">[</span><span class="n">colName</span><span class="p">]</span> <span class="o">=</span> <span class="n">srcRow</span><span class="p">[</span><span class="n">colName</span><span class="p">]</span>
             <span class="n">dstRow</span><span class="o">.</span><span class="n">append</span><span class="p">()</span>
             <span class="n">nrows</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">dstTable</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">nrows</span></div>
+        <span class="n">dstTable</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
+        <span class="k">return</span> <span class="n">nrows</span>
 
 <div class="viewcode-block" id="Table.get_where_list"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.get_where_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_where_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                        <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1789,8 +1798,8 @@
         <span class="c1"># Reset the conditions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_where_condition</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">sort</span><span class="p">:</span>
-            <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span></div>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.itersequence"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.itersequence">[docs]</a>    <span class="k">def</span> <span class="nf">itersequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate over a sequence of row coordinates.&quot;&quot;&quot;</span>
@@ -1812,8 +1821,8 @@
         <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">start</span> <span class="o">&gt;</span> <span class="n">stop</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">iter</span><span class="p">([])</span>
-        <span class="n">row</span> <span class="o">=</span> <span class="n">tableextension</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="n">sequence</span><span class="p">)</span></div>
+        <span class="n">row</span> <span class="o">=</span> <span class="n">tableextension</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="n">sequence</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_sortby_csi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sortby</span><span class="p">,</span> <span class="n">checkCSI</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sortby</span><span class="p">,</span> <span class="n">Column</span><span class="p">):</span>
@@ -1864,8 +1873,8 @@
         <span class="k">if</span> <span class="p">(</span><span class="n">start</span> <span class="o">&gt;</span> <span class="n">stop</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">step</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">start</span> <span class="o">&lt;</span> <span class="n">stop</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&gt;</span> <span class="n">step</span><span class="p">):</span>
             <span class="c1"># Fall-back action is to return an empty iterator</span>
             <span class="k">return</span> <span class="nb">iter</span><span class="p">([])</span>
-        <span class="n">row</span> <span class="o">=</span> <span class="n">tableextension</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="n">index</span><span class="p">)</span></div>
+        <span class="n">row</span> <span class="o">=</span> <span class="n">tableextension</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.read_sorted"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.read_sorted">[docs]</a>    <span class="k">def</span> <span class="nf">read_sorted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sortby</span><span class="p">,</span> <span class="n">checkCSI</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1892,8 +1901,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
         <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_sortby_csi</span><span class="p">(</span><span class="n">sortby</span><span class="p">,</span> <span class="n">checkCSI</span><span class="p">)</span>
-        <span class="n">coords</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">:</span><span class="n">step</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">:</span><span class="n">step</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.iterrows"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.iterrows">[docs]</a>    <span class="k">def</span> <span class="nf">iterrows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate over the table using a Row instance.</span>
@@ -1933,8 +1942,8 @@
         <span class="k">if</span> <span class="p">(</span><span class="n">start</span> <span class="o">&gt;</span> <span class="n">stop</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">step</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">start</span> <span class="o">&lt;</span> <span class="n">stop</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&gt;</span> <span class="n">step</span><span class="p">):</span>
             <span class="c1"># Fall-back action is to return an empty iterator</span>
             <span class="k">return</span> <span class="nb">iter</span><span class="p">([])</span>
-        <span class="n">row</span> <span class="o">=</span> <span class="n">tableextension</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span></div>
+        <span class="n">row</span> <span class="o">=</span> <span class="n">tableextension</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.__iter__"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate over the table using a Row instance.</span>
@@ -1959,8 +1968,8 @@
 <span class="sd">                                                    if row[&#39;var1&#39;] &lt;= 20 ]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()</span></div>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read a range of rows and return an in-memory object.&quot;&quot;&quot;</span>
@@ -2104,8 +2113,8 @@
         <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
                                                 <span class="n">warn_negstep</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-        <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span></div>
+        <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_read_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Private part of `read_coordinates()` with no flavor conversion.&quot;&quot;&quot;</span>
@@ -2154,8 +2163,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span></div>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.get_enum"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.get_enum">[docs]</a>    <span class="k">def</span> <span class="nf">get_enum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the enumerated type associated with the named column.</span>
@@ -2173,8 +2182,8 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_colenums</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;column ``</span><span class="si">%s</span><span class="s2">`` of table ``</span><span class="si">%s</span><span class="s2">`` is not of an enumerated type&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="n">colname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">))</span></div>
+                <span class="s2">&quot;column ``</span><span class="si">%s</span><span class="s2">`` of table ``</span><span class="si">%s</span><span class="s2">`` is not of an enumerated type&quot;</span></div>
+                <span class="o">%</span> <span class="p">(</span><span class="n">colname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Table.col"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.col">[docs]</a>    <span class="k">def</span> <span class="nf">col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a column from the table.</span>
@@ -2197,8 +2206,8 @@
 <span class="sd">        :meth:`Table.read` method.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.__getitem__"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a row or a range of rows from the table.</span>
@@ -2257,8 +2266,8 @@
         <span class="c1"># Try with a boolean or point selection</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_coordinates</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span></div>
+        <span class="k">else</span><span class="p">:</span></div>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
 
 <div class="viewcode-block" id="Table.__setitem__"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.__setitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set a row or a range of rows in the table.</span>
@@ -2327,8 +2336,8 @@
         <span class="c1"># Try with a boolean or point selection</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">modify_coordinates</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span></div>
+        <span class="k">else</span><span class="p">:</span></div>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
 
     <span class="k">def</span> <span class="nf">_save_buffered_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wbufRA</span><span class="p">,</span> <span class="n">lenrows</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Update the indexes after a flushing of rows.&quot;&quot;&quot;</span>
@@ -2404,8 +2413,8 @@
         <span class="n">lenrows</span> <span class="o">=</span> <span class="n">wbufRA</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="c1"># If the number of rows to append is zero, don&#39;t do anything else</span>
         <span class="k">if</span> <span class="n">lenrows</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># Save write buffer to disk</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_save_buffered_rows</span><span class="p">(</span><span class="n">wbufRA</span><span class="p">,</span> <span class="n">lenrows</span><span class="p">)</span></div>
+            <span class="c1"># Save write buffer to disk</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_save_buffered_rows</span><span class="p">(</span><span class="n">wbufRA</span><span class="p">,</span> <span class="n">lenrows</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_conv_to_recarr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Try to convert the object into a recarray.&quot;&quot;&quot;</span>
@@ -2463,8 +2472,8 @@
 
         <span class="c1"># Redo the index if needed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">lcoords</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">lcoords</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.modify_rows"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.modify_rows">[docs]</a>    <span class="k">def</span> <span class="nf">modify_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Modify a series of rows in the slice [start:stop:step].</span>
@@ -2518,8 +2527,8 @@
 
         <span class="c1"># Redo the index if needed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">lenrows</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">lenrows</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.modify_column"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.modify_column">[docs]</a>    <span class="k">def</span> <span class="nf">modify_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                       <span class="n">column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">colname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -2599,8 +2608,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_records</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">mod_recarr</span><span class="p">)</span>
         <span class="c1"># Redo the index if needed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reindex</span><span class="p">([</span><span class="n">colname</span><span class="p">])</span>
-
-        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.modify_columns"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.modify_columns">[docs]</a>    <span class="k">def</span> <span class="nf">modify_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                        <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -2675,8 +2684,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_records</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">mod_recarr</span><span class="p">)</span>
         <span class="c1"># Redo the index if needed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reindex</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.flush_rows_to_index"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.flush_rows_to_index">[docs]</a>    <span class="k">def</span> <span class="nf">flush_rows_to_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_lastrow</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add remaining rows in buffers to non-dirty indexes.</span>
@@ -2699,8 +2708,8 @@
                         <span class="n">rowsadded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_rows_to_index</span><span class="p">(</span>
                             <span class="n">colname</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">nrows</span><span class="p">,</span> <span class="n">_lastrow</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_unsaved_indexedrows</span> <span class="o">-=</span> <span class="n">rowsadded</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_indexedrows</span> <span class="o">+=</span> <span class="n">rowsadded</span>
-        <span class="k">return</span> <span class="n">rowsadded</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_indexedrows</span> <span class="o">+=</span> <span class="n">rowsadded</span></div>
+        <span class="k">return</span> <span class="n">rowsadded</span>
 
     <span class="k">def</span> <span class="nf">_add_rows_to_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colname</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">nrows</span><span class="p">,</span> <span class="n">lastrow</span><span class="p">,</span> <span class="n">update</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add more elements to the existing index.&quot;&quot;&quot;</span>
@@ -2784,8 +2793,8 @@
         <span class="n">nrows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remove_rows</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
         <span class="c1"># remove_rows is a invalidating index operation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.remove_row"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.remove_row">[docs]</a>    <span class="k">def</span> <span class="nf">remove_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes a row from the table.</span>
@@ -2815,8 +2824,8 @@
 <span class="sd">                table.remove_rows(15)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">remove_rows</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span></div>
+</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_rows</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_update_dependent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_g_update_dependent</span><span class="p">()</span>
@@ -2930,8 +2939,8 @@
 <span class="sd">        rebuild the indexes on it.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Table.reindex_dirty"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.reindex_dirty">[docs]</a>    <span class="k">def</span> <span class="nf">reindex_dirty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Recompute the existing indexes in table, *if* they are dirty.</span>
@@ -2942,8 +2951,8 @@
 <span class="sd">        (:meth:`Table.remove_rows`, for example).</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_copy_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">object</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">sortby</span><span class="p">,</span> <span class="n">checkCSI</span><span class="p">):</span>
         <span class="s2">&quot;Copy rows from self to object&quot;</span>
@@ -3061,8 +3070,8 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
-            <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">createparents</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span></div>
+            <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">createparents</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Flush the table buffers.&quot;&quot;&quot;</span>
@@ -3168,8 +3177,8 @@
 <span class="si">%s</span><span class="s2"></span>
 <span class="s2">  description := </span><span class="si">%r</span><span class="s2"></span>
 <span class="s2">  byteorder := </span><span class="si">%r</span><span class="s2"></span>
-<span class="s2">  chunkshape := </span><span class="si">%r</span><span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> \
-                <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">)</span></div>
+<span class="s2">  chunkshape := </span><span class="si">%r</span><span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> \</div>
+                <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Cols"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Cols">[docs]</a><span class="nd">@six</span><span class="o">.</span><span class="n">python_2_unicode_compatible</span>
@@ -3246,8 +3255,8 @@
 
 <div class="viewcode-block" id="Cols.__len__"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Cols.__len__">[docs]</a>    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the number of top level columns in table.&quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_colnames</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_colnames</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Cols._f_col"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Cols._f_col">[docs]</a>    <span class="k">def</span> <span class="nf">_f_col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get an accessor to the column colname.</span>
@@ -3274,8 +3283,8 @@
                             <span class="s2">&quot;column named ``</span><span class="si">%s</span><span class="s2">``&quot;</span><span class="p">)</span>
                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__tablePath</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_desc</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span>
                               <span class="n">colname</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_col</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_col</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Like `self._f_col()` but it does not check arguments.&quot;&quot;&quot;</span>
@@ -3343,8 +3352,8 @@
                     <span class="k">return</span> <span class="n">crecarray</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">colgroup</span><span class="p">)</span>  <span class="c1"># RecArray case</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">get_nested_field</span><span class="p">(</span><span class="n">crecarray</span><span class="p">,</span> <span class="n">colgroup</span><span class="p">)</span>  <span class="c1"># numpy case</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;invalid index or slice: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span></div>
+        <span class="k">else</span><span class="p">:</span></div>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;invalid index or slice: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
 
 <div class="viewcode-block" id="Cols.__setitem__"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Cols.__setitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set a row or a range of rows in a table or nested column.</span>
@@ -3395,8 +3404,8 @@
         <span class="k">if</span> <span class="n">colgroup</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>  <span class="c1"># The root group</span>
             <span class="n">table</span><span class="o">.</span><span class="n">modify_rows</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">table</span><span class="o">.</span><span class="n">modify_column</span><span class="p">(</span>
-                <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">colname</span><span class="o">=</span><span class="n">colgroup</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
+            <span class="n">table</span><span class="o">.</span><span class="n">modify_column</span><span class="p">(</span></div>
+                <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">colname</span><span class="o">=</span><span class="n">colgroup</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># First, close the columns (ie possible indices open)</span>
@@ -3443,8 +3452,8 @@
                 <span class="n">tcol</span> <span class="o">=</span> <span class="s2">&quot;Description&quot;</span>
                 <span class="c1"># Description doesn&#39;t have a shape currently</span>
                 <span class="n">shape</span> <span class="o">=</span> <span class="p">()</span>
-            <span class="n">out</span> <span class="o">+=</span> <span class="s2">&quot;  </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">tcol</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
-        <span class="k">return</span> <span class="n">out</span></div>
+            <span class="n">out</span> <span class="o">+=</span> <span class="s2">&quot;  </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">tcol</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="n">out</span>
 
 
 <div class="viewcode-block" id="Column"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column">[docs]</a><span class="nd">@six</span><span class="o">.</span><span class="n">python_2_unicode_compatible</span>
@@ -3564,8 +3573,8 @@
 <span class="sd">        This matches the length in rows of the parent table.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">nrows</span></div>
+</div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">nrows</span>
 
 <div class="viewcode-block" id="Column.__getitem__"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a row or a range of rows from a column.</span>
@@ -3634,8 +3643,8 @@
                 <span class="n">key</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">table</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pathname</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39; key type is not valid in this context&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span></div>
+                <span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39; key type is not valid in this context&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate through all items in the column.&quot;&quot;&quot;</span>
@@ -3708,8 +3717,8 @@
                 <span class="n">key</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">table</span><span class="o">.</span><span class="n">modify_column</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
                                        <span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pathname</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Non-valid index or slice: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span></div>
+        <span class="k">else</span><span class="p">:</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Non-valid index or slice: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Column.create_index"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column.create_index">[docs]</a>    <span class="k">def</span> <span class="nf">create_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optlevel</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                      <span class="n">tmp_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_blocksizes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_testmode</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -3778,8 +3787,8 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;_blocksizes must be a tuple with exactly 4 &quot;</span>
                              <span class="s2">&quot;elements&quot;</span><span class="p">)</span>
         <span class="n">idxrows</span> <span class="o">=</span> <span class="n">_column__create_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optlevel</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span>
-                                        <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">_blocksizes</span><span class="p">,</span> <span class="n">_verbose</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">idxrows</span><span class="p">)</span></div>
+                                        <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">_blocksizes</span><span class="p">,</span> <span class="n">_verbose</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">idxrows</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Column.create_csindex"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column.create_csindex">[docs]</a>    <span class="k">def</span> <span class="nf">create_csindex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                        <span class="n">_blocksizes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_testmode</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -3803,8 +3812,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_index</span><span class="p">(</span>
-            <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="n">optlevel</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="o">=</span><span class="n">tmp_dir</span><span class="p">,</span>
-            <span class="n">_blocksizes</span><span class="o">=</span><span class="n">_blocksizes</span><span class="p">,</span> <span class="n">_testmode</span><span class="o">=</span><span class="n">_testmode</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="n">_verbose</span><span class="p">)</span></div>
+            <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="n">optlevel</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="o">=</span><span class="n">tmp_dir</span><span class="p">,</span></div>
+            <span class="n">_blocksizes</span><span class="o">=</span><span class="n">_blocksizes</span><span class="p">,</span> <span class="n">_testmode</span><span class="o">=</span><span class="n">_testmode</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="n">_verbose</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_do_reindex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dirty</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Common code for reindex() and reindex_dirty() codes.&quot;&quot;&quot;</span>
@@ -3839,8 +3848,8 @@
 <span class="sd">        This method does nothing if the column is not indexed.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Column.reindex_dirty"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column.reindex_dirty">[docs]</a>    <span class="k">def</span> <span class="nf">reindex_dirty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Recompute the associated index only if it is dirty.</span>
@@ -3852,8 +3861,8 @@
 <span class="sd">        This method does nothing if the column is not indexed.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_reindex</span><span class="p">(</span><span class="n">dirty</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Column.remove_index"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column.remove_index">[docs]</a>    <span class="k">def</span> <span class="nf">remove_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Remove the index associated with this column.</span>
@@ -3869,8 +3878,8 @@
         <span class="c1"># Remove the index if existing.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_indexed</span><span class="p">:</span>
             <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span>
-            <span class="n">index</span><span class="o">.</span><span class="n">_f_remove</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">_set_column_indexing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pathname</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+            <span class="n">index</span><span class="o">.</span><span class="n">_f_remove</span><span class="p">()</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">_set_column_indexing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pathname</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Close this column.&quot;&quot;&quot;</span>
@@ -3894,8 +3903,8 @@
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;A detailed string representation for this object.&quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+</div>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 
 <span class="c1">## Local Variables:</span>

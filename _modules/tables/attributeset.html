@@ -332,9 +332,9 @@
 
 <span class="sd">    .. rubric:: Notes on AttributeSet methods</span>
 
-<span class="sd">    Note that this class overrides the __getattr__(), __setattr__() and</span>
-<span class="sd">    __delattr__() special methods.  This allows you to read, assign or</span>
-<span class="sd">    delete attributes on disk by just using the next constructs::</span>
+<span class="sd">    Note that this class overrides the __getattr__(), __setattr__(),</span>
+<span class="sd">    __delattr__() and __dir__() special methods.  This allows you to</span>
+<span class="sd">    read, assign or delete attributes on disk by just using the next constructs::</span>
 
 <span class="sd">        leaf.attrs.myattr = &#39;str attr&#39;    # set a string (native support)</span>
 <span class="sd">        leaf.attrs.myattr2 = 3            # set an integer (native support)</span>
@@ -350,6 +350,10 @@
 <span class="sd">            print(&quot;name: %s, value: %s&quot; % (name, node._v_attrs[name]))</span>
 
 <span class="sd">    Use whatever idiom you prefer to access the attributes.</span>
+
+<span class="sd">    Finally, on interactive python sessions you may get autocompletions of</span>
+<span class="sd">    attributes named as *valid python identifiers* by pressing the  `[Tab]`</span>
+<span class="sd">    key, or to use the dir() global function.</span>
 
 <span class="sd">    If an attribute is set on a target node that already has a large</span>
 <span class="sd">    number of attributes, a PerformanceWarning will be issued.</span>
@@ -461,8 +465,17 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="p">[:]</span>
         <span class="k">elif</span> <span class="n">attrset</span> <span class="o">==</span> <span class="s2">&quot;sys&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="p">[:]</span>
-        <span class="k">elif</span> <span class="n">attrset</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">[:]</span></div>
+        <span class="k">elif</span> <span class="n">attrset</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">[:]</span>
+
+    <span class="k">def</span> <span class="nf">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Autocomplete only children named as valid python identifiers.</span>
+
+<span class="sd">        Only PY3 supports this special method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span>
+                    <span class="nb">super</span><span class="p">(</span><span class="n">AttributeSet</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__dir__</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span>
+                    <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">()))</span>
 
     <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the attribute named &quot;name&quot;.&quot;&quot;&quot;</span>
@@ -759,8 +772,8 @@
 <span class="sd">        with the given name, false otherwise.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span></div>
+</div>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span>
 
 <div class="viewcode-block" id="AttributeSet._f_rename"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_rename">[docs]</a>    <span class="k">def</span> <span class="nf">_f_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">,</span> <span class="n">newattrname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Rename an attribute from oldattrname to newattrname.&quot;&quot;&quot;</span>
@@ -775,8 +788,8 @@
         <span class="c1"># Now, create the new attribute</span>
         <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newattrname</span><span class="p">,</span> <span class="n">attrvalue</span><span class="p">)</span>
 
-        <span class="c1"># Finally, remove the old attribute</span>
-        <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">)</span></div>
+        <span class="c1"># Finally, remove the old attribute</span></div>
+        <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newset</span><span class="p">,</span> <span class="n">set_attr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">copyclass</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Copy set attributes.</span>
@@ -835,8 +848,8 @@
         <span class="c1"># However, we need to know Node here.</span>
         <span class="c1"># Using class_name_dict avoids a circular import.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">class_name_dict</span><span class="p">[</span><span class="s1">&#39;Node&#39;</span><span class="p">]):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;destination object is not a node: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">where</span><span class="p">,))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;destination object is not a node: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">where</span><span class="p">,))</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Nothing will be done here, as the existing instance is completely</span>
@@ -866,8 +879,8 @@
             <span class="n">attrlist</span> <span class="o">=</span> <span class="s1">&#39;[</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;,</span><span class="se">\n</span><span class="s1">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rep</span><span class="p">))</span>
 
             <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">:</span><span class="se">\n</span><span class="s2">   </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">attrlist</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">else</span><span class="p">:</span></div>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">NotLoggedAttributeSet</span><span class="p">(</span><span class="n">AttributeSet</span><span class="p">):</span>

@@ -215,7 +215,7 @@ redesigned (see the <em>Backward incompatible changes</em> section in
 <a class="reference internal" href="../release-notes/RELEASE_NOTES_v3.1.x.html"><span class="doc">Changes from 3.1.0 to 3.1.1</span></a>) to be more simple and
 transparent and to allow the use of PyTables in multi-thread programs.</p>
 <p>Citing the <a class="reference internal" href="../release-notes/RELEASE_NOTES_v3.1.x.html"><span class="doc">Changes from 3.1.0 to 3.1.1</span></a>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">It</span> <span class="ow">is</span> <span class="n">important</span> <span class="n">to</span> <span class="n">stress</span> <span class="n">that</span> <span class="n">the</span> <span class="n">new</span> <span class="n">implementation</span> <span class="n">still</span> <span class="n">has</span> <span class="n">an</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">It</span> <span class="ow">is</span> <span class="n">important</span> <span class="n">to</span> <span class="n">stress</span> <span class="n">that</span> <span class="n">the</span> <span class="n">new</span> <span class="n">implementation</span> <span class="n">still</span> <span class="n">has</span> <span class="n">an</span>
 <span class="n">internal</span> <span class="n">registry</span> <span class="p">(</span><span class="n">implementation</span> <span class="n">detail</span><span class="p">)</span> <span class="ow">and</span> <span class="n">it</span> <span class="ow">is</span> <span class="n">still</span>
 <span class="o">**</span><span class="ow">not</span> <span class="n">thread</span> <span class="n">safe</span><span class="o">**.</span>
 <span class="n">Just</span> <span class="n">now</span> <span class="n">a</span> <span class="n">smart</span> <span class="n">enough</span> <span class="n">developer</span> <span class="n">should</span> <span class="n">be</span> <span class="n">able</span> <span class="n">to</span> <span class="n">use</span> <span class="n">PyTables</span> <span class="ow">in</span> <span class="n">a</span>
@@ -244,9 +244,9 @@ correct behaviour of the internal machinery used to manage HDF5 file handles.</p
 <div class="section" id="very-simple-solution">
 <h2>Very simple solution<a class="headerlink" href="#very-simple-solution" title="Permalink to this headline">¶</a></h2>
 <p>A very simple solution for this kind of scenario is to use a
-<code class="xref py py-class docutils literal"><span class="pre">threading.Lock</span></code> around part of the code that are considered critical
-e.g. the <a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><code class="xref py py-func docutils literal"><span class="pre">open_file()</span></code></a> function and the <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.close" title="tables.File.close"><code class="xref py py-meth docutils literal"><span class="pre">File.close()</span></code></a> method:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">threading</span>
+<code class="xref py py-class docutils literal notranslate"><span class="pre">threading.Lock</span></code> around part of the code that are considered critical
+e.g. the <a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">open_file()</span></code></a> function and the <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.close" title="tables.File.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">File.close()</span></code></a> method:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">threading</span>
 
 <span class="n">lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
 
@@ -259,9 +259,9 @@ e.g. the <a class="reference internal" href="../usersguide/libref/top_level.html
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The <code class="xref py py-func docutils literal"><span class="pre">synchronized_open_file()</span></code> and <code class="xref py py-func docutils literal"><span class="pre">synchronized_close_file()</span></code> can
+<p>The <code class="xref py py-func docutils literal notranslate"><span class="pre">synchronized_open_file()</span></code> and <code class="xref py py-func docutils literal notranslate"><span class="pre">synchronized_close_file()</span></code> can
 be used in the <em>thread function</em> to open and close the HDF5 file:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tables</span> <span class="k">as</span> <span class="nn">tb</span>
 
 <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">inqueue</span><span class="p">,</span> <span class="n">outqueue</span><span class="p">):</span>
@@ -281,13 +281,13 @@ be used in the <em>thread function</em> to open and close the HDF5 file:</p>
 </div>
 <p>Finally the main function of the program:</p>
 <ul class="simple">
-<li>instantiates the input and output <code class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></code>,</li>
+<li>instantiates the input and output <code class="xref py py-class docutils literal notranslate"><span class="pre">queue.Queue</span></code>,</li>
 <li>starts all threads,</li>
-<li>sends the processing requests on the input <code class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></code></li>
-<li>collects results reading from the output <code class="xref py py-class docutils literal"><span class="pre">queue.Queue</span></code></li>
-<li>performs finalization actions (<code class="xref py py-meth docutils literal"><span class="pre">threading.Thread.join()</span></code>)</li>
+<li>sends the processing requests on the input <code class="xref py py-class docutils literal notranslate"><span class="pre">queue.Queue</span></code></li>
+<li>collects results reading from the output <code class="xref py py-class docutils literal notranslate"><span class="pre">queue.Queue</span></code></li>
+<li>performs finalization actions (<code class="xref py py-meth docutils literal notranslate"><span class="pre">threading.Thread.join()</span></code>)</li>
 </ul>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">queue</span>
 <span class="kn">import</span> <span class="nn">threading</span>
 
@@ -355,20 +355,20 @@ be used in the <em>thread function</em> to open and close the HDF5 file:</p>
 </pre></div>
 </div>
 <p>The program in the example computes the mean value of a potentially huge
-dataset splinting the computation across <code class="xref py py-data docutils literal"><span class="pre">NTHREADS</span></code> (5 in this case)
+dataset splinting the computation across <code class="xref py py-data docutils literal notranslate"><span class="pre">NTHREADS</span></code> (5 in this case)
 threads.</p>
 <p>The complete and working code of this example (Python 3 is required) can be
-found in the <code class="file docutils literal"><span class="pre">examples</span></code> directory:
-<a class="reference download internal" href="../_downloads/simple_threading.py" download=""><code class="xref download docutils literal"><span class="pre">simple_threading.py</span></code></a>.</p>
+found in the <code class="file docutils literal notranslate"><span class="pre">examples</span></code> directory:
+<a class="reference download internal" href="../_downloads/simple_threading.py" download=""><code class="xref download docutils literal notranslate"><span class="pre">simple_threading.py</span></code></a>.</p>
 <p>The approach presented in this section is very simple and readable but has
 the <strong>drawback</strong> that the user code have to be modified to replace
-<a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><code class="xref py py-func docutils literal"><span class="pre">open_file()</span></code></a> and <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.close" title="tables.File.close"><code class="xref py py-meth docutils literal"><span class="pre">File.close()</span></code></a> calls with their safe version
-(<code class="xref py py-func docutils literal"><span class="pre">synchronized_open_file()</span></code> and <code class="xref py py-func docutils literal"><span class="pre">synchronized_close_file()</span></code>).</p>
+<a class="reference internal" href="../usersguide/libref/top_level.html#tables.open_file" title="tables.open_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">open_file()</span></code></a> and <a class="reference internal" href="../usersguide/libref/file_class.html#tables.File.close" title="tables.File.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">File.close()</span></code></a> calls with their safe version
+(<code class="xref py py-func docutils literal notranslate"><span class="pre">synchronized_open_file()</span></code> and <code class="xref py py-func docutils literal notranslate"><span class="pre">synchronized_close_file()</span></code>).</p>
 <p>Also, the solution shown in the example does not cover the entire PyTables
 API (e.g. although not recommended HDF5 files can be opened using the
-<a class="reference internal" href="../usersguide/libref/file_class.html#tables.File" title="tables.File"><code class="xref py py-class docutils literal"><span class="pre">File</span></code></a> constructor) and makes it impossible to use <em>pythonic</em>
+<a class="reference internal" href="../usersguide/libref/file_class.html#tables.File" title="tables.File"><code class="xref py py-class docutils literal notranslate"><span class="pre">File</span></code></a> constructor) and makes it impossible to use <em>pythonic</em>
 constructs like the <em>with</em> statement:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
     <span class="n">do_something</span><span class="p">(</span><span class="n">h5file</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -379,7 +379,7 @@ constructs like the <em>with</em> statement:</p>
 presented in the previous section consists in monkey-patching the PyTables
 package to replace some of its components with a more thread-safe version of
 themselves:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">threading</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">threading</span>
 
 <span class="kn">import</span> <span class="nn">tables</span> <span class="k">as</span> <span class="nn">tb</span>
 <span class="kn">import</span> <span class="nn">tables.file</span> <span class="k">as</span> <span class="nn">_tables_file</span>
@@ -433,7 +433,7 @@ themselves:</p>
 in the previous section.
 In particular the standard PyTables API (including <em>with</em> statements) can be
 used in the <em>thread function</em>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">inqueue</span><span class="p">,</span> <span class="n">outqueue</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">inqueue</span><span class="p">,</span> <span class="n">outqueue</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">yslice</span> <span class="o">=</span> <span class="n">inqueue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
         <span class="k">with</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
@@ -447,8 +447,8 @@ used in the <em>thread function</em>:</p>
 </pre></div>
 </div>
 <p>The complete code of this version of the example can be found in the
-<code class="file docutils literal"><span class="pre">examples</span></code> folder:
-<a class="reference download internal" href="../_downloads/threading_monkeypatch.py" download=""><code class="xref download docutils literal"><span class="pre">simple_threading.py</span></code></a>.
+<code class="file docutils literal notranslate"><span class="pre">examples</span></code> folder:
+<a class="reference download internal" href="../_downloads/threading_monkeypatch.py" download=""><code class="xref download docutils literal notranslate"><span class="pre">simple_threading.py</span></code></a>.
 Python 3 is required.</p>
 </div>
 </div>
