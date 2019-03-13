@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>tables.table &mdash; PyTables 3.4.4 documentation</title>
+  <title>tables.table &mdash; PyTables 3.5.0 documentation</title>
   
 
   
@@ -26,6 +26,7 @@
 
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
  
@@ -71,7 +72,7 @@
             
             
               <div class="version">
-                3.4.4
+                3.5.0
               </div>
             
           
@@ -712,12 +713,12 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s2">&quot;The shape of this table.&quot;</span>
+        <span class="sd">&quot;&quot;&quot;The shape of this table.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">rowsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s2">&quot;The size in bytes of each row in the table.&quot;</span>
+        <span class="sd">&quot;&quot;&quot;The size in bytes of each row in the table.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">_v_dtype</span><span class="o">.</span><span class="n">itemsize</span>
 
     <span class="nd">@property</span>
@@ -949,12 +950,12 @@
         <span class="c1"># Try purely descriptive description objects.</span>
         <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="c1"># Dictionary case</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">new</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">description</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">)</span>
                       <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">IsDescription</span><span class="p">)):</span>
             <span class="c1"># IsDescription subclass case</span>
             <span class="n">descr</span> <span class="o">=</span> <span class="n">description</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">descr</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">descr</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">new</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">Description</span><span class="p">):</span>
             <span class="c1"># It is a Description instance already</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
@@ -964,7 +965,7 @@
             <span class="c1"># Try NumPy dtype instances</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rabyteorder</span> <span class="o">=</span> \
-                    <span class="n">descr_from_dtype</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
+                    <span class="n">descr_from_dtype</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
 
         <span class="c1"># No description yet?</span>
         <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -984,7 +985,7 @@
                 <span class="k">if</span> <span class="n">nrows</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_v_recarray</span> <span class="o">=</span> <span class="n">nparray</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rabyteorder</span> <span class="o">=</span> \
-                    <span class="n">descr_from_dtype</span><span class="p">(</span><span class="n">nparray</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                    <span class="n">descr_from_dtype</span><span class="p">(</span><span class="n">nparray</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
 
         <span class="c1"># No description yet?</span>
         <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1227,7 +1228,7 @@
 
         <span class="c1"># 2. Create an instance description to host the record fields.</span>
         <span class="n">validate</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_isPTFile</span>  <span class="c1"># only for non-PyTables files</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="n">validate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="n">validate</span><span class="p">,</span> <span class="n">ptparams</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
 
         <span class="c1"># 3. Compute or get chunk shape and buffer size parameters.</span>
         <span class="k">if</span> <span class="n">chunksize</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -2793,6 +2794,7 @@
 <span class="sd">        n : int</span>
 <span class="sd">            The index of the row to remove.</span>
 
+
 <span class="sd">        .. versionadded:: 3.0</span>
 
 <span class="sd">        Examples</span>
@@ -3914,7 +3916,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2011-2018, PyTables maintainers.
+        &copy; Copyright 2011-2019, PyTables maintainers
 
     </p>
   </div>
@@ -3933,21 +3935,14 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'3.4.4',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
 
   
 
