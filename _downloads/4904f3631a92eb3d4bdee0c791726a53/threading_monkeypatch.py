@@ -58,7 +58,6 @@ tb.File = ThreadsafeFile
 
 _tables_file._open_files = ThreadsafeFileRegistry()
 
-
 SIZE = 100
 NTHREADS = 5
 FILENAME = 'simple_threading.h5'

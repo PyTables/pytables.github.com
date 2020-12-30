@@ -7,7 +7,6 @@ import threading
 import numpy as np
 import tables as tb
 
-
 SIZE = 100
 NTHREADS = 5
 FILENAME = 'simple_threading.h5'
@@ -47,8 +46,8 @@ def run(filename, path, inqueue, outqueue):
         h5array = h5file.get_node(path)
         data = h5array[yslice, ...]
         psum = np.sum(data)
-    except Exception as e:
-        outqueue.put(e)
+    except Exception as exc:
+        outqueue.put(exc)
     else:
         outqueue.put(psum)
     finally:
@@ -65,7 +64,7 @@ def main():
     outqueue = queue.Queue()
 
     # start all threads
-    for i in range(NTHREADS):
+    for _ in range(NTHREADS):
         thread = threading.Thread(target=run,
                                   args=(FILENAME, H5PATH, inqueue, outqueue))
         thread.start()
@@ -79,7 +78,7 @@ def main():
     try:
         mean_ = 0.
 
-        for i in range(len(threads)):
+        for _ in range(len(threads)):
             out = outqueue.get()
             if isinstance(out, Exception):
                 raise out
@@ -93,7 +92,7 @@ def main():
             thread.join()
 
     # print results
-    print('Mean: {}'.format(mean_))
+    print(f'Mean: {mean_}')
 
 
 if __name__ == '__main__':
