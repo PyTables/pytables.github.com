@@ -1,39 +1,39 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>How to integrate PyTables in your application by using py2exe &mdash; PyTables 3.6.1 documentation</title>
+  <title>How to integrate PyTables in your application by using py2exe &mdash; PyTables 3.6.2.dev0 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Installing PyTables when you’re not root" href="no_root_install.html" />
@@ -76,7 +76,7 @@
             
             
               <div class="version">
-                3.6.1
+                3.6.2.dev0
               </div>
             
           
@@ -93,6 +93,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -129,6 +130,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -167,7 +169,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../index.html">Docs</a> &raquo;</li>
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="index.html">PyTables Cookbook</a> &raquo;</li>
         
@@ -241,48 +243,48 @@ Please follow the instructions at <a class="reference external" href="http://www
 39
 40
 41
-42</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
-<span class="kn">from</span> <span class="nn">tables</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">import</span> <span class="nn">numarray</span>
+42</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tables</span> <span class="k">as</span> <span class="nn">tb</span>
 
-<span class="k">class</span> <span class="nc">Particle</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">StringCol</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span> <span class="c1"># 16-character String</span>
-    <span class="n">idnumber</span> <span class="o">=</span> <span class="n">Int64Col</span><span class="p">()</span> <span class="c1"># Signed 64-bit integer</span>
-    <span class="n">ADCcount</span> <span class="o">=</span> <span class="n">UInt16Col</span><span class="p">()</span> <span class="c1"># Unsigned short integer</span>
-    <span class="n">TDCcount</span> <span class="o">=</span> <span class="n">UInt8Col</span><span class="p">()</span> <span class="c1"># Unsigned byte</span>
-    <span class="n">grid_i</span> <span class="o">=</span> <span class="n">Int32Col</span><span class="p">()</span> <span class="c1"># Integer</span>
-    <span class="n">grid_j</span> <span class="o">=</span> <span class="n">IntCol</span><span class="p">()</span> <span class="c1"># Integer (equivalent to Int32Col)</span>
-    <span class="n">pressure</span> <span class="o">=</span> <span class="n">Float32Col</span><span class="p">()</span> <span class="c1"># Float (single-precision)</span>
-    <span class="n">energy</span> <span class="o">=</span> <span class="n">FloatCol</span><span class="p">()</span> <span class="c1"># Double (double-precision)</span>
 
-<span class="n">h5file</span> <span class="o">=</span> <span class="n">openFile</span><span class="p">(</span><span class="s2">&quot;tutorial.h5&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Test file&quot;</span><span class="p">)</span>
-<span class="n">group</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">createGroup</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="s2">&quot;detector&quot;</span><span class="p">,</span> <span class="s2">&quot;Detector information&quot;</span><span class="p">)</span>
-<span class="n">table</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">createTable</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s2">&quot;readout&quot;</span><span class="p">,</span> <span class="n">Particle</span><span class="p">,</span> <span class="s2">&quot;Readout example&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Particle</span><span class="p">(</span><span class="n">tb</span><span class="o">.</span><span class="n">IsDescription</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">StringCol</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>  <span class="c1"># 16-character String</span>
+    <span class="n">idnumber</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">Int64Col</span><span class="p">()</span>  <span class="c1"># Signed 64-bit integer</span>
+    <span class="n">ADCcount</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">UInt16Col</span><span class="p">()</span>  <span class="c1"># Unsigned short integer</span>
+    <span class="n">TDCcount</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">UInt8Col</span><span class="p">()</span>  <span class="c1"># Unsigned byte</span>
+    <span class="n">grid_i</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">Int32Col</span><span class="p">()</span>  <span class="c1"># Integer</span>
+    <span class="n">grid_j</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">IntCol</span><span class="p">()</span>  <span class="c1"># Integer (equivalent to Int32Col)</span>
+    <span class="n">pressure</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">Float32Col</span><span class="p">()</span>  <span class="c1"># Float (single-precision)</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">FloatCol</span><span class="p">()</span>  <span class="c1"># Double (double-precision)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">h5file</span><span class="p">)</span>
 
-<span class="n">particle</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">row</span>
+<span class="k">with</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s2">&quot;tutorial.h5&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Test file&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="s2">&quot;detector&quot;</span><span class="p">,</span> <span class="s2">&quot;Detector information&quot;</span><span class="p">)</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">create_table</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="s2">&quot;readout&quot;</span><span class="p">,</span> <span class="n">Particle</span><span class="p">,</span> <span class="s2">&quot;Readout example&quot;</span><span class="p">)</span>
 
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
-    <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Particle: </span><span class="si">%6d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">i</span>
-    <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;TDCcount&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">256</span>
-    <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;ADCcount&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="mi">256</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">16</span><span class="p">)</span>
-    <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;grid_i&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
-    <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;grid_j&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">-</span> <span class="n">i</span>
-    <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="n">i</span><span class="p">)</span>
-    <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">particle</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">4</span><span class="p">)</span>
-    <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;idnumber&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">34</span><span class="p">)</span>
-    <span class="n">particle</span><span class="o">.</span><span class="n">append</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">h5file</span><span class="p">)</span>
 
-<span class="n">table</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="n">particle</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">row</span>
 
-<span class="n">table</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">readout</span>
-<span class="n">pressure</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;TDCcount&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">3</span> <span class="ow">and</span>
-                                                       <span class="mi">20</span><span class="o">&lt;=</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span><span class="o">&lt;</span><span class="mi">50</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Particle: </span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s1">6d</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;TDCcount&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">256</span>
+        <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;ADCcount&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">256</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+        <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;grid_i&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;grid_j&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">-</span> <span class="n">i</span>
+        <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">particle</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">particle</span><span class="p">[</span><span class="s1">&#39;idnumber&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">34</span><span class="p">)</span>
+        <span class="n">particle</span><span class="o">.</span><span class="n">append</span><span class="p">()</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">pressure</span><span class="p">)</span>
+    <span class="n">table</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
-<span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="k">with</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s2">&quot;tutorial.h5&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Test file&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">readout</span>
+    <span class="n">pressure</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;TDCcount&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="ow">and</span> <span class="mi">20</span> <span class="o">&lt;=</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">50</span><span class="p">]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">pressure</span><span class="p">)</span>
 </pre></div>
 </td></tr></table></div>
 <p>To wrap this script into an executable you have to create a setup script and a
@@ -309,7 +311,7 @@ All dependencies (dll’s and such stuff) will be copied into this folder.
 When you distribute your application you have to distribute all files and
 folders inside the <em>dist</em> folder.</p>
 <p>Below you can see how to start the build process (<cite>python setup.py py2exe</cite>):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="p">:</span><span class="n">pytables_test</span><span class="o">&gt;</span> <span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">py2exe</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="p">:</span><span class="n">pytables_test</span><span class="o">&gt;</span> <span class="n">python3</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">py2exe</span>
 <span class="o">...</span>
 <span class="n">BUILDING</span> <span class="n">EXECUTABLE</span>
 <span class="o">...</span>
@@ -359,11 +361,19 @@ folders inside the <em>dist</em> folder.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2011-2019, PyTables maintainers
+        
+        &copy; Copyright 2011–2020, PyTables maintainers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -374,7 +384,6 @@ folders inside the <em>dist</em> folder.</p>
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {
