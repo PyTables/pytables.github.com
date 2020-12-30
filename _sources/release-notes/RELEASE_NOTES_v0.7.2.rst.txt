@@ -12,7 +12,7 @@ been addressed:
   has been reported, and hopefully they should be fixed more
   sooner than later.
 
-- Table buffers are built dinamically now, so if Tables are
+- Table buffers are built dynamically now, so if Tables are
   not accessed for reading or writing this memory will not be
   booked. This will help to reduce the memory consumption.
 

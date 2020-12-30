@@ -51,7 +51,7 @@ Bibliography
 :ref:`[NUMEXPR] <NUMEXPR>`
     David Cooke, Francesc Alted, and et al. Numexpr. Fast evaluation of array
     expressions by using a vector-based virtual machine.
-    It is an enhaced computing kernel that is generally faster (between 1x
+    It is an enhanced computing kernel that is generally faster (between 1x
     and 10x, depending on the kind of operations) than NumPy at evaluating
     complex array expressions. `<http://code.google.com/p/numexpr>`_.
 
