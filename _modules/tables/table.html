@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>tables.table &mdash; PyTables 3.6.2.dev0 documentation</title>
   
@@ -17,13 +17,13 @@
 
   
   
+
   
   
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+
+  
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -150,6 +150,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -174,36 +176,24 @@
            <div itemprop="articleBody">
             
   <h1>Source code for tables.table</h1><div class="highlight"><pre>
-<span></span><span class="c1">########################################################################</span>
-<span class="c1">#</span>
-<span class="c1"># License: BSD</span>
-<span class="c1"># Created: September 4, 2002</span>
-<span class="c1"># Author: Francesc Alted - faltet@pytables.com</span>
-<span class="c1">#</span>
-<span class="c1"># $Id$</span>
-<span class="c1">#</span>
-<span class="c1">########################################################################</span>
+<span></span><span class="sd">&quot;&quot;&quot;Here is defined the Table class.&quot;&quot;&quot;</span>
 
-<span class="sd">&quot;&quot;&quot;Here is defined the Table class.&quot;&quot;&quot;</span>
-
+<span class="kn">import</span> <span class="nn">functools</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">operator</span>
-<span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span> <span class="k">as</span> <span class="n">_reduce</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">perf_counter</span> <span class="k">as</span> <span class="n">clock</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span>
-<span class="kn">import</span> <span class="nn">numexpr</span>
+<span class="kn">import</span> <span class="nn">numexpr</span> <span class="k">as</span> <span class="nn">ne</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">tableextension</span>
 <span class="kn">from</span> <span class="nn">.lrucacheextension</span> <span class="kn">import</span> <span class="n">ObjectCache</span><span class="p">,</span> <span class="n">NumCache</span>
 <span class="kn">from</span> <span class="nn">.atom</span> <span class="kn">import</span> <span class="n">Atom</span>
 <span class="kn">from</span> <span class="nn">.conditions</span> <span class="kn">import</span> <span class="n">compile_condition</span>
-<span class="kn">from</span> <span class="nn">numexpr.necompiler</span> <span class="kn">import</span> <span class="n">getType</span> <span class="k">as</span> <span class="n">numexpr_getType</span><span class="p">,</span> <span class="n">double</span>
-<span class="kn">from</span> <span class="nn">numexpr.expressions</span> <span class="kn">import</span> <span class="n">functions</span> <span class="k">as</span> <span class="n">numexpr_functions</span>
 <span class="kn">from</span> <span class="nn">.flavor</span> <span class="kn">import</span> <span class="n">flavor_of</span><span class="p">,</span> <span class="n">array_as_internal</span><span class="p">,</span> <span class="n">internal_to_flavor</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">is_idx</span><span class="p">,</span> <span class="n">lazyattr</span><span class="p">,</span> <span class="n">SizeType</span><span class="p">,</span> <span class="n">NailedDict</span> <span class="k">as</span> <span class="n">CacheDict</span>
 <span class="kn">from</span> <span class="nn">.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span>
@@ -235,47 +225,40 @@
 <span class="n">obversion</span> <span class="o">=</span> <span class="s2">&quot;2.7&quot;</span>  <span class="c1"># The Table VERSION number</span>
 
 
-<span class="k">try</span><span class="p">:</span>
-    <span class="c1"># int_, long_ are only available in numexpr &gt;= 2.1</span>
-    <span class="kn">from</span> <span class="nn">numexpr.necompiler</span> <span class="kn">import</span> <span class="n">int_</span><span class="p">,</span> <span class="n">long_</span>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="n">int_</span> <span class="o">=</span> <span class="nb">int</span>
-    <span class="n">long_</span> <span class="o">=</span> <span class="nb">int</span>
-
 <span class="c1"># Maps NumPy types to the types used by Numexpr.</span>
 <span class="n">_nxtype_from_nptype</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">bool_</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span> <span class="n">int_</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span> <span class="n">int_</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">:</span> <span class="n">int_</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span> <span class="n">long_</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span> <span class="n">int_</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">uint16</span><span class="p">:</span> <span class="n">int_</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">uint32</span><span class="p">:</span> <span class="n">long_</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">:</span> <span class="n">long_</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span> <span class="n">double</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">:</span> <span class="nb">complex</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">complex128</span><span class="p">:</span> <span class="nb">complex</span><span class="p">,</span>
-    <span class="n">numpy</span><span class="o">.</span><span class="n">bytes_</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">int_</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">int_</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">:</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">int_</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">long_</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">int_</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">:</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">int_</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">:</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">long_</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">:</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">long_</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">double</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">:</span> <span class="nb">complex</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">:</span> <span class="nb">complex</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">bytes_</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
 <span class="p">}</span>
 
-<span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">str_</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
+<span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
 
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;float16&#39;</span><span class="p">):</span>
-    <span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">float16</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span>    <span class="c1"># XXX: check</span>
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;float96&#39;</span><span class="p">):</span>
-    <span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">float96</span><span class="p">]</span> <span class="o">=</span> <span class="n">double</span>   <span class="c1"># XXX: check</span>
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;float128&#39;</span><span class="p">):</span>
-    <span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">float128</span><span class="p">]</span> <span class="o">=</span> <span class="n">double</span>  <span class="c1"># XXX: check</span>
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;complec192&#39;</span><span class="p">):</span>
-    <span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex192</span><span class="p">]</span> <span class="o">=</span> <span class="nb">complex</span>  <span class="c1"># XXX: check</span>
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;complex256&#39;</span><span class="p">):</span>
-    <span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex256</span><span class="p">]</span> <span class="o">=</span> <span class="nb">complex</span>  <span class="c1"># XXX: check</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float16&#39;</span><span class="p">):</span>
+    <span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float16</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span>    <span class="c1"># XXX: check</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float96&#39;</span><span class="p">):</span>
+    <span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float96</span><span class="p">]</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">double</span>   <span class="c1"># XXX: check</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float128&#39;</span><span class="p">):</span>
+    <span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float128</span><span class="p">]</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">double</span>  <span class="c1"># XXX: check</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;complex192&#39;</span><span class="p">):</span>
+    <span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">complex192</span><span class="p">]</span> <span class="o">=</span> <span class="nb">complex</span>  <span class="c1"># XXX: check</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;complex256&#39;</span><span class="p">):</span>
+    <span class="n">_nxtype_from_nptype</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">complex256</span><span class="p">]</span> <span class="o">=</span> <span class="nb">complex</span>  <span class="c1"># XXX: check</span>
 
 
 <span class="c1"># The NumPy scalar type corresponding to `SizeType`.</span>
-<span class="n">_npsizetype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
+<span class="n">_npsizetype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
 
 
 <span class="k">def</span> <span class="nf">_index_name_of</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
@@ -325,7 +308,7 @@
 <span class="k">def</span> <span class="nf">_table__where_indexed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compiled</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">,</span>
                           <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-        <span class="n">tref</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="n">tref</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
         <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Entering table_whereIndexed&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span> <span class="o">=</span> <span class="kc">True</span>
@@ -336,7 +319,7 @@
     <span class="c1"># Get the values in expression that are not columns</span>
     <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">condvars</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
     <span class="c1"># Build a key for the sequence cache</span>
     <span class="n">seqkey</span> <span class="o">=</span> <span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">values</span><span class="p">),</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
@@ -348,7 +331,7 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">iter</span><span class="p">([])</span>
         <span class="c1"># seq is a list.</span>
-        <span class="n">seq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int64&#39;</span><span class="p">)</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int64&#39;</span><span class="p">)</span>
         <span class="c1"># Correct the ranges in cached sequence</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[(</span><span class="n">seq</span> <span class="o">&gt;=</span> <span class="n">start</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span>
@@ -378,8 +361,8 @@
         <span class="k">if</span> <span class="n">index</span><span class="o">.</span><span class="n">reduction</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">ncoords</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># No values from index condition, thus the chunkmap should be empty</span>
             <span class="n">nrowsinchunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">nchunks</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">)</span> <span class="o">/</span> <span class="n">nrowsinchunk</span><span class="p">))</span>
-            <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nchunks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;bool&quot;</span><span class="p">)</span>
+            <span class="n">nchunks</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">/</span> <span class="n">nrowsinchunk</span><span class="p">)</span>
+            <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nchunks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;bool&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Get the chunkmap from the index</span>
             <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">get_chunkmap</span><span class="p">()</span>
@@ -392,7 +375,7 @@
         <span class="k">return</span> <span class="nb">iter</span><span class="p">([])</span>
 
     <span class="c1"># Compute the final chunkmap</span>
-    <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">numexpr</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">strexpr</span><span class="p">,</span> <span class="n">cmvars</span><span class="p">)</span>
+    <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">strexpr</span><span class="p">,</span> <span class="n">cmvars</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">chunkmap</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="c1"># The chunkmap is all False, so the result is empty</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_seqcache</span><span class="o">.</span><span class="n">setitem</span><span class="p">(</span><span class="n">seqkey</span><span class="p">,</span> <span class="p">[],</span> <span class="mi">1</span><span class="p">)</span>
@@ -461,13 +444,13 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">dname</span> <span class="o">+=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">iname</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">idgroup</span> <span class="o">=</span> <span class="n">get_node</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">itgroup</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">dname</span><span class="p">))</span>
+                <span class="n">idgroup</span> <span class="o">=</span> <span class="n">get_node</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">itgroup</span><span class="o">.</span><span class="n">_v_pathname</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">dname</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
             <span class="k">except</span> <span class="n">NoSuchNodeError</span><span class="p">:</span>
                 <span class="n">idgroup</span> <span class="o">=</span> <span class="n">create_indexes_descr</span><span class="p">(</span><span class="n">idgroup</span><span class="p">,</span> <span class="n">dname</span><span class="p">,</span> <span class="n">iname</span><span class="p">,</span> <span class="n">filters</span><span class="p">)</span>
 
     <span class="c1"># Create the atom</span>
     <span class="k">assert</span> <span class="n">dtype</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">()</span>
-    <span class="n">atom</span> <span class="o">=</span> <span class="n">Atom</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">dtype</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,))))</span>
+    <span class="n">atom</span> <span class="o">=</span> <span class="n">Atom</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">dtype</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,))))</span>
 
     <span class="c1"># Protection on tables larger than the expected rows (perhaps the</span>
     <span class="c1"># user forgot to pass this parameter to the Table constructor?)</span>
@@ -518,7 +501,7 @@
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gives a detailed Description column representation.&quot;&quot;&quot;</span>
 
-        <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;  </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+        <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;  </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="se">\&quot;</span><span class="s1">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
         <span class="k">return</span> <span class="s1">&#39;{</span><span class="se">\n</span><span class="s1">  </span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;,</span><span class="se">\n</span><span class="s1">  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rep</span><span class="p">))</span>
 
 
@@ -691,8 +674,6 @@
     <span class="c1"># Class identifier.</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;TABLE&#39;</span>
 
-    <span class="c1"># Properties</span>
-    <span class="c1"># ~~~~~~~~~~</span>
     <span class="nd">@lazyattr</span>
     <span class="k">def</span> <span class="nf">row</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The associated Row instance (see :ref:`RowClassDescr`).&quot;&quot;&quot;</span>
@@ -704,9 +685,6 @@
         <span class="sd">&quot;&quot;&quot;The NumPy ``dtype`` that most closely matches this table.&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">_v_dtype</span>
-
-    <span class="c1"># Read-only shorthands</span>
-    <span class="c1"># ````````````````````</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -725,8 +703,6 @@
 <span class="sd">        the compression ratio of the data.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span>
 
-    <span class="c1"># Lazy attributes</span>
-    <span class="c1"># ```````````````</span>
     <span class="nd">@lazyattr</span>
     <span class="k">def</span> <span class="nf">_v_iobuf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;A buffer for doing I/O.&quot;&quot;&quot;</span>
@@ -740,7 +716,7 @@
         <span class="c1"># First, do a check to see whether we need to set default values</span>
         <span class="c1"># different from 0 or not.</span>
         <span class="k">for</span> <span class="n">coldflt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coldflts</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coldflt</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="n">coldflt</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coldflt</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="n">coldflt</span><span class="p">:</span>
                 <span class="k">break</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># No default different from 0 found.  Returning None.</span>
@@ -760,9 +736,6 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">carr</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">aligned</span> <span class="ow">and</span> <span class="n">carr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">colunaligned</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">colpathname</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">colunaligned</span><span class="p">)</span>
-
-    <span class="c1"># Index-related properties</span>
-    <span class="c1"># ````````````````````````</span>
 
     <span class="c1"># **************** WARNING! ***********************</span>
     <span class="c1"># This function can be called during the destruction time of a table</span>
@@ -822,23 +795,22 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">indexedcolpathnames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;List of pathnames of indexed columns in the table.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">_colpname</span> <span class="k">for</span> <span class="n">_colpname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="p">[</span><span class="n">_colpname</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">_colpname</span>
+                <span class="k">for</span> <span class="n">_colpname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="p">[</span><span class="n">_colpname</span><span class="p">]]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">colindexes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;A dictionary with the indexes of the indexed columns.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_ColIndexes</span><span class="p">(</span>
-            <span class="p">(</span><span class="n">_colpname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">_f_col</span><span class="p">(</span><span class="n">_colpname</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">_colpname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="p">[</span><span class="n">_colpname</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">_ColIndexes</span><span class="p">((</span><span class="n">_colpname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">_f_col</span><span class="p">(</span><span class="n">_colpname</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+                           <span class="k">for</span> <span class="n">_colpname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">colpathnames</span>
+                           <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">colindexed</span><span class="p">[</span><span class="n">_colpname</span><span class="p">])</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_dirtyindexes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Whether some index in table is dirty.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition_cache</span><span class="o">.</span><span class="n">_nailcount</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
-    <span class="c1"># Other methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">expectedrows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -947,12 +919,14 @@
         <span class="c1"># Try purely descriptive description objects.</span>
         <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="c1"># Dictionary case</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">description</span><span class="p">,</span>
+                                           <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">new</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">description</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">)</span>
                       <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">IsDescription</span><span class="p">)):</span>
             <span class="c1"># IsDescription subclass case</span>
             <span class="n">descr</span> <span class="o">=</span> <span class="n">description</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">descr</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">descr</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
+                                           <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">new</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">Description</span><span class="p">):</span>
             <span class="c1"># It is a Description instance already</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
@@ -960,9 +934,10 @@
         <span class="c1"># No description yet?</span>
         <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Try NumPy dtype instances</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rabyteorder</span> <span class="o">=</span> \
-                    <span class="n">descr_from_dtype</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">):</span>
+                <span class="n">tup</span> <span class="o">=</span> <span class="n">descr_from_dtype</span><span class="p">(</span><span class="n">description</span><span class="p">,</span>
+                                       <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rabyteorder</span> <span class="o">=</span> <span class="n">tup</span>
 
         <span class="c1"># No description yet?</span>
         <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -973,7 +948,7 @@
                 <span class="k">pass</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;python&#39;</span><span class="p">:</span>
-                    <span class="n">nparray</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
+                    <span class="n">nparray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">nparray</span> <span class="o">=</span> <span class="n">array_as_internal</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">=</span> <span class="n">nrows</span> <span class="o">=</span> <span class="n">SizeType</span><span class="p">(</span><span class="n">nparray</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
@@ -981,8 +956,9 @@
                 <span class="c1"># initial buffer.</span>
                 <span class="k">if</span> <span class="n">nrows</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_v_recarray</span> <span class="o">=</span> <span class="n">nparray</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rabyteorder</span> <span class="o">=</span> \
-                    <span class="n">descr_from_dtype</span><span class="p">(</span><span class="n">nparray</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+                <span class="n">tup</span> <span class="o">=</span> <span class="n">descr_from_dtype</span><span class="p">(</span><span class="n">nparray</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                                       <span class="n">ptparams</span><span class="o">=</span><span class="n">parentnode</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rabyteorder</span> <span class="o">=</span> <span class="n">tup</span>
 
         <span class="c1"># No description yet?</span>
         <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -993,7 +969,7 @@
 
         <span class="c1"># Check the chunkshape parameter</span>
         <span class="k">if</span> <span class="n">new</span> <span class="ow">and</span> <span class="n">chunkshape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
                 <span class="n">chunkshape</span> <span class="o">=</span> <span class="p">(</span><span class="n">chunkshape</span><span class="p">,)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">chunkshape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">)</span>
@@ -1130,14 +1106,15 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_empty_array_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_empty_array_cache</span><span class="p">[</span>
-                <span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">arr</span>
 
     <span class="k">def</span> <span class="nf">_get_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get the appropriate buffer for data depending on table nestedness.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Get the appropriate buffer for data depending on table</span>
+<span class="sd">        nestedness.&quot;&quot;&quot;</span>
 
         <span class="c1"># This is *much* faster than the numpy.rec.array counterpart</span>
-        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_type_col_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a list containing &#39;type_&#39; column names.&quot;&quot;&quot;</span>
@@ -1225,7 +1202,8 @@
 
         <span class="c1"># 2. Create an instance description to host the record fields.</span>
         <span class="n">validate</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_isPTFile</span>  <span class="c1"># only for non-PyTables files</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="n">validate</span><span class="p">,</span> <span class="n">ptparams</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">Description</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="n">validate</span><span class="p">,</span>
+                                       <span class="n">ptparams</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
 
         <span class="c1"># 3. Compute or get chunk shape and buffer size parameters.</span>
         <span class="k">if</span> <span class="n">chunksize</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1321,7 +1299,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_reduce</span><span class="p">(</span><span class="nb">getattr</span><span class="p">,</span> <span class="n">colpathname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span>
+                <span class="nb">getattr</span><span class="p">,</span> <span class="n">colpathname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;table ``</span><span class="si">%s</span><span class="s2">`` does not have a column named ``</span><span class="si">%s</span><span class="s2">``&quot;</span>
                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">colpathname</span><span class="p">))</span>
@@ -1388,7 +1367,7 @@
             <span class="n">cexpr</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="s1">&#39;&lt;string&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;eval&#39;</span><span class="p">)</span>
             <span class="n">exprvars</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">cexpr</span><span class="o">.</span><span class="n">co_names</span>
                         <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span> <span class="s1">&#39;True&#39;</span><span class="p">]</span>
-                        <span class="ow">and</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">numexpr_functions</span><span class="p">]</span>
+                        <span class="ow">and</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ne</span><span class="o">.</span><span class="n">expressions</span><span class="o">.</span><span class="n">functions</span><span class="p">]</span>
             <span class="n">exprvarscache</span><span class="p">[</span><span class="n">expression</span><span class="p">]</span> <span class="o">=</span> <span class="n">exprvars</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">exprvars</span> <span class="o">=</span> <span class="n">exprvarscache</span><span class="p">[</span><span class="n">expression</span><span class="p">]</span>
@@ -1452,9 +1431,9 @@
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># only non-column values are converted to arrays</span>
                 <span class="c1"># XXX: not 100% sure about this</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
             <span class="n">reqvars</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
         <span class="k">return</span> <span class="n">reqvars</span>
 
@@ -1478,7 +1457,7 @@
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># array</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">varnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
-                    <span class="n">vartypes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">numexpr_getType</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>  <span class="c1"># expensive</span>
+                    <span class="n">vartypes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">getType</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>  <span class="c1"># expensive</span>
                 <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                     <span class="c1"># This is more clear than the error given by Numexpr.</span>
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;variable ``</span><span class="si">%s</span><span class="s2">`` has data type ``</span><span class="si">%s</span><span class="s2">``, &quot;</span>
@@ -1663,7 +1642,7 @@
         <span class="sd">&quot;&quot;&quot;Low-level counterpart of `self.where()`.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-            <span class="n">tref</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">tref</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Entering table._where&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
         <span class="c1"># Adjust the slice to be used.</span>
@@ -1681,7 +1660,7 @@
         <span class="k">if</span> <span class="n">compiled</span><span class="o">.</span><span class="n">index_expressions</span><span class="p">:</span>
             <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">_table__where_indexed</span><span class="p">(</span>
                 <span class="bp">self</span><span class="p">,</span> <span class="n">compiled</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunkmap</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunkmap</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
                 <span class="c1"># If it is not a NumPy array it should be an iterator</span>
                 <span class="c1"># Reset conditions</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1719,8 +1698,8 @@
             <span class="n">cstart</span><span class="p">,</span> <span class="n">cstop</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">coords</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="n">cstop</span> <span class="o">-</span> <span class="n">cstart</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">):</span>
                 <span class="c1"># Chances for monotonically increasing row values. Refine.</span>
-                <span class="n">inc_seq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">alltrue</span><span class="p">(</span>
-                    <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">cstart</span><span class="p">,</span> <span class="n">cstop</span><span class="p">)</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coords</span><span class="p">))</span>
+                <span class="n">inc_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">alltrue</span><span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">cstart</span><span class="p">,</span> <span class="n">cstop</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coords</span><span class="p">))</span>
                 <span class="k">if</span> <span class="n">inc_seq</span><span class="p">:</span>
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">cstart</span><span class="p">,</span> <span class="n">cstop</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="n">field</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_coordinates</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
@@ -1781,11 +1760,11 @@
 
         <span class="n">coords</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">nrow</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span>
                   <span class="bp">self</span><span class="o">.</span><span class="n">_where</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">condvars</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)]</span>
-        <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
         <span class="c1"># Reset the conditions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_where_condition</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">sort</span><span class="p">:</span>
-            <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">internal_to_flavor</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Table.itersequence"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.itersequence">[docs]</a>    <span class="k">def</span> <span class="nf">itersequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
@@ -1793,7 +1772,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="s1">&#39;__getitem__&#39;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Wrong &#39;sequence&#39; parameter type. Only sequences &quot;</span>
-                             <span class="s2">&quot;are suported.&quot;</span><span class="p">)</span>
+                            <span class="s2">&quot;are suported.&quot;</span><span class="p">)</span>
         <span class="c1"># start, stop and step are necessary for the new iterator for</span>
         <span class="c1"># coordinates, and perhaps it would be useful to add them as</span>
         <span class="c1"># parameters in the future (not now, because I&#39;ve just removed</span>
@@ -1980,7 +1959,7 @@
             <span class="k">if</span> <span class="n">field</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">nra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_container</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">nra</span>
-            <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype_field</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype_field</span><span class="p">)</span>
 
         <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
 
@@ -1988,7 +1967,7 @@
             <span class="c1"># Compute the shape of the resulting column object</span>
             <span class="k">if</span> <span class="n">field</span><span class="p">:</span>
                 <span class="c1"># Create a container for the results</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nrows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype_field</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nrows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype_field</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Recarray case</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_container</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span>
@@ -1997,15 +1976,14 @@
             <span class="c1"># have different byteorders</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">out</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">isnative</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;output array must be in system&#39;s byteorder &quot;</span>
-                                  <span class="s2">&quot;or results will be incorrect&quot;</span><span class="p">)</span>
+                                 <span class="s2">&quot;or results will be incorrect&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">field</span><span class="p">:</span>
                 <span class="n">bytes_required</span> <span class="o">=</span> <span class="n">dtype_field</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">*</span> <span class="n">nrows</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">bytes_required</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span> <span class="o">*</span> <span class="n">nrows</span>
             <span class="k">if</span> <span class="n">bytes_required</span> <span class="o">!=</span> <span class="n">out</span><span class="o">.</span><span class="n">nbytes</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span><span class="s1">&#39;output array size invalid, got </span><span class="si">{}</span><span class="s1"> bytes, &#39;</span>
-                                  <span class="s1">&#39;need </span><span class="si">{}</span><span class="s1"> bytes&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">nbytes</span><span class="p">,</span>
-                                                           <span class="n">bytes_required</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;output array size invalid, got </span><span class="si">{</span><span class="n">out</span><span class="o">.</span><span class="n">nbytes</span><span class="si">}</span><span class="s1">&#39;</span>
+                                 <span class="sa">f</span><span class="s1">&#39; bytes, need </span><span class="si">{</span><span class="n">bytes_required</span><span class="si">}</span><span class="s1"> bytes&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">out</span><span class="o">.</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;C_CONTIGUOUS&#39;</span><span class="p">]:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;output array not C contiguous&#39;</span><span class="p">)</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">out</span>
@@ -2120,12 +2098,12 @@
         <span class="c1"># Do the real read</span>
         <span class="k">if</span> <span class="n">ncoords</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># Turn coords into an array of coordinate indexes, if necessary</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span>
                     <span class="n">coords</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="n">_npsizetype</span> <span class="ow">and</span>
                     <span class="n">coords</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">contiguous</span> <span class="ow">and</span>
                     <span class="n">coords</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">aligned</span><span class="p">):</span>
                 <span class="c1"># Get a contiguous and aligned coordinate array</span>
-                <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_read_elements</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
 
         <span class="c1"># Do the final conversions, if needed</span>
@@ -2251,10 +2229,10 @@
                 <span class="n">key</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
         <span class="c1"># Try with a boolean or point selection</span>
-        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_coordinates</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span></div>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Table.__setitem__"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Table.__setitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set a row or a range of rows in the table.</span>
@@ -2321,10 +2299,10 @@
                 <span class="n">key</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">modify_rows</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="c1"># Try with a boolean or point selection</span>
-        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">modify_coordinates</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span></div>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_save_buffered_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wbufRA</span><span class="p">,</span> <span class="n">lenrows</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Update the indexes after a flushing of rows.&quot;&quot;&quot;</span>
@@ -2392,7 +2370,7 @@
                 <span class="n">rows</span> <span class="o">=</span> <span class="n">array_as_internal</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">iflavor</span><span class="p">)</span>
             <span class="c1"># Works for Python structures and always copies the original,</span>
             <span class="c1"># so the resulting object is safe for in-place conversion.</span>
-            <span class="n">wbufRA</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">)</span>
+            <span class="n">wbufRA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>  <span class="c1"># XXX</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;rows parameter cannot be converted into a &quot;</span>
                              <span class="s2">&quot;recarray object compliant with table &#39;</span><span class="si">%s</span><span class="s2">&#39;. &quot;</span>
@@ -2415,11 +2393,11 @@
                 <span class="c1"># See http://projects.scipy.org/scipy/numpy/ticket/315</span>
                 <span class="c1"># for discussion on how to pass buffers to constructors</span>
                 <span class="c1"># See also http://projects.scipy.org/scipy/numpy/ticket/348</span>
-                <span class="n">recarr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">obj</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">)</span>
+                <span class="n">recarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">obj</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Works for Python structures and always copies the original,</span>
                 <span class="c1"># so the resulting object is safe for in-place conversion.</span>
-                <span class="n">recarr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">)</span>
+                <span class="n">recarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_dtype</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>  <span class="c1"># XXX</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Object cannot be converted into a recarray &quot;</span>
                              <span class="s2">&quot;object compliant with table format &#39;</span><span class="si">%s</span><span class="s2">&#39;. &quot;</span>
@@ -2557,7 +2535,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># If the column is a recarray (or kind of), convert into ndarray</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="s1">&#39;dtype&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">column</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;V&#39;</span><span class="p">:</span>
-                <span class="n">column</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">descr</span><span class="p">)</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">descr</span><span class="p">)</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Make sure the result is always a *copy* of the original,</span>
                 <span class="c1"># so the resulting object is safe for in-place conversion.</span>
@@ -2628,7 +2606,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;start&#39; must have a positive value.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;step&#39; must have a value greater or &quot;</span>
-                              <span class="s2">&quot;equal than 1.&quot;</span><span class="p">)</span>
+                             <span class="s2">&quot;equal than 1.&quot;</span><span class="p">)</span>
         <span class="n">descr</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
             <span class="n">objcol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_column_instance</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span>
@@ -2641,9 +2619,9 @@
             <span class="n">iflavor</span> <span class="o">=</span> <span class="n">flavor_of</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">iflavor</span> <span class="o">!=</span> <span class="s1">&#39;python&#39;</span><span class="p">:</span>
                 <span class="n">columns</span> <span class="o">=</span> <span class="n">array_as_internal</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">iflavor</span><span class="p">)</span>
-                <span class="n">recarray</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">descr</span><span class="p">)</span>
+                <span class="n">recarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">descr</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">recarray</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">fromarrays</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">descr</span><span class="p">)</span>
+                <span class="n">recarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rec</span><span class="o">.</span><span class="n">fromarrays</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">descr</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>  <span class="c1"># XXX</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;columns parameter cannot be converted into a &quot;</span>
                              <span class="s2">&quot;recarray object compliant with table &#39;</span><span class="si">%s</span><span class="s2">&#39;. &quot;</span>
@@ -3064,20 +3042,21 @@
     <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Flush the table buffers.&quot;&quot;&quot;</span>
 
-        <span class="c1"># Flush rows that remains to be appended</span>
-        <span class="k">if</span> <span class="s1">&#39;row&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">row</span><span class="o">.</span><span class="n">_flush_buffered_rows</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">autoindex</span><span class="p">:</span>
-            <span class="c1"># Flush any unindexed row</span>
-            <span class="n">rowsadded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flush_rows_to_index</span><span class="p">(</span><span class="n">_lastrow</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="n">rowsadded</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indexedrows</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> \
-                <span class="p">(</span><span class="s2">&quot;internal error: the number of indexed rows (</span><span class="si">%d</span><span class="s2">) &quot;</span>
-                 <span class="s2">&quot;and rows in the table (</span><span class="si">%d</span><span class="s2">) is not equal; &quot;</span>
-                 <span class="s2">&quot;please report this to the authors.&quot;</span>
-                 <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_indexedrows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">))</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dirtyindexes</span><span class="p">:</span>
-                <span class="c1"># Finally, re-index any dirty column</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">reindex_dirty</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_iswritable</span><span class="p">():</span>
+            <span class="c1"># Flush rows that remains to be appended</span>
+            <span class="k">if</span> <span class="s1">&#39;row&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">row</span><span class="o">.</span><span class="n">_flush_buffered_rows</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">autoindex</span><span class="p">:</span>
+                <span class="c1"># Flush any unindexed row</span>
+                <span class="n">rowsadded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flush_rows_to_index</span><span class="p">(</span><span class="n">_lastrow</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">rowsadded</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indexedrows</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> \
+                    <span class="p">(</span><span class="s2">&quot;internal error: the number of indexed rows (</span><span class="si">%d</span><span class="s2">) &quot;</span>
+                     <span class="s2">&quot;and rows in the table (</span><span class="si">%d</span><span class="s2">) is not equal; &quot;</span>
+                     <span class="s2">&quot;please report this to the authors.&quot;</span>
+                     <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_indexedrows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">))</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dirtyindexes</span><span class="p">:</span>
+                    <span class="c1"># Finally, re-index any dirty column</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reindex_dirty</span><span class="p">()</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
@@ -3340,7 +3319,7 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">get_nested_field</span><span class="p">(</span><span class="n">crecarray</span><span class="p">,</span> <span class="n">colgroup</span><span class="p">)</span>  <span class="c1"># numpy case</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;invalid index or slice: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span></div>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid index or slice: </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Cols.__setitem__"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Cols.__setitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set a row or a range of rows in a table or nested column.</span>
@@ -3384,7 +3363,7 @@
             <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;invalid index or slice: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid index or slice: </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># Actually modify the correct columns</span>
         <span class="n">colgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_desc</span><span class="o">.</span><span class="n">_v_pathname</span>
@@ -3411,21 +3390,17 @@
         <span class="sd">&quot;&quot;&quot;The string representation for this object.&quot;&quot;&quot;</span>
 
         <span class="c1"># The pathname</span>
-        <span class="n">tablepathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__tablePath</span>
         <span class="n">descpathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_desc</span><span class="o">.</span><span class="n">_v_pathname</span>
         <span class="k">if</span> <span class="n">descpathname</span><span class="p">:</span>
             <span class="n">descpathname</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">descpathname</span>
-        <span class="c1"># Get this class name</span>
-        <span class="n">classname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="c1"># The number of columns</span>
-        <span class="n">ncols</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_colnames</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.cols</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">), </span><span class="si">%s</span><span class="s2"> columns&quot;</span> <span class="o">%</span> \
-               <span class="p">(</span><span class="n">tablepathname</span><span class="p">,</span> <span class="n">descpathname</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="n">ncols</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__tablePath</span><span class="si">}</span><span class="s2">.cols</span><span class="si">{</span><span class="n">descpathname</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">), &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_colnames</span><span class="p">)</span><span class="si">}</span><span class="s2"> columns&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;A detailed string representation for this object.&quot;&quot;&quot;</span>
 
-        <span class="n">out</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="si">!s}</span><span class="s1">&#39;</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_colnames</span><span class="p">:</span>
             <span class="c1"># Get this class name</span>
             <span class="n">classname</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
@@ -3439,8 +3414,8 @@
                 <span class="n">tcol</span> <span class="o">=</span> <span class="s2">&quot;Description&quot;</span>
                 <span class="c1"># Description doesn&#39;t have a shape currently</span>
                 <span class="n">shape</span> <span class="o">=</span> <span class="p">()</span>
-            <span class="n">out</span> <span class="o">+=</span> <span class="s2">&quot;  </span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">tcol</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
-        <span class="k">return</span> <span class="n">out</span></div>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">classname</span><span class="si">}{</span><span class="n">shape</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">tcol</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span></div>
 
 
 <div class="viewcode-block" id="Column"><a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Column">[docs]</a><span class="k">class</span> <span class="nc">Column</span><span class="p">:</span>
@@ -3479,8 +3454,6 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># Lazy read-only attributes</span>
-    <span class="c1"># `````````````````````````</span>
     <span class="nd">@lazyattr</span>
     <span class="k">def</span> <span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The NumPy dtype that most closely matches this column.&quot;&quot;&quot;</span>
@@ -3492,9 +3465,6 @@
         <span class="sd">&quot;&quot;&quot;The PyTables type of the column (a string).&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="o">.</span><span class="n">_v_types</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-
-    <span class="c1"># Properties</span>
-    <span class="c1"># ~~~~~~~~~~</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -3638,7 +3608,7 @@
         <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span>
         <span class="n">itemsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span>
         <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;IO_BUFFER_SIZE&#39;</span><span class="p">]</span> <span class="o">//</span> <span class="n">itemsize</span>
-        <span class="n">buf</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">nrowsinbuf</span><span class="p">,</span> <span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_itemtype</span><span class="p">)</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">nrowsinbuf</span><span class="p">,</span> <span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_itemtype</span><span class="p">)</span>
         <span class="n">max_row</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">start_row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">nrowsinbuf</span><span class="p">):</span>
             <span class="n">end_row</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">start_row</span> <span class="o">+</span> <span class="n">nrowsinbuf</span><span class="p">,</span> <span class="n">max_row</span><span class="p">)</span>
@@ -3762,11 +3732,12 @@
         <span class="k">if</span> <span class="n">filters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">filters</span> <span class="o">=</span> <span class="n">default_index_filters</span>
         <span class="k">if</span> <span class="n">tmp_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">tmp_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_file</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">tmp_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_file</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Temporary directory &#39;</span><span class="si">%s</span><span class="s2">&#39; does not exist&quot;</span> <span class="o">%</span>
-                                 <span class="n">tmp_dir</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Temporary directory &#39;</span><span class="si">{</span><span class="n">tmp_dir</span><span class="si">}</span><span class="s2">&#39; does not exist&quot;</span>
+                <span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">_blocksizes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
                 <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_blocksizes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">_blocksizes</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;_blocksizes must be a tuple with exactly 4 &quot;</span>
@@ -3874,58 +3845,39 @@
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The string representation for this object.&quot;&quot;&quot;</span>
 
-        <span class="c1"># The pathname</span>
-        <span class="n">tablepathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_table_path</span>
-        <span class="n">pathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pathname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
-        <span class="c1"># Get this class name</span>
-        <span class="n">classname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="c1"># The shape for this column</span>
-        <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span>
-        <span class="c1"># The type</span>
-        <span class="n">tcol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="o">.</span><span class="n">_v_types</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.cols.</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, idx=</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> \
-               <span class="p">(</span><span class="n">tablepathname</span><span class="p">,</span> <span class="n">pathname</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">tcol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_path</span><span class="si">}</span><span class="s2">.cols.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pathname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="o">.</span><span class="n">_v_types</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="si">}</span><span class="s2">, idx=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;A detailed string representation for this object.&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
-
-
-<span class="c1">## Local Variables:</span>
-<span class="c1">## mode: python</span>
-<span class="c1">## py-indent-offset: 4</span>
-<span class="c1">## tab-width: 4</span>
-<span class="c1">## fill-column: 72</span>
-<span class="c1">## End:</span>
 </pre></div>
 
            </div>
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2011–2020, PyTables maintainers
+        &#169; Copyright 2011–2021, PyTables maintainers.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

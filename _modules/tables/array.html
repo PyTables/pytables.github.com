@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>tables.array &mdash; PyTables 3.6.2.dev0 documentation</title>
   
@@ -17,13 +17,13 @@
 
   
   
+
   
   
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+
+  
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -150,6 +150,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -174,21 +176,11 @@
            <div itemprop="articleBody">
             
   <h1>Source code for tables.array</h1><div class="highlight"><pre>
-<span></span><span class="c1">########################################################################</span>
-<span class="c1">#</span>
-<span class="c1"># License: BSD</span>
-<span class="c1"># Created: October 10, 2002</span>
-<span class="c1"># Author: Francesc Alted - faltet@pytables.com</span>
-<span class="c1">#</span>
-<span class="c1"># $Id$</span>
-<span class="c1">#</span>
-<span class="c1">########################################################################</span>
-
-<span class="sd">&quot;&quot;&quot;Here is defined the Array class.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Here is defined the Array class.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">operator</span>
 <span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
 <span class="kn">from</span> <span class="nn">.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
@@ -196,7 +188,6 @@
 <span class="kn">from</span> <span class="nn">.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">is_idx</span><span class="p">,</span> <span class="n">convert_to_np_atom2</span><span class="p">,</span> <span class="n">SizeType</span><span class="p">,</span> <span class="n">lazyattr</span><span class="p">,</span>
                     <span class="n">byteorders</span><span class="p">,</span> <span class="n">quantize</span><span class="p">)</span>
-
 
 
 <span class="c1"># default version for ARRAY objects</span>
@@ -269,16 +260,10 @@
     <span class="c1"># Class identifier.</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;ARRAY&#39;</span>
 
-    <span class="c1"># Lazy read-only attributes</span>
-    <span class="c1"># `````````````````````````</span>
     <span class="nd">@lazyattr</span>
     <span class="k">def</span> <span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The NumPy ``dtype`` that most closely matches this array.&quot;&quot;&quot;</span>
-
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span>
-
-    <span class="c1"># Properties</span>
-    <span class="c1"># ~~~~~~~~~~</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">nrows</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -290,7 +275,8 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">rowsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The size of the rows in bytes in dimensions orthogonal to *maindim*.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;The size of the rows in bytes in dimensions orthogonal to</span>
+<span class="sd">        *maindim*.&quot;&quot;&quot;</span>
         <span class="n">maindim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span>
         <span class="n">rowsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">size</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
@@ -304,8 +290,6 @@
 <span class="sd">        memory.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span>
 
-    <span class="c1"># Other methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
                  <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">_atom</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -374,7 +358,7 @@
             <span class="c1"># `Leaf._g_post_init_hook()` should be setting the flavor on disk.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_flavor</span> <span class="o">=</span> <span class="n">flavor</span> <span class="o">=</span> <span class="n">flavor_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">)</span>
             <span class="n">nparr</span> <span class="o">=</span> <span class="n">array_as_internal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span>
-        <span class="k">except</span><span class="p">:</span>  <span class="c1"># XXX</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># XXX</span>
             <span class="c1"># Problems converting data. Close the node and re-raise exception.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">flush</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">raise</span>
@@ -397,7 +381,7 @@
             <span class="c1"># on</span>
             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_array</span><span class="p">(</span>
                 <span class="n">nparr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_new_title</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
-        <span class="k">except</span><span class="p">:</span>  <span class="c1"># XXX</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># XXX</span>
             <span class="c1"># Problems creating the Array on disk. Close node and re-raise.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">flush</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">raise</span>
@@ -547,10 +531,10 @@
 
         <span class="n">maxlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">maxlen</span><span class="p">,)</span>
-        <span class="n">startl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
-        <span class="n">stopl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
-        <span class="n">stepl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
-        <span class="n">stop_None</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="n">startl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="n">stopl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="n">stepl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="n">stop_None</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="n">keys</span> <span class="o">=</span> <span class="p">(</span><span class="n">keys</span><span class="p">,)</span>
         <span class="n">nkeys</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
@@ -603,17 +587,6 @@
         <span class="c1"># Compute the shape for the container properly. Fixes #1288792</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
-            <span class="c1"># The negative division operates differently with python scalars</span>
-            <span class="c1"># and numpy scalars (which are similar to C conventions). See:</span>
-            <span class="c1"># http://www.python.org/doc/faq/programming.html#why-does-22-10-return-3</span>
-            <span class="c1"># and</span>
-            <span class="c1"># http://www.peterbe.com/Integer-division-in-programming-languages</span>
-            <span class="c1"># for more info on this issue.</span>
-            <span class="c1"># I&#39;ve finally decided to rely on the len(xrange) function.</span>
-            <span class="c1"># F. Alted 2006-09-25</span>
-            <span class="c1"># Switch to `lrange` to allow long ranges (see #99).</span>
-            <span class="c1"># use xrange, since it supports large integers as of Python 2.6</span>
-            <span class="c1"># see github #181</span>
             <span class="n">new_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">startl</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">stopl</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">stepl</span><span class="p">[</span><span class="n">dim</span><span class="p">]))</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">new_dim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">stop_None</span><span class="p">[</span><span class="n">dim</span><span class="p">]):</span>
                 <span class="n">shape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_dim</span><span class="p">)</span>
@@ -749,24 +722,22 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">list_seen</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span>
-                        <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span>
-                            <span class="n">numpy</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">))):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span>
+                        <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span>
+                            <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))):</span>
                         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Only integer coordinates allowed.&quot;</span><span class="p">)</span>
 
-                <span class="n">nexp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;i8&quot;</span><span class="p">)</span>
+                <span class="n">nexp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;i8&quot;</span><span class="p">)</span>
                 <span class="c1"># Convert negative values</span>
-                <span class="n">nexp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nexp</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">length</span> <span class="o">+</span> <span class="n">nexp</span><span class="p">,</span> <span class="n">nexp</span><span class="p">)</span>
+                <span class="n">nexp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nexp</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">length</span> <span class="o">+</span> <span class="n">nexp</span><span class="p">,</span> <span class="n">nexp</span><span class="p">)</span>
                 <span class="c1"># Check whether the list is ordered or not</span>
                 <span class="c1"># (only one unordered list is allowed)</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">nexp</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">nexp</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nexp</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">nexp</span><span class="p">)):</span>
                     <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
                         <span class="s2">&quot;Selection lists cannot have repeated values&quot;</span><span class="p">)</span>
                 <span class="n">neworder</span> <span class="o">=</span> <span class="n">nexp</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
                 <span class="k">if</span> <span class="p">(</span><span class="n">neworder</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="p">),)</span> <span class="ow">or</span>
-                        <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-                            <span class="n">numpy</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
-                                <span class="n">neworder</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="p">))))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">neworder</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="p">))))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">reorder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
                             <span class="s2">&quot;Only one selection list can be unordered&quot;</span><span class="p">)</span>
@@ -892,7 +863,7 @@
         <span class="c1"># truncate data if least_significant_digit filter is set</span>
         <span class="c1"># TODO: add the least_significant_digit attribute to the array on disk</span>
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">least_significant_digit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
-                <span class="ow">not</span> <span class="n">numpy</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">nparr</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">signedinteger</span><span class="p">)):</span>
+                <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">nparr</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">signedinteger</span><span class="p">)):</span>
             <span class="n">nparr</span> <span class="o">=</span> <span class="n">quantize</span><span class="p">(</span><span class="n">nparr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">least_significant_digit</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -917,7 +888,7 @@
 
         <span class="k">if</span> <span class="n">nparr</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="n">slice_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
             <span class="c1"># Create an array compliant with the specified shape</span>
-            <span class="n">narr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">slice_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">narr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">slice_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
             <span class="c1"># Assign the value to it. It will raise a ValueError exception</span>
             <span class="c1"># if the objects cannot be broadcast to a single shape.</span>
@@ -929,7 +900,7 @@
     <span class="k">def</span> <span class="nf">_read_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read a slice based on `startl`, `stopl` and `stepl`.&quot;&quot;&quot;</span>
 
-        <span class="n">nparr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">nparr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
         <span class="c1"># Protection against reading empty arrays</span>
         <span class="k">if</span> <span class="mi">0</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">:</span>
             <span class="c1"># Arrays that have non-zero dimensionality</span>
@@ -942,7 +913,7 @@
     <span class="k">def</span> <span class="nf">_read_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read a set of points defined by `coords`.&quot;&quot;&quot;</span>
 
-        <span class="n">nparr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">))</span>
+        <span class="n">nparr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_g_read_coords</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
         <span class="c1"># For zero-shaped arrays, return the scalar</span>
@@ -958,7 +929,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Create the container for the slice</span>
-        <span class="n">nparr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">nparr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
         <span class="c1"># Arrays that have non-zero dimensionality</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_read_selection</span><span class="p">(</span><span class="n">selection</span><span class="p">,</span> <span class="n">nparr</span><span class="p">)</span>
         <span class="c1"># For zero-shaped arrays, return the scalar</span>
@@ -1014,14 +985,13 @@
         <span class="k">if</span> <span class="n">shape</span><span class="p">:</span>
             <span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="n">nrowstoread</span>
         <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">arr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">bytes_required</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rowsize</span> <span class="o">*</span> <span class="n">nrowstoread</span>
             <span class="c1"># if buffer is too small, it will segfault</span>
             <span class="k">if</span> <span class="n">bytes_required</span> <span class="o">!=</span> <span class="n">out</span><span class="o">.</span><span class="n">nbytes</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span><span class="s1">&#39;output array size invalid, got </span><span class="si">{}</span><span class="s1"> bytes, &#39;</span>
-                                  <span class="s1">&#39;need </span><span class="si">{}</span><span class="s1"> bytes&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">nbytes</span><span class="p">,</span>
-                                                           <span class="n">bytes_required</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;output array size invalid, got </span><span class="si">{</span><span class="n">out</span><span class="o">.</span><span class="n">nbytes</span><span class="si">}</span><span class="s1">&#39;</span>
+                                 <span class="sa">f</span><span class="s1">&#39; bytes, need </span><span class="si">{</span><span class="n">bytes_required</span><span class="si">}</span><span class="s1"> bytes&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">out</span><span class="o">.</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;C_CONTIGUOUS&#39;</span><span class="p">]:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;output array not C contiguous&#39;</span><span class="p">)</span>
             <span class="n">arr</span> <span class="o">=</span> <span class="n">out</span>
@@ -1092,21 +1062,19 @@
         <span class="c1"># For details, see #275 of trac.</span>
         <span class="n">object_</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="n">_log</span><span class="p">,</span>
                         <span class="n">_atom</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
-        <span class="n">nbytes</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">nbytes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">size</span>
 
         <span class="k">return</span> <span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="n">nbytes</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;This provides more metainfo in addition to standard __str__&quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  atom := </span><span class="si">{!r}</span><span class="s2"></span>
-<span class="s2">  maindim := </span><span class="si">{!r}</span><span class="s2"></span>
-<span class="s2">  flavor := </span><span class="si">{!r}</span><span class="s2"></span>
-<span class="s2">  byteorder := </span><span class="si">{!r}</span><span class="s2"></span>
-<span class="s2">  chunkshape := </span><span class="si">{!r}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span><span class="p">,</span>
-                         <span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">,</span>
-                         <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  atom := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="si">!r}</span><span class="s2"></span>
+<span class="s2">  maindim := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">maindim</span><span class="si">!r}</span><span class="s2"></span>
+<span class="s2">  flavor := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">flavor</span><span class="si">!r}</span><span class="s2"></span>
+<span class="s2">  byteorder := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="si">!r}</span><span class="s2"></span>
+<span class="s2">  chunkshape := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="si">!r}</span><span class="s2">&quot;&quot;&quot;</span></div>
 
 
 <span class="k">class</span> <span class="nc">ImageArray</span><span class="p">(</span><span class="n">Array</span><span class="p">):</span>
@@ -1126,28 +1094,25 @@
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2011–2020, PyTables maintainers
+        &#169; Copyright 2011–2021, PyTables maintainers.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

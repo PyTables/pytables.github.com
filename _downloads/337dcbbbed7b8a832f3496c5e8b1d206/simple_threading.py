@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import os
+import math
 import queue
 import threading
+from pathlib import Path
 
 import numpy as np
 import tables as tb
@@ -22,7 +23,7 @@ def create_test_file(filename):
 
 
 def chunk_generator(data_size, nchunks):
-    chunk_size = int(np.ceil(data_size / nchunks))
+    chunk_size = math.ceil(data_size / nchunks)
     for start in range(0, data_size, chunk_size):
         yield slice(start, start + chunk_size)
 
@@ -57,7 +58,7 @@ def run(filename, path, inqueue, outqueue):
 
 def main():
     # generate the test data
-    if not os.path.exists(FILENAME):
+    if not Path(FILENAME).exists():
         create_test_file(FILENAME)
 
     threads = []
@@ -77,7 +78,7 @@ def main():
 
     # collect results
     try:
-        mean_ = 0.
+        mean_ = 0
 
         for _ in range(len(threads)):
             out = outqueue.get()
@@ -93,7 +94,7 @@ def main():
             thread.join()
 
     # print results
-    print('Mean: {}'.format(mean_))
+    print(f'Mean: {mean_}')
 
 
 if __name__ == '__main__':

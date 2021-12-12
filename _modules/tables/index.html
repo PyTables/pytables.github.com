@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>tables.index &mdash; PyTables 3.6.2.dev0 documentation</title>
   
@@ -17,13 +17,13 @@
 
   
   
+
   
   
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+
+  
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -150,6 +150,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -174,33 +176,23 @@
            <div itemprop="articleBody">
             
   <h1>Source code for tables.index</h1><div class="highlight"><pre>
-<span></span><span class="c1">#######################################################################</span>
-<span class="c1">#</span>
-<span class="c1"># License: BSD</span>
-<span class="c1"># Created: June 08, 2004</span>
-<span class="c1"># Author: Francesc Alted - faltet@pytables.com</span>
-<span class="c1">#</span>
-<span class="c1"># $Id$</span>
-<span class="c1">#</span>
-<span class="c1">########################################################################</span>
-
-<span class="sd">&quot;&quot;&quot;Here is defined the Index class.&quot;&quot;&quot;</span>
-
+<span></span><span class="sd">&quot;&quot;&quot;Here is defined the Index class.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">operator</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">tempfile</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span><span class="p">,</span> <span class="n">perf_counter</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">perf_counter</span> <span class="k">as</span> <span class="n">clock</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">process_time</span> <span class="k">as</span> <span class="n">cpuclock</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">.idxutils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">calc_chunksize</span><span class="p">,</span> <span class="n">calcoptlevels</span><span class="p">,</span>
-                             <span class="n">get_reduction_level</span><span class="p">,</span> <span class="n">nextafter</span><span class="p">,</span> <span class="n">inftype</span><span class="p">)</span>
+                       <span class="n">get_reduction_level</span><span class="p">,</span> <span class="n">nextafter</span><span class="p">,</span> <span class="n">inftype</span><span class="p">)</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">indexesextension</span>
 <span class="kn">from</span> <span class="nn">.node</span> <span class="kn">import</span> <span class="n">NotLoggedMixin</span>
@@ -214,18 +206,15 @@
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">PerformanceWarning</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">is_idx</span><span class="p">,</span> <span class="n">idx2long</span><span class="p">,</span> <span class="n">lazyattr</span>
 <span class="kn">from</span> <span class="nn">.utilsextension</span> <span class="kn">import</span> <span class="p">(</span><span class="n">nan_aware_gt</span><span class="p">,</span> <span class="n">nan_aware_ge</span><span class="p">,</span>
-                                   <span class="n">nan_aware_lt</span><span class="p">,</span> <span class="n">nan_aware_le</span><span class="p">,</span>
-                                   <span class="n">bisect_left</span><span class="p">,</span> <span class="n">bisect_right</span><span class="p">)</span>
+                             <span class="n">nan_aware_lt</span><span class="p">,</span> <span class="n">nan_aware_le</span><span class="p">,</span>
+                             <span class="n">bisect_left</span><span class="p">,</span> <span class="n">bisect_right</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.lrucacheextension</span> <span class="kn">import</span> <span class="n">ObjectCache</span>
-
-
 
 <span class="c1"># default version for INDEX objects</span>
 <span class="c1"># obversion = &quot;1.0&quot;    # Version of indexes in PyTables 1.x series</span>
 <span class="c1"># obversion = &quot;2.0&quot;    # Version of indexes in PyTables Pro 2.0 series</span>
 <span class="n">obversion</span> <span class="o">=</span> <span class="s2">&quot;2.1&quot;</span>     <span class="c1"># Version of indexes in PyTables Pro 2.1 and up series,</span>
-                      <span class="c1"># including the join 2.3 Std + Pro version</span>
-
+<span class="c1">#                     # including the join 2.3 Std + Pro version</span>
 
 <span class="n">debug</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="c1"># debug = True  # Uncomment this for printing sizes purposes</span>
@@ -233,7 +222,6 @@
 <span class="c1"># profile = True  # Uncomment for profiling</span>
 <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">show_stats</span>
-
 
 <span class="c1"># The default method for sorting</span>
 <span class="c1"># defsort = &quot;quicksort&quot;</span>
@@ -330,7 +318,6 @@
 
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;INDEX&#39;</span>
 
-
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">kind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The kind of this index.&quot;&quot;&quot;</span>
@@ -345,13 +332,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">dirty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-       <span class="sd">&quot;&quot;&quot;Whether the index is dirty or not.</span>
-<span class="sd">       Dirty indexes are out of sync with column data, so they exist but they</span>
-<span class="sd">       are not usable.</span>
-<span class="sd">       &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Whether the index is dirty or not.</span>
+<span class="sd">        Dirty indexes are out of sync with column data, so they exist but they</span>
+<span class="sd">        are not usable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
-       <span class="c1"># If there is no ``DIRTY`` attribute, index should be clean.</span>
-       <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="s1">&#39;DIRTY&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># If there is no ``DIRTY`` attribute, index should be clean.</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="s1">&#39;DIRTY&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
     <span class="nd">@dirty</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">dirty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dirty</span><span class="p">):</span>
@@ -379,7 +366,8 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accessor for the `Table` object of this index.&quot;&quot;&quot;</span>
-        <span class="n">tablepath</span><span class="p">,</span> <span class="n">columnpath</span> <span class="o">=</span> <span class="n">_table_column_pathname_of_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
+        <span class="n">tablepath</span><span class="p">,</span> <span class="n">columnpath</span> <span class="o">=</span> <span class="n">_table_column_pathname_of_index</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
         <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">tablepath</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">table</span>
 
@@ -436,7 +424,9 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">temp_required</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Whether a temporary file for indexes is required or not.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">nrows</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indsize</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">nrows</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">want_complete_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -483,13 +473,13 @@
             <span class="c1"># bucket outside of a slice.</span>
             <span class="n">maxnb</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">8</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span> <span class="o">&gt;</span> <span class="n">maxnb</span> <span class="o">*</span> <span class="n">lbucket</span><span class="p">:</span>
-                <span class="n">lbucket</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">)</span> <span class="o">/</span> <span class="n">maxnb</span><span class="p">))</span>
+                <span class="n">lbucket</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span> <span class="o">/</span> <span class="n">maxnb</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="c1"># For light, we will never have to keep track of a</span>
             <span class="c1"># bucket outside of a block.</span>
             <span class="n">maxnb</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">16</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span> <span class="o">&gt;</span> <span class="n">maxnb</span> <span class="o">*</span> <span class="n">lbucket</span><span class="p">:</span>
-                <span class="n">lbucket</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">)</span> <span class="o">/</span> <span class="n">maxnb</span><span class="p">))</span>
+                <span class="n">lbucket</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span> <span class="o">/</span> <span class="n">maxnb</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># For medium and full indexes there should not be a need to</span>
             <span class="c1"># increase lbucket</span>
@@ -524,12 +514,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">base</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">type</span>
             <span class="sd">&quot;&quot;&quot;The datatypes to be stored by the sorted index array.&quot;&quot;&quot;</span>
-            <span class="c1">############### Important note ###########################</span>
+            <span class="c1"># ############## Important note ###########################</span>
             <span class="c1"># The datatypes saved as index values are NumPy native</span>
             <span class="c1"># types, so we get rid of type metainfo like Time* or Enum*</span>
             <span class="c1"># that belongs to HDF5 types (actually, this metainfo is</span>
             <span class="c1"># not needed for sorting and looking-up purposes).</span>
-            <span class="c1">##########################################################</span>
+            <span class="c1"># #########################################################</span>
             <span class="n">indsize</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;ultralight&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;light&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;medium&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">}[</span><span class="n">kind</span><span class="p">]</span>
             <span class="k">assert</span> <span class="n">indsize</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="s2">&quot;indsize should be 1, 2, 4 or 8!&quot;</span>
@@ -639,7 +629,7 @@
         <span class="c1"># (in case these parameters haven&#39;t been passed to the constructor)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksizes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">blocksizes</span> <span class="o">=</span> <span class="n">calc_chunksize</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">expectedrows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">expectedrows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
         <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">,</span>
          <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksizes</span>
         <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
@@ -651,10 +641,10 @@
         <span class="n">rslicesize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduction</span>
 
         <span class="c1"># Save them on disk as attributes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">superblocksize</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">blocksize</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">slicesize</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">chunksize</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">superblocksize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">blocksize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">slicesize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">chunksize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="p">)</span>
         <span class="c1"># Save the optlevel as well</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">optlevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span>
         <span class="c1"># Save the reduction level</span>
@@ -713,21 +703,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># The starts and lengths initialization</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
         <span class="sd">&quot;&quot;&quot;Where the values fulfiling conditions starts for every slice.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lengths</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
         <span class="sd">&quot;&quot;&quot;Lengths of the values fulfilling conditions for every slice.&quot;&quot;&quot;</span>
 
         <span class="c1"># Finally, create a temporary file for indexes if needed</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp_required</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">create_temp</span><span class="p">()</span>
 
-
     <span class="k">def</span> <span class="nf">initial_append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xarr</span><span class="p">,</span> <span class="n">nrow</span><span class="p">,</span> <span class="n">reduction</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute an initial indices arrays for data to be indexed.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-            <span class="n">tref</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">tref</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Entering initial_append&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
         <span class="n">arr</span> <span class="o">=</span> <span class="n">xarr</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
@@ -737,7 +726,7 @@
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Before creating idx&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">indsize</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
-            <span class="n">idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint64&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">nrow</span> <span class="o">*</span> <span class="n">slicesize</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint64&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">nrow</span> <span class="o">*</span> <span class="n">slicesize</span>
         <span class="k">elif</span> <span class="n">indsize</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
             <span class="c1"># For medium (32-bit) all the rows in tables should be</span>
             <span class="c1"># directly reachable.  But as len(arr) &lt; 2**31, we can</span>
@@ -757,9 +746,9 @@
             <span class="c1"># example, in table sorts).</span>
             <span class="c1">#</span>
             <span class="c1"># F. Alted 2008-09-15</span>
-            <span class="n">idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint32&quot;</span><span class="p">)</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint32&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">),</span> <span class="s2">&quot;uint</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">indsize</span> <span class="o">*</span> <span class="mi">8</span><span class="p">))</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">),</span> <span class="s2">&quot;uint</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">indsize</span> <span class="o">*</span> <span class="mi">8</span><span class="p">))</span>
             <span class="n">lbucket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lbucket</span>
             <span class="c1"># Fill the idx with the bucket indices</span>
             <span class="n">offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lbucket</span> <span class="o">-</span> <span class="p">((</span><span class="n">nrow</span> <span class="o">*</span> <span class="p">(</span><span class="n">slicesize</span> <span class="o">%</span> <span class="n">lbucket</span><span class="p">))</span> <span class="o">%</span> <span class="n">lbucket</span><span class="p">))</span>
@@ -806,7 +795,7 @@
         <span class="sd">&quot;&quot;&quot;Perform final operations in 32-bit indices.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-            <span class="n">tref</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">tref</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Entering final_idx32&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
         <span class="c1"># Do an upcast first in order to add the offset.</span>
@@ -826,7 +815,7 @@
         <span class="sd">&quot;&quot;&quot;Append the array to the index objects.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-            <span class="n">tref</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">tref</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Entering append&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">update</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp_required</span><span class="p">:</span>
@@ -891,7 +880,7 @@
         <span class="sd">&quot;&quot;&quot;Append the array to the last row index objects.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-            <span class="n">tref</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">tref</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Entering appendLR&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
         <span class="c1"># compute the elements in the last row sorted &amp; bounds array</span>
@@ -910,7 +899,7 @@
         <span class="n">nelementsILR</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
         <span class="c1"># Build the cache of bounds</span>
         <span class="n">rchunksize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span> <span class="o">//</span> <span class="n">reduction</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">arr</span><span class="p">[::</span><span class="n">rchunksize</span><span class="p">],</span> <span class="p">[</span><span class="n">larr</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">arr</span><span class="p">[::</span><span class="n">rchunksize</span><span class="p">],</span> <span class="p">[</span><span class="n">larr</span><span class="p">]))</span>
         <span class="c1"># The number of elements will be saved as an attribute</span>
         <span class="n">sortedLR</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">nelements</span> <span class="o">=</span> <span class="n">nelementsSLR</span>
         <span class="n">indicesLR</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">nelements</span> <span class="o">=</span> <span class="n">nelementsILR</span>
@@ -934,7 +923,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dirtycache</span> <span class="o">=</span> <span class="kc">True</span>   <span class="c1"># the cache is dirty now</span>
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Exiting appendLR&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
-
 
     <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Optimize an index so as to allow faster searches.</span>
@@ -1015,8 +1003,8 @@
         <span class="sd">&quot;&quot;&quot;Bring an already optimized index into a complete sorted state.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-            <span class="n">c1</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+            <span class="n">c1</span> <span class="o">=</span> <span class="n">cpuclock</span><span class="p">()</span>
         <span class="n">ss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span>
         <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmp</span>
         <span class="n">ranges</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">ranges</span><span class="p">[:]</span>
@@ -1025,21 +1013,21 @@
         <span class="n">nelementsLR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelementsILR</span>
         <span class="k">if</span> <span class="n">nelementsLR</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># Add the ranges corresponding to the last row</span>
-            <span class="n">rangeslr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
-            <span class="n">ranges</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ranges</span><span class="p">,</span> <span class="p">[</span><span class="n">rangeslr</span><span class="p">]))</span>
+            <span class="n">rangeslr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="n">ranges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ranges</span><span class="p">,</span> <span class="p">[</span><span class="n">rangeslr</span><span class="p">]))</span>
             <span class="n">nslices</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="nb">sorted</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">sorted</span>
         <span class="n">indices</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">indices</span>
         <span class="n">sortedLR</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">sortedLR</span>
         <span class="n">indicesLR</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">indicesLR</span>
-        <span class="n">sremain</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-        <span class="n">iremain</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;u</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">)</span>
-        <span class="n">starts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nslices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int_</span><span class="p">)</span>
+        <span class="n">sremain</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">iremain</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;u</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">)</span>
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nslices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
             <span class="c1"># Find the overlapping elements for slice i</span>
-            <span class="n">sover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-            <span class="n">iover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;u</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">)</span>
+            <span class="n">sover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">iover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;u</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">)</span>
             <span class="n">prev_end</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nslices</span><span class="p">):</span>
                 <span class="n">stj</span> <span class="o">=</span> <span class="n">starts</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
@@ -1059,33 +1047,33 @@
                 <span class="k">if</span> <span class="n">prev_end</span> <span class="o">&gt;</span> <span class="n">next_end</span><span class="p">:</span>
                     <span class="c1"># Complete overlapping case</span>
                     <span class="k">if</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span><span class="p">:</span>
-                        <span class="n">sover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sover</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">stj</span><span class="p">:]))</span>
-                        <span class="n">iover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">iover</span><span class="p">,</span> <span class="n">indices</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">stj</span><span class="p">:]))</span>
+                        <span class="n">sover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sover</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">stj</span><span class="p">:]))</span>
+                        <span class="n">iover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">iover</span><span class="p">,</span> <span class="n">indices</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">stj</span><span class="p">:]))</span>
                         <span class="n">starts</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">ss</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">n</span> <span class="o">=</span> <span class="n">nelementsLR</span>
-                        <span class="n">sover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sover</span><span class="p">,</span> <span class="n">sortedLR</span><span class="p">[</span><span class="n">stj</span><span class="p">:</span><span class="n">n</span><span class="p">]))</span>
-                        <span class="n">iover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">iover</span><span class="p">,</span> <span class="n">indicesLR</span><span class="p">[</span><span class="n">stj</span><span class="p">:</span><span class="n">n</span><span class="p">]))</span>
+                        <span class="n">sover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sover</span><span class="p">,</span> <span class="n">sortedLR</span><span class="p">[</span><span class="n">stj</span><span class="p">:</span><span class="n">n</span><span class="p">]))</span>
+                        <span class="n">iover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">iover</span><span class="p">,</span> <span class="n">indicesLR</span><span class="p">[</span><span class="n">stj</span><span class="p">:</span><span class="n">n</span><span class="p">]))</span>
                         <span class="n">starts</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">nelementsLR</span>
                 <span class="k">elif</span> <span class="n">prev_end</span> <span class="o">&gt;</span> <span class="n">next_beg</span><span class="p">:</span>
                     <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_item_lt</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">prev_end</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">ranges</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">stj</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span><span class="p">:</span>
-                        <span class="n">sover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sover</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">stj</span><span class="p">:</span><span class="n">idx</span><span class="p">]))</span>
-                        <span class="n">iover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">iover</span><span class="p">,</span> <span class="n">indices</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">stj</span><span class="p">:</span><span class="n">idx</span><span class="p">]))</span>
+                        <span class="n">sover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sover</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">stj</span><span class="p">:</span><span class="n">idx</span><span class="p">]))</span>
+                        <span class="n">iover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">iover</span><span class="p">,</span> <span class="n">indices</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">stj</span><span class="p">:</span><span class="n">idx</span><span class="p">]))</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">sover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sover</span><span class="p">,</span> <span class="n">sortedLR</span><span class="p">[</span><span class="n">stj</span><span class="p">:</span><span class="n">idx</span><span class="p">]))</span>
-                        <span class="n">iover</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">iover</span><span class="p">,</span> <span class="n">indicesLR</span><span class="p">[</span><span class="n">stj</span><span class="p">:</span><span class="n">idx</span><span class="p">]))</span>
+                        <span class="n">sover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sover</span><span class="p">,</span> <span class="n">sortedLR</span><span class="p">[</span><span class="n">stj</span><span class="p">:</span><span class="n">idx</span><span class="p">]))</span>
+                        <span class="n">iover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">iover</span><span class="p">,</span> <span class="n">indicesLR</span><span class="p">[</span><span class="n">stj</span><span class="p">:</span><span class="n">idx</span><span class="p">]))</span>
                     <span class="n">starts</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
             <span class="c1"># Build the extended slices to sort out</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span><span class="p">:</span>
-                <span class="n">ssorted</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="n">ssorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
                     <span class="p">(</span><span class="n">sremain</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">starts</span><span class="p">[</span><span class="n">i</span><span class="p">]:],</span> <span class="n">sover</span><span class="p">))</span>
-                <span class="n">sindices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="n">sindices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
                     <span class="p">(</span><span class="n">iremain</span><span class="p">,</span> <span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">starts</span><span class="p">[</span><span class="n">i</span><span class="p">]:],</span> <span class="n">iover</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">ssorted</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="n">ssorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
                     <span class="p">(</span><span class="n">sremain</span><span class="p">,</span> <span class="n">sortedLR</span><span class="p">[</span><span class="n">starts</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span><span class="n">nelementsLR</span><span class="p">],</span> <span class="n">sover</span><span class="p">))</span>
-                <span class="n">sindices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="n">sindices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
                     <span class="p">(</span><span class="n">iremain</span><span class="p">,</span> <span class="n">indicesLR</span><span class="p">[</span><span class="n">starts</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span><span class="n">nelementsLR</span><span class="p">],</span> <span class="n">iover</span><span class="p">))</span>
             <span class="c1"># Sort the extended slices</span>
             <span class="n">indexesextension</span><span class="o">.</span><span class="n">keysort</span><span class="p">(</span><span class="n">ssorted</span><span class="p">,</span> <span class="n">sindices</span><span class="p">)</span>
@@ -1108,7 +1096,7 @@
                 <span class="n">indicesLR</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">sindices</span>
                 <span class="c1"># Update the caches for last row</span>
                 <span class="n">sortedlr</span> <span class="o">=</span> <span class="n">sortedLR</span><span class="p">[:</span><span class="n">nelementsLR</span><span class="p">]</span>
-                <span class="n">bebounds</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="n">bebounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
                     <span class="p">(</span><span class="n">sortedlr</span><span class="p">[::</span><span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="p">],</span> <span class="p">[</span><span class="n">sortedlr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]))</span>
                 <span class="n">sortedLR</span><span class="p">[</span><span class="n">nelementsLR</span><span class="p">:</span><span class="n">nelementsLR</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">bebounds</span><span class="p">)]</span> <span class="o">=</span> <span class="n">bebounds</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span> <span class="o">=</span> <span class="n">bebounds</span>
@@ -1121,9 +1109,7 @@
         <span class="c1"># in verbose mode!).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compute_overlaps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmp</span><span class="p">,</span> <span class="s2">&quot;do_complete_sort()&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="n">c</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">c1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;time: </span><span class="si">{}</span><span class="s2">. clock: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;time: </span><span class="si">{</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t1</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">. clock: </span><span class="si">{</span><span class="n">cpuclock</span><span class="p">()</span> <span class="o">-</span> <span class="n">c1</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">swap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">what</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Swap chunks or slices using a certain bounds reference.&quot;&quot;&quot;</span>
@@ -1136,25 +1122,23 @@
         <span class="n">thtover</span> <span class="o">=</span> <span class="mf">0.01</span>    <span class="c1"># minimum overlaping index for slices (a 1%)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-            <span class="n">c1</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+            <span class="n">c1</span> <span class="o">=</span> <span class="n">cpuclock</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">what</span> <span class="o">==</span> <span class="s2">&quot;chunks&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">swap_chunks</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">what</span> <span class="o">==</span> <span class="s2">&quot;slices&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">swap_slices</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">mode</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;swap_</span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">what</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;swap_</span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">)&quot;</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;swap_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">what</span><span class="p">)</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;swap_</span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">(</span><span class="n">nover</span><span class="p">,</span> <span class="n">mult</span><span class="p">,</span> <span class="n">tover</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_overlaps</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tmp</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
-        <span class="n">rmult</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mult</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mult</span><span class="p">))</span>
+        <span class="n">rmult</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mult</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">mult</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="n">c</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">c1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;time: </span><span class="si">{}</span><span class="s2">. clock: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;time: </span><span class="si">{</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t1</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">. clock: </span><span class="si">{</span><span class="n">cpuclock</span><span class="p">()</span> <span class="o">-</span> <span class="n">c1</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="c1"># Check that entropy is actually decreasing</span>
-        <span class="k">if</span> <span class="n">what</span> <span class="o">==</span> <span class="s2">&quot;chunks&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_tover</span> <span class="o">&gt;</span> <span class="mf">0.</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_nover</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">what</span> <span class="o">==</span> <span class="s2">&quot;chunks&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_tover</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_nover</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">tover_var</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_tover</span> <span class="o">-</span> <span class="n">tover</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_tover</span>
             <span class="n">nover_var</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_nover</span> <span class="o">-</span> <span class="n">nover</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_nover</span>
             <span class="k">if</span> <span class="n">tover_var</span> <span class="o">&lt;</span> <span class="mf">0.05</span> <span class="ow">and</span> <span class="n">nover_var</span> <span class="o">&lt;</span> <span class="mf">0.05</span><span class="p">:</span>
@@ -1168,7 +1152,7 @@
         <span class="k">if</span> <span class="n">rmult</span> <span class="o">&lt;</span> <span class="n">thmult</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="c1"># Additional check for the overlap ratio</span>
-        <span class="k">if</span> <span class="mf">0.</span> <span class="o">&lt;=</span> <span class="n">tover</span> <span class="o">&lt;</span> <span class="n">thtover</span><span class="p">:</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">tover</span> <span class="o">&lt;</span> <span class="n">thtover</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span>
 
@@ -1299,7 +1283,7 @@
             <span class="n">nelementsSLR</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sortedlr</span><span class="p">)</span>
             <span class="n">sortedLR</span><span class="p">[:</span><span class="n">nelementsSLR</span><span class="p">]</span> <span class="o">=</span> <span class="n">sortedlr</span>
             <span class="c1"># Now, the bounds</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sortedlr</span><span class="p">[::</span><span class="n">cs</span><span class="p">],</span> <span class="p">[</span><span class="n">sortedlr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sortedlr</span><span class="p">[::</span><span class="n">cs</span><span class="p">],</span> <span class="p">[</span><span class="n">sortedlr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]))</span>
             <span class="n">offset2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">)</span>
             <span class="n">sortedLR</span><span class="p">[</span><span class="n">nelementsSLR</span><span class="p">:</span><span class="n">nelementsSLR</span> <span class="o">+</span> <span class="n">offset2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span>
             <span class="c1"># Finally, the indices</span>
@@ -1314,7 +1298,7 @@
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Deleting temporaries...&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tmp</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tmpfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpfilename</span><span class="p">)</span>
+        <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpfilename</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tmpfilename</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># The optimization process has finished, and the index is ok now</span>
@@ -1329,7 +1313,7 @@
         <span class="n">cs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span>
         <span class="n">ncs</span> <span class="o">=</span> <span class="n">ncs2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchunkslice</span>
         <span class="n">self_nslices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span>
-        <span class="n">tmp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
             <span class="n">ns</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">i</span>
             <span class="k">if</span> <span class="n">ns</span> <span class="o">==</span> <span class="n">self_nslices</span><span class="p">:</span>
@@ -1393,7 +1377,7 @@
                     <span class="n">can_cross_bbounds</span><span class="p">):</span>
                 <span class="n">nslices</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">ul</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelementsILR</span> <span class="o">//</span> <span class="n">cs</span>
-                <span class="n">bounds</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[:</span><span class="n">ul</span><span class="p">]))</span>
+                <span class="n">bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[:</span><span class="n">ul</span><span class="p">]))</span>
             <span class="n">sbounds_idx</span> <span class="o">=</span> <span class="n">bounds</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="n">defsort</span><span class="p">)</span>
             <span class="n">offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nblock</span> <span class="o">*</span> <span class="n">nsb</span><span class="p">)</span>
             <span class="c1"># Swap sorted and indices following the new order</span>
@@ -1408,19 +1392,17 @@
         <span class="sd">&quot;&quot;&quot;Read a slice from the `where` dataset and put it in `buffer`.&quot;&quot;&quot;</span>
 
         <span class="c1"># Create the buffers for specifying the coordinates</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">startl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">nslice</span><span class="p">,</span> <span class="n">start</span><span class="p">],</span> <span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stopl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">nslice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="n">buffer</span><span class="o">.</span><span class="n">size</span><span class="p">],</span>
-                                 <span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stepl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">startl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">nslice</span><span class="p">,</span> <span class="n">start</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">nslice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="n">buffer</span><span class="o">.</span><span class="n">size</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stepl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
         <span class="n">where</span><span class="o">.</span><span class="n">_g_read_slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">startl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stepl</span><span class="p">,</span> <span class="n">buffer</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">write_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">nslice</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Write a `slice` to the `where` dataset with the `buffer` data.&quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">startl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">nslice</span><span class="p">,</span> <span class="n">start</span><span class="p">],</span> <span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stopl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">nslice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="n">buffer</span><span class="o">.</span><span class="n">size</span><span class="p">],</span>
-                                 <span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stepl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">startl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">nslice</span><span class="p">,</span> <span class="n">start</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">nslice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="n">buffer</span><span class="o">.</span><span class="n">size</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stepl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
         <span class="n">countl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopl</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">startl</span>   <span class="c1"># (1, self.slicesize)</span>
         <span class="n">where</span><span class="o">.</span><span class="n">_g_write_slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">startl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stepl</span><span class="p">,</span> <span class="n">countl</span><span class="p">,</span> <span class="n">buffer</span><span class="p">)</span>
 
@@ -1428,20 +1410,19 @@
     <span class="k">def</span> <span class="nf">read_slice_lr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read a slice from the `where` dataset and put it in `buffer`.&quot;&quot;&quot;</span>
 
-        <span class="n">startl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
-        <span class="n">stopl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span> <span class="o">+</span> <span class="n">buffer</span><span class="o">.</span><span class="n">size</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
-        <span class="n">stepl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="n">startl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="n">stopl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span> <span class="o">+</span> <span class="n">buffer</span><span class="o">.</span><span class="n">size</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="n">stepl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
         <span class="n">where</span><span class="o">.</span><span class="n">_g_read_slice</span><span class="p">(</span><span class="n">startl</span><span class="p">,</span> <span class="n">stopl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">buffer</span><span class="p">)</span>
 
     <span class="c1"># Write version for LastRow</span>
     <span class="k">def</span> <span class="nf">write_sliceLR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Write a slice from the `where` dataset with the `buffer` data.&quot;&quot;&quot;</span>
 
-        <span class="n">startl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
-        <span class="n">countl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span> <span class="o">+</span> <span class="n">buffer</span><span class="o">.</span><span class="n">size</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
-        <span class="n">stepl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="n">startl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="n">countl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span> <span class="o">+</span> <span class="n">buffer</span><span class="o">.</span><span class="n">size</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="n">stepl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
         <span class="n">where</span><span class="o">.</span><span class="n">_g_write_slice</span><span class="p">(</span><span class="n">startl</span><span class="p">,</span> <span class="n">stepl</span><span class="p">,</span> <span class="n">countl</span><span class="p">,</span> <span class="n">buffer</span><span class="p">)</span>
-
 
     <span class="k">def</span> <span class="nf">reorder_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nslice</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">ssorted</span><span class="p">,</span> <span class="n">sindices</span><span class="p">,</span>
                       <span class="n">tmp_sorted</span><span class="p">,</span> <span class="n">tmp_indices</span><span class="p">):</span>
@@ -1518,9 +1499,8 @@
         <span class="n">nblocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nblocks</span>
         <span class="n">nelementsLR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelementsILR</span>
         <span class="c1"># Create the buffer for reordering 2 slices at a time</span>
-        <span class="n">ssorted</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">ss</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-        <span class="n">sindices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">ss</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
-                               <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;u</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">))</span>
+        <span class="n">ssorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">ss</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">sindices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">ss</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;u</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
             <span class="c1"># Bootstrap the process for reordering</span>
@@ -1552,7 +1532,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">write_sliceLR</span><span class="p">(</span><span class="n">sortedLR</span><span class="p">,</span> <span class="n">sortedlr</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">write_sliceLR</span><span class="p">(</span><span class="n">indicesLR</span><span class="p">,</span> <span class="n">indiceslr</span><span class="p">)</span>
                 <span class="c1"># Update the caches for last row</span>
-                <span class="n">bebounds</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sortedlr</span><span class="p">[::</span><span class="n">cs</span><span class="p">],</span> <span class="p">[</span><span class="n">sortedlr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]))</span>
+                <span class="n">bebounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sortedlr</span><span class="p">[::</span><span class="n">cs</span><span class="p">],</span> <span class="p">[</span><span class="n">sortedlr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]))</span>
                 <span class="n">sortedLR</span><span class="p">[</span><span class="n">nelementsLR</span><span class="p">:</span><span class="n">nelementsLR</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">bebounds</span><span class="p">)]</span> <span class="o">=</span> <span class="n">bebounds</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span> <span class="o">=</span> <span class="n">bebounds</span>
             <span class="c1"># Write the first part of the buffers to the regular leaves</span>
@@ -1612,7 +1592,7 @@
                 <span class="n">ranges</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">mranges</span><span class="p">[</span><span class="n">sblock</span> <span class="o">*</span> <span class="n">nss</span><span class="p">:</span><span class="n">sblock</span> <span class="o">*</span> <span class="n">nss</span> <span class="o">+</span> <span class="n">nss2</span><span class="p">]</span>
             <span class="n">sranges_idx</span> <span class="o">=</span> <span class="n">ranges</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="n">defsort</span><span class="p">)</span>
             <span class="c1"># Don&#39;t swap the superblock at all if one doesn&#39;t need to</span>
-            <span class="n">ndiff</span> <span class="o">=</span> <span class="p">(</span><span class="n">sranges_idx</span> <span class="o">!=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nss2</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">ndiff</span> <span class="o">=</span> <span class="p">(</span><span class="n">sranges_idx</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nss2</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span>
             <span class="k">if</span> <span class="n">ndiff</span> <span class="o">*</span> <span class="mi">50</span> <span class="o">&lt;</span> <span class="n">nss2</span><span class="p">:</span>
                 <span class="c1"># The number of slices to rearrange is less than 2.5%,</span>
                 <span class="c1"># so skip the reordering of this superblock</span>
@@ -1718,12 +1698,12 @@
         <span class="n">nelementsLR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelementsILR</span>
         <span class="k">if</span> <span class="n">nelementsLR</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># Add the ranges corresponding to the last row</span>
-            <span class="n">rangeslr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
-            <span class="n">ranges</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ranges</span><span class="p">,</span> <span class="p">[</span><span class="n">rangeslr</span><span class="p">]))</span>
+            <span class="n">rangeslr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="n">ranges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ranges</span><span class="p">,</span> <span class="p">[</span><span class="n">rangeslr</span><span class="p">]))</span>
             <span class="n">nslices</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">soverlap</span> <span class="o">=</span> <span class="mf">0.</span>
-        <span class="n">toverlap</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.</span>
-        <span class="n">multiplicity</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nslices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int_&quot;</span><span class="p">)</span>
+        <span class="n">soverlap</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">toverlap</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">multiplicity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nslices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int_&quot;</span><span class="p">)</span>
         <span class="n">overlaps</span> <span class="o">=</span> <span class="n">multiplicity</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">starts</span> <span class="o">=</span> <span class="n">multiplicity</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
@@ -1807,13 +1787,13 @@
         <span class="n">nslices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelementsILR</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># Add the ranges corresponding to the last row</span>
-            <span class="n">rangeslr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
-            <span class="n">ranges</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ranges</span><span class="p">,</span> <span class="p">[</span><span class="n">rangeslr</span><span class="p">]))</span>
+            <span class="n">rangeslr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bebounds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="n">ranges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ranges</span><span class="p">,</span> <span class="p">[</span><span class="n">rangeslr</span><span class="p">]))</span>
             <span class="n">nslices</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">noverlaps</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">soverlap</span> <span class="o">=</span> <span class="mf">0.</span>
-        <span class="n">toverlap</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.</span>
-        <span class="n">multiplicity</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nslices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int_&quot;</span><span class="p">)</span>
+        <span class="n">soverlap</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">toverlap</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">multiplicity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nslices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int_&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nslices</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nslices</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">ranges</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
@@ -1853,7 +1833,7 @@
         <span class="sd">&quot;&quot;&quot;Return the sorted or indices values in the specified range.&quot;&quot;&quot;</span>
         <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">start</span> <span class="o">&gt;=</span> <span class="n">stop</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="c1"># Correction for negative values of step (reverse indices)</span>
         <span class="k">if</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">tmp</span> <span class="o">=</span> <span class="n">start</span>
@@ -1862,11 +1842,11 @@
         <span class="k">if</span> <span class="n">what</span> <span class="o">==</span> <span class="s2">&quot;sorted&quot;</span><span class="p">:</span>
             <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorted</span>
             <span class="n">valuesLR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sortedLR</span>
-            <span class="n">buffer_</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">buffer_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span>
             <span class="n">valuesLR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indicesLR</span>
-            <span class="n">buffer_</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;u</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">)</span>
+            <span class="n">buffer_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;u</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span><span class="p">)</span>
         <span class="n">ss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span>
         <span class="n">nrow_start</span> <span class="o">=</span> <span class="n">start</span> <span class="o">//</span> <span class="n">ss</span>
         <span class="n">istart</span> <span class="o">=</span> <span class="n">start</span> <span class="o">%</span> <span class="n">ss</span>
@@ -1901,7 +1881,6 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_sorted_indices</span><span class="p">(</span><span class="s1">&#39;sorted&#39;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span></div>
 
-
 <div class="viewcode-block" id="Index.read_indices"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.index.Index.read_indices">[docs]</a>    <span class="k">def</span> <span class="nf">read_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the indices values of index in the specified range.</span>
 
@@ -1911,7 +1890,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_sorted_indices</span><span class="p">(</span><span class="s1">&#39;indices&#39;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span></div>
-
 
     <span class="k">def</span> <span class="nf">_process_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a range specifc for the index usage.&quot;&quot;&quot;</span>
@@ -1932,7 +1910,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">step</span> <span class="o">=</span> <span class="n">idx2long</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
-
 
 <div class="viewcode-block" id="Index.__getitem__"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.index.Index.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the indices values of index in the specified range.</span>
@@ -1986,8 +1963,8 @@
                                          <span class="s1">&#39;last row chunks&#39;</span><span class="p">)</span>
         <span class="sd">&quot;&quot;&quot;A cache for the last row chunks. Only used for searches in</span>
 <span class="sd">        the last row, and mainly useful for small indexes.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lengths</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sorted</span><span class="o">.</span><span class="n">_init_sorted_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dirtycache</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -1995,7 +1972,7 @@
         <span class="sd">&quot;&quot;&quot;Do a binary search in this index for an item.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-            <span class="n">tref</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">tref</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Entering search&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
 
@@ -2173,12 +2150,11 @@
             <span class="n">stop</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span>
 
-
     <span class="k">def</span> <span class="nf">get_chunkmap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute a map with the interesting chunks in index.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
-            <span class="n">tref</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">tref</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="n">show_stats</span><span class="p">(</span><span class="s2">&quot;Entering get_chunkmap&quot;</span><span class="p">,</span> <span class="n">tref</span><span class="p">)</span>
         <span class="n">ss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span>
@@ -2186,9 +2162,9 @@
         <span class="n">nslices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span>
         <span class="n">lbucket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lbucket</span>
         <span class="n">indsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indsize</span>
-        <span class="n">bucketsinblock</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">)</span> <span class="o">/</span> <span class="n">lbucket</span>
-        <span class="n">nchunks</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nelements</span><span class="p">)</span> <span class="o">/</span> <span class="n">lbucket</span><span class="p">))</span>
-        <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nchunks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;bool&quot;</span><span class="p">)</span>
+        <span class="n">bucketsinblock</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span> <span class="o">/</span> <span class="n">lbucket</span>
+        <span class="n">nchunks</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nelements</span> <span class="o">/</span> <span class="n">lbucket</span><span class="p">)</span>
+        <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">nchunks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;bool&quot;</span><span class="p">)</span>
         <span class="n">reduction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduction</span>
         <span class="n">starts</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">reduction</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="n">stops</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lengths</span><span class="p">)</span> <span class="o">*</span> <span class="n">reduction</span>
@@ -2198,7 +2174,7 @@
             <span class="n">start</span> <span class="o">=</span> <span class="n">starts</span><span class="p">[</span><span class="n">nslice</span><span class="p">]</span>
             <span class="n">stop</span> <span class="o">=</span> <span class="n">stops</span><span class="p">[</span><span class="n">nslice</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">stop</span> <span class="o">&gt;</span> <span class="n">start</span><span class="p">:</span>
-                <span class="n">idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;u</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">indsize</span><span class="p">)</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;u</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">indsize</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">nslice</span> <span class="o">&lt;</span> <span class="n">nslices</span><span class="p">:</span>
                     <span class="n">indices</span><span class="o">.</span><span class="n">_read_index_slice</span><span class="p">(</span><span class="n">nslice</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -2221,12 +2197,12 @@
         <span class="k">if</span> <span class="n">lbucket</span> <span class="o">!=</span> <span class="n">nrowsinchunk</span><span class="p">:</span>
             <span class="c1"># Map the &#39;coarse grain&#39; chunkmap into the &#39;true&#39; chunkmap</span>
             <span class="n">nelements</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span>
-            <span class="n">tnchunks</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">nelements</span><span class="p">)</span> <span class="o">/</span> <span class="n">nrowsinchunk</span><span class="p">))</span>
-            <span class="n">tchunkmap</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">tnchunks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;bool&quot;</span><span class="p">)</span>
-            <span class="n">ratio</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lbucket</span><span class="p">)</span> <span class="o">/</span> <span class="n">nrowsinchunk</span>
+            <span class="n">tnchunks</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">nelements</span> <span class="o">/</span> <span class="n">nrowsinchunk</span><span class="p">)</span>
+            <span class="n">tchunkmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">tnchunks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;bool&quot;</span><span class="p">)</span>
+            <span class="n">ratio</span> <span class="o">=</span> <span class="n">lbucket</span> <span class="o">/</span> <span class="n">nrowsinchunk</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">chunkmap</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">starts</span> <span class="o">=</span> <span class="p">(</span><span class="n">idx</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int_&#39;</span><span class="p">)</span>
-            <span class="n">stops</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int_&#39;</span><span class="p">)</span>
+            <span class="n">stops</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int_&#39;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">starts</span><span class="p">,</span> <span class="n">stops</span><span class="p">):</span>
                 <span class="n">tchunkmap</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">chunkmap</span> <span class="o">=</span> <span class="n">tchunkmap</span>
@@ -2282,7 +2258,6 @@
 
         <span class="k">return</span> <span class="n">range_</span>
 
-
     <span class="k">def</span> <span class="nf">_f_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Remove this Index object.&quot;&quot;&quot;</span>
 
@@ -2294,51 +2269,43 @@
         <span class="sd">&quot;&quot;&quot;This provides a more compact representation than __repr__&quot;&quot;&quot;</span>
 
         <span class="c1"># The filters</span>
-        <span class="n">filters</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complevel</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">shuffle</span><span class="p">:</span>
-                <span class="n">filters</span> <span class="o">+=</span> <span class="s2">&quot;, shuffle&quot;</span>
+                <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;shuffle&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">bitshuffle</span><span class="p">:</span>
-                <span class="n">filters</span> <span class="o">+=</span> <span class="s2">&quot;, bitshuffle&quot;</span>
-            <span class="n">filters</span> <span class="o">+=</span> <span class="s2">&quot;, </span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complib</span><span class="p">,</span>
-                                     <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complevel</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s2">&quot;Index(</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s%s</span><span class="s2">).is_csi=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> \
-               <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_csi</span><span class="p">)</span>
+                <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;bitshuffle&#39;</span><span class="p">)</span>
+            <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complib</span><span class="si">}</span><span class="s1">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complevel</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Index(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="si">}{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span><span class="si">}</span><span class="s2">).is_csi=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">is_csi</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;This provides more metainfo than standard __repr__&quot;&quot;&quot;</span>
 
-        <span class="n">cpathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">+</span> <span class="s2">&quot;.cols.&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">column</span><span class="o">.</span><span class="n">pathname</span>
-        <span class="n">retstr</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span><span class="si">{}</span><span class="s2"> (Index for column </span><span class="si">{}</span><span class="s2">)</span>
-<span class="s2">  optlevel := </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  kind := </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  filters := </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  is_csi := </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  nelements := </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  chunksize := </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  slicesize := </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  blocksize := </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  superblocksize := </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  dirty := </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">  byteorder := </span><span class="si">{!r}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">cpathname</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_csi</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">nelements</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">dirty</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span>
-        <span class="n">retstr</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  sorted := </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorted</span>
-        <span class="n">retstr</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  indices := </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span>
-        <span class="n">retstr</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  ranges := </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span>
-        <span class="n">retstr</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  bounds := </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span>
-        <span class="n">retstr</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  sortedLR := </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">sortedLR</span>
-        <span class="n">retstr</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  indicesLR := </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">indicesLR</span>
+        <span class="n">cpathname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">_v_pathname</span><span class="si">}</span><span class="s2">.cols.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">column</span><span class="o">.</span><span class="n">pathname</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">retstr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="si">}</span><span class="s2"> (Index for column </span><span class="si">{</span><span class="n">cpathname</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">  optlevel := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">optlevel</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  kind := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  filters := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  is_csi := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">is_csi</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  nelements := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nelements</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  chunksize := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  slicesize := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  blocksize := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  superblocksize := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">superblocksize</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  dirty := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dirty</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">  byteorder := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="si">!r}</span><span class="s2"></span>
+<span class="s2">    sorted := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sorted</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">    indices := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">    ranges := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">    bounds := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">    sortedLR := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sortedLR</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">    indicesLR := </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">indicesLR</span><span class="si">}</span><span class="s2">&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">retstr</span></div>
 
 
 <span class="k">class</span> <span class="nc">IndexesDescG</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;DINDEX&#39;</span>
-
 
     <span class="k">def</span> <span class="nf">_g_width_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
@@ -2349,10 +2316,8 @@
             <span class="n">PerformanceWarning</span><span class="p">)</span>
 
 
-
 <span class="k">class</span> <span class="nc">IndexesTableG</span><span class="p">(</span><span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;TINDEX&#39;</span>
-
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">auto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -2376,16 +2341,15 @@
             <span class="s2">&quot;and possibly slow I/O&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_max_group_width</span><span class="p">,</span>
             <span class="n">PerformanceWarning</span><span class="p">)</span>
 
-
     <span class="k">def</span> <span class="nf">_g_check_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_i_&#39;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;names of index groups must start with ``_i_``: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
 
-
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Accessor for the `Table` object of this `IndexesTableG` container.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Accessor for the `Table` object of this `IndexesTableG`</span>
+<span class="sd">        container.&quot;&quot;&quot;</span>
         <span class="n">names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
         <span class="n">tablename</span> <span class="o">=</span> <span class="n">names</span><span class="o">.</span><span class="n">pop</span><span class="p">()[</span><span class="mi">3</span><span class="p">:]</span>   <span class="c1"># &quot;_i_&quot; is at the beginning</span>
         <span class="n">parentpathname</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
@@ -2398,43 +2362,31 @@
     <span class="sd">&quot;&quot;&quot;This is meant to hide indexes of PyTables 1.x files.&quot;&quot;&quot;</span>
 
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;CINDEX&#39;</span>
-
-
-
-<span class="c1">## Local Variables:</span>
-<span class="c1">## mode: python</span>
-<span class="c1">## py-indent-offset: 4</span>
-<span class="c1">## tab-width: 4</span>
-<span class="c1">## fill-column: 72</span>
-<span class="c1">## End:</span>
 </pre></div>
 
            </div>
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2011–2020, PyTables maintainers
+        &#169; Copyright 2011–2021, PyTables maintainers.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

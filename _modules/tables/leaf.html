@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>tables.leaf &mdash; PyTables 3.6.2.dev0 documentation</title>
   
@@ -17,13 +17,13 @@
 
   
   
+
   
   
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+
+  
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -150,6 +150,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -174,22 +176,12 @@
            <div itemprop="articleBody">
             
   <h1>Source code for tables.leaf</h1><div class="highlight"><pre>
-<span></span><span class="c1">########################################################################</span>
-<span class="c1">#</span>
-<span class="c1"># License: BSD</span>
-<span class="c1"># Created: October 14, 2002</span>
-<span class="c1"># Author: Francesc Alted - faltet@pytables.com</span>
-<span class="c1">#</span>
-<span class="c1"># $Id$</span>
-<span class="c1">#</span>
-<span class="c1">########################################################################</span>
-
-<span class="sd">&quot;&quot;&quot;Here is defined the Leaf class.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Here is defined the Leaf class.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">math</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">.flavor</span> <span class="kn">import</span> <span class="p">(</span><span class="n">check_flavor</span><span class="p">,</span> <span class="n">internal_flavor</span><span class="p">,</span> <span class="n">toarray</span><span class="p">,</span>
                      <span class="n">alias_map</span> <span class="k">as</span> <span class="n">flavor_alias_map</span><span class="p">)</span>
@@ -197,7 +189,6 @@
 <span class="kn">from</span> <span class="nn">.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">byteorders</span><span class="p">,</span> <span class="n">lazyattr</span><span class="p">,</span> <span class="n">SizeType</span>
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">PerformanceWarning</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utilsextension</span>
 
 
 <span class="k">def</span> <span class="nf">csformula</span><span class="p">(</span><span class="n">expected_mb</span><span class="p">):</span>
@@ -296,11 +287,6 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># Properties</span>
-    <span class="c1"># ~~~~~~~~~~</span>
-
-    <span class="c1"># Node property aliases</span>
-    <span class="c1"># `````````````````````</span>
     <span class="c1"># These are a little hard to override, but so are properties.</span>
     <span class="n">attrs</span> <span class="o">=</span> <span class="n">Node</span><span class="o">.</span><span class="n">_v_attrs</span>
     <span class="sd">&quot;&quot;&quot;The associated AttributeSet instance - see :ref:`AttributeSetClassDescr`</span>
@@ -309,11 +295,10 @@
     <span class="sd">&quot;&quot;&quot;A description for this node</span>
 <span class="sd">    (This is an easier-to-write alias of :attr:`Node._v_title`).&quot;&quot;&quot;</span>
 
-    <span class="c1"># Read-only node property aliases</span>
-    <span class="c1"># ```````````````````````````````</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The name of this node in its parent group (This is an easier-to-write alias of :attr:`Node._v_name`).&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;The name of this node in its parent group (This is an</span>
+<span class="sd">        easier-to-write alias of :attr:`Node._v_name`).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span>
 
     <span class="nd">@property</span>
@@ -343,8 +328,6 @@
 <span class="sd">        .. versionadded: 2.4&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-    <span class="c1"># Lazy read-only attributes</span>
-    <span class="c1"># `````````````````````````</span>
     <span class="nd">@lazyattr</span>
     <span class="k">def</span> <span class="nf">filters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Filter properties for this leaf.</span>
@@ -370,9 +353,6 @@
 <span class="sd">        track_times = (leaf._get_obj_timestamps().ctime == 0)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_obj_track_times</span><span class="p">()</span>
-
-    <span class="c1"># Other properties</span>
-    <span class="c1"># ````````````````</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">maindim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -420,8 +400,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_storage_size</span><span class="p">()</span>
 
-    <span class="c1"># Special methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">new</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -456,7 +434,6 @@
         <span class="c1"># Existing filters need not be read since `filters`</span>
         <span class="c1"># is a lazy property that automatically handles their loading.</span>
 
-
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">_log</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Leaf.__len__"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.__len__">[docs]</a>    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -474,26 +451,18 @@
         <span class="sd">&quot;&quot;&quot;The string representation for this object is its pathname in the</span>
 <span class="sd">        HDF5 object tree plus some additional metainfo.&quot;&quot;&quot;</span>
 
-        <span class="c1"># Get this class name</span>
-        <span class="n">classname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="c1"># The title</span>
-        <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_title</span>
-        <span class="c1"># The filters</span>
-        <span class="n">filters</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">fletcher32</span><span class="p">:</span>
-            <span class="n">filters</span> <span class="o">+=</span> <span class="s2">&quot;, fletcher32&quot;</span>
+            <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;fletcher32&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complevel</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">shuffle</span><span class="p">:</span>
-                <span class="n">filters</span> <span class="o">+=</span> <span class="s2">&quot;, shuffle&quot;</span>
+                <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;shuffle&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">bitshuffle</span><span class="p">:</span>
-                <span class="n">filters</span> <span class="o">+=</span> <span class="s2">&quot;, bitshuffle&quot;</span>
-            <span class="n">filters</span> <span class="o">+=</span> <span class="s2">&quot;, </span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complib</span><span class="p">,</span>
-                                     <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complevel</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s%s%s</span><span class="s2">) </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> \
-               <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+                <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;bitshuffle&quot;</span><span class="p">)</span>
+            <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complib</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">complevel</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="si">}{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span><span class="si">}</span><span class="s2">) </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_title</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="c1"># Private methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Code to be run after node creation and before creation logging.</span>
 
@@ -536,7 +505,7 @@
         <span class="n">chunkshape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="c1"># Check whether trimming the main dimension is enough</span>
         <span class="n">chunkshape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">newchunknitems</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+        <span class="n">newchunknitems</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">newchunknitems</span> <span class="o">&lt;=</span> <span class="n">chunknitems</span><span class="p">:</span>
             <span class="n">chunkshape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunknitems</span> <span class="o">//</span> <span class="n">newchunknitems</span>
         <span class="k">else</span><span class="p">:</span>
@@ -544,7 +513,7 @@
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">)):</span>
                 <span class="c1"># Check whether trimming this dimension is enough</span>
                 <span class="n">chunkshape</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="n">newchunknitems</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+                <span class="n">newchunknitems</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">newchunknitems</span> <span class="o">&lt;=</span> <span class="n">chunknitems</span><span class="p">:</span>
                     <span class="n">chunkshape</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunknitems</span> <span class="o">//</span> <span class="n">newchunknitems</span>
                     <span class="k">break</span>
@@ -594,9 +563,9 @@
         <span class="k">if</span> <span class="n">warn_negstep</span> <span class="ow">and</span> <span class="n">step</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;slice step cannot be negative&quot;</span><span class="p">)</span>
 
-        <span class="c1">#if start is not None: start = long(start)</span>
-        <span class="c1">#if stop is not None: stop = long(stop)</span>
-        <span class="c1">#if step is not None: step = long(step)</span>
+        <span class="c1"># if start is not None: start = long(start)</span>
+        <span class="c1"># if stop is not None: stop = long(stop)</span>
+        <span class="c1"># if step is not None: step = long(step)</span>
 
         <span class="k">return</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">nrows</span><span class="p">))</span>
 
@@ -711,27 +680,27 @@
 
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="c1"># Try to convert key to a numpy array.  If not possible,</span>
             <span class="c1"># a TypeError will be issued (to be catched later on).</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">key</span> <span class="o">=</span> <span class="n">toarray</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
-        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># Protection against empty keys</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;i8&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;i8&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
                     <span class="s2">&quot;Boolean indexing array has incompatible shape&quot;</span><span class="p">)</span>
             <span class="c1"># Get the True coordinates (64-bit indices!)</span>
-            <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;i8&#39;</span><span class="p">)</span>
-            <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;i8&#39;</span><span class="p">)</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">key</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;i&#39;</span> <span class="ow">or</span> <span class="n">key</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;u&#39;</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
@@ -740,18 +709,18 @@
                 <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
                         <span class="s2">&quot;Coordinate indexing array has incompatible shape&quot;</span><span class="p">)</span>
-                <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;i8&quot;</span><span class="p">)</span>
-                <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;i8&quot;</span><span class="p">)</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># For 1-dimensional datasets</span>
-                <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;i8&quot;</span><span class="p">)</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;i8&quot;</span><span class="p">)</span>
 
             <span class="c1"># handle negative indices</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">coords</span> <span class="o">&lt;</span> <span class="mi">0</span>
             <span class="n">coords</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">coords</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)[</span><span class="n">idx</span><span class="p">]</span>
 
             <span class="c1"># bounds check</span>
-            <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">coords</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">numpy</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">coords</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">coords</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">coords</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Index out of bounds&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Only integer coordinates allowed.&quot;</span><span class="p">)</span>
@@ -760,10 +729,7 @@
             <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">coords</span>
 
-    <span class="c1"># Public methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~</span>
     <span class="c1"># Tree manipulation</span>
-    <span class="c1"># `````````````````</span>
 <div class="viewcode-block" id="Leaf.remove"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Remove this node from the hierarchy.</span>
 
@@ -872,7 +838,6 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_isvisible</span><span class="p">()</span></div>
 
     <span class="c1"># Attribute handling</span>
-    <span class="c1"># ``````````````````</span>
 <div class="viewcode-block" id="Leaf.get_attr"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.get_attr">[docs]</a>    <span class="k">def</span> <span class="nf">get_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a PyTables attribute from this node.</span>
 
@@ -901,7 +866,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_f_delattr</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
 
     <span class="c1"># Data handling</span>
-    <span class="c1"># `````````````</span>
 <div class="viewcode-block" id="Leaf.flush"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Leaf.flush">[docs]</a>    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Flush pending data to disk.</span>
 
@@ -947,42 +911,31 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_f_close</span><span class="p">(</span><span class="n">flush</span><span class="p">)</span></div></div>
-
-
-<span class="c1">## Local Variables:</span>
-<span class="c1">## mode: python</span>
-<span class="c1">## py-indent-offset: 4</span>
-<span class="c1">## tab-width: 4</span>
-<span class="c1">## fill-column: 72</span>
-<span class="c1">## End:</span>
 </pre></div>
 
            </div>
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2011–2020, PyTables maintainers
+        &#169; Copyright 2011–2021, PyTables maintainers.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

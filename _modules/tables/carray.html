@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>tables.carray &mdash; PyTables 3.6.2.dev0 documentation</title>
   
@@ -17,13 +17,13 @@
 
   
   
+
   
   
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+
+  
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -150,6 +150,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -174,22 +176,11 @@
            <div itemprop="articleBody">
             
   <h1>Source code for tables.carray</h1><div class="highlight"><pre>
-<span></span><span class="c1">########################################################################</span>
-<span class="c1">#</span>
-<span class="c1"># License: BSD</span>
-<span class="c1"># Created: June 15, 2005</span>
-<span class="c1"># Author: Antonio Valentino</span>
-<span class="c1"># Modified by: Francesc Alted</span>
-<span class="c1">#</span>
-<span class="c1"># $Id$</span>
-<span class="c1">#</span>
-<span class="c1">########################################################################</span>
-
-<span class="sd">&quot;&quot;&quot;Here is defined the CArray class.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Here is defined the CArray class.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">sys</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">.atom</span> <span class="kn">import</span> <span class="n">Atom</span>
 <span class="kn">from</span> <span class="nn">.array</span> <span class="kn">import</span> <span class="n">Array</span>
@@ -267,24 +258,24 @@
 <span class="sd">    See below a small example of the use of the `CArray` class.</span>
 <span class="sd">    The code is available in ``examples/carray1.py``::</span>
 
-<span class="sd">        import numpy</span>
-<span class="sd">        import tables</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import tables as tb</span>
 
 <span class="sd">        fileName = &#39;carray1.h5&#39;</span>
 <span class="sd">        shape = (200, 300)</span>
-<span class="sd">        atom = tables.UInt8Atom()</span>
-<span class="sd">        filters = tables.Filters(complevel=5, complib=&#39;zlib&#39;)</span>
+<span class="sd">        atom = tb.UInt8Atom()</span>
+<span class="sd">        filters = tb.Filters(complevel=5, complib=&#39;zlib&#39;)</span>
 
-<span class="sd">        h5f = tables.open_file(fileName, &#39;w&#39;)</span>
+<span class="sd">        h5f = tb.open_file(fileName, &#39;w&#39;)</span>
 <span class="sd">        ca = h5f.create_carray(h5f.root, &#39;carray&#39;, atom, shape,</span>
 <span class="sd">                               filters=filters)</span>
 
 <span class="sd">        # Fill a hyperslab in ``ca``.</span>
-<span class="sd">        ca[10:60, 20:70] = numpy.ones((50, 50))</span>
+<span class="sd">        ca[10:60, 20:70] = np.ones((50, 50))</span>
 <span class="sd">        h5f.close()</span>
 
 <span class="sd">        # Re-open a read another hyperslab</span>
-<span class="sd">        h5f = tables.open_file(fileName)</span>
+<span class="sd">        h5f = tb.open_file(fileName)</span>
 <span class="sd">        print(h5f)</span>
 <span class="sd">        print(h5f.root.carray[8:12, 18:22])</span>
 <span class="sd">        h5f.close()</span>
@@ -307,11 +298,6 @@
     <span class="c1"># Class identifier.</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;CARRAY&#39;</span>
 
-
-    <span class="c1"># Properties</span>
-    <span class="c1"># ~~~~~~~~~~</span>
-    <span class="c1"># Special methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">atom</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -381,9 +367,8 @@
                         <span class="s2">&quot;`chunkshape` parameter must be a sequence &quot;</span>
                         <span class="s2">&quot;and you passed a </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">))</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;the shape (</span><span class="si">%s</span><span class="s2">) and chunkshape (</span><span class="si">%s</span><span class="s2">) &quot;</span>
-                                     <span class="s2">&quot;ranks must be equal.&quot;</span> <span class="o">%</span>
-                                    <span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">chunkshape</span><span class="p">))</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;the shape (</span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">) and chunkshape &quot;</span>
+                                     <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">chunkshape</span><span class="si">}</span><span class="s2">) ranks must be equal.&quot;</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="nb">min</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;chunkshape parameter cannot have &quot;</span>
                                      <span class="s2">&quot;zero-dimensions.&quot;</span><span class="p">)</span>
@@ -422,7 +407,7 @@
             <span class="c1"># needed for setting attributes in some descendants later</span>
             <span class="c1"># on</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_carray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_new_title</span><span class="p">)</span>
-        <span class="k">except</span><span class="p">:</span>  <span class="c1"># XXX</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># XXX</span>
             <span class="c1"># Problems creating the Array on disk. Close node and re-raise.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">flush</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">raise</span>
@@ -466,38 +451,34 @@
             <span class="nb">object</span><span class="p">[</span><span class="n">start3</span><span class="p">:</span><span class="n">stop3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">slices</span><span class="p">))</span>
         <span class="c1"># Activate the conversion again (default)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">nbytes</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">nbytes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">size</span>
 
         <span class="k">return</span> <span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">nbytes</span><span class="p">)</span></div>
-
 </pre></div>
 
            </div>
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2011–2020, PyTables maintainers
+        &#169; Copyright 2011–2021, PyTables maintainers.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

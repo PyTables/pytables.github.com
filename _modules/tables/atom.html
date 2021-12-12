@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>tables.atom &mdash; PyTables 3.6.2.dev0 documentation</title>
   
@@ -17,13 +17,13 @@
 
   
   
+
   
   
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+
+  
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -150,6 +150,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -174,26 +176,13 @@
            <div itemprop="articleBody">
             
   <h1>Source code for tables.atom</h1><div class="highlight"><pre>
-<span></span><span class="c1">########################################################################</span>
-<span class="c1">#</span>
-<span class="c1"># License: BSD</span>
-<span class="c1"># Created: December 16, 2004</span>
-<span class="c1"># Author: Ivan Vilata i Balaguer - ivan at selidor dot net</span>
-<span class="c1">#</span>
-<span class="c1"># $Id$</span>
-<span class="c1">#</span>
-<span class="c1">########################################################################</span>
+<span></span><span class="sd">&quot;&quot;&quot;Atom classes for describing dataset contents.&quot;&quot;&quot;</span>
 
-<span class="sd">&quot;&quot;&quot;Atom classes for describing dataset contents.&quot;&quot;&quot;</span>
-
-<span class="c1"># Imports</span>
-<span class="c1"># =======</span>
 <span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">SizeType</span>
 <span class="kn">from</span> <span class="nn">.misc.enum</span> <span class="kn">import</span> <span class="n">Enum</span>
@@ -202,8 +191,6 @@
 
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">FlavorWarning</span>
 
-<span class="c1"># Public variables</span>
-<span class="c1"># ================</span>
 <span class="n">__docformat__</span> <span class="o">=</span> <span class="s1">&#39;reStructuredText&#39;</span>
 <span class="sd">&quot;&quot;&quot;The format of documentation strings in this module.&quot;&quot;&quot;</span>
 
@@ -222,8 +209,6 @@
 <span class="sd">&quot;&quot;&quot;Maps atom kinds to their default atom type (if any).&quot;&quot;&quot;</span>
 
 
-<span class="c1"># Public functions</span>
-<span class="c1"># ================</span>
 <span class="n">_type_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^([a-z]+)([0-9]*)$&#39;</span><span class="p">)</span>
 
 
@@ -262,8 +247,6 @@
     <span class="k">return</span> <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">)</span></div>
 
 
-<span class="c1"># Private functions</span>
-<span class="c1"># =================</span>
 <span class="k">def</span> <span class="nf">_invalid_itemsize_error</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">itemsizes</span><span class="p">):</span>
     <span class="n">isizes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">itemsizes</span><span class="p">)</span>
     <span class="k">return</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid item size for kind ``</span><span class="si">%s</span><span class="s2">``: </span><span class="si">%r</span><span class="s2">; &quot;</span>
@@ -291,7 +274,7 @@
 <span class="k">def</span> <span class="nf">_normalize_shape</span><span class="p">(</span><span class="n">shape</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Check that the `shape` is safe to be used and return it as a tuple.&quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
         <span class="k">if</span> <span class="n">shape</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;shape value must be greater than 0: </span><span class="si">%d</span><span class="s2">&quot;</span>
                              <span class="o">%</span> <span class="n">shape</span><span class="p">)</span>
@@ -306,7 +289,7 @@
     <span class="c1"># HDF5 does not support ranks greater than 32</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">32</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;shapes with rank &gt; 32 are not supported: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+            <span class="sa">f</span><span class="s2">&quot;shapes with rank &gt; 32 are not supported: </span><span class="si">{</span><span class="n">shape</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">)</span>
 
@@ -320,13 +303,13 @@
         <span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">basedtype</span> <span class="o">=</span> <span class="n">dtype</span><span class="o">.</span><span class="n">base</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">default</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">basedtype</span><span class="p">)</span>
+        <span class="n">default</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">basedtype</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="n">array</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
             <span class="k">raise</span>
         <span class="c1"># Maybe nested dtype with &quot;scalar&quot; value.</span>
-        <span class="n">default</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">basedtype</span><span class="o">.</span><span class="n">base</span><span class="p">)</span>
+        <span class="n">default</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">basedtype</span><span class="o">.</span><span class="n">base</span><span class="p">)</span>
     <span class="c1"># 0-dim arrays will be representented as NumPy scalars</span>
     <span class="c1"># (PyTables attribute convention)</span>
     <span class="k">if</span> <span class="n">default</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
@@ -353,8 +336,6 @@
     <span class="k">return</span> <span class="n">dispatched_cmp</span>
 
 
-<span class="c1"># Helper classes</span>
-<span class="c1"># ==============</span>
 <span class="k">class</span> <span class="nc">MetaAtom</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Atom metaclass.</span>
 
@@ -391,8 +372,6 @@
             <span class="n">atom_map</span><span class="p">[</span><span class="n">kind</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">itemsize</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">cls</span>
 
 
-<span class="c1"># Atom classes</span>
-<span class="c1"># ============</span>
 <div class="viewcode-block" id="Atom"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Atom">[docs]</a><span class="k">class</span> <span class="nc">Atom</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">MetaAtom</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Defines the type of atomic cells stored in a dataset.</span>
 
@@ -488,8 +467,6 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># Class methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">prefix</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the atom class prefix.&quot;&quot;&quot;</span>
@@ -505,23 +482,23 @@
 <span class="sd">        arguments, respectively. Information in the</span>
 <span class="sd">        sctype not represented in an Atom is ignored::</span>
 
-<span class="sd">            &gt;&gt;&gt; import numpy</span>
-<span class="sd">            &gt;&gt;&gt; Atom.from_sctype(numpy.int16, shape=(2, 2))</span>
+<span class="sd">            &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">            &gt;&gt;&gt; Atom.from_sctype(np.int16, shape=(2, 2))</span>
 <span class="sd">            Int16Atom(shape=(2, 2), dflt=0)</span>
 <span class="sd">            &gt;&gt;&gt; Atom.from_sctype(&#39;S5&#39;, dflt=&#39;hello&#39;)</span>
 <span class="sd">            Traceback (most recent call last):</span>
 <span class="sd">            ...</span>
 <span class="sd">            ValueError: unknown NumPy scalar type: &#39;S5&#39;</span>
-<span class="sd">            &gt;&gt;&gt; Atom.from_sctype(&#39;Float64&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; Atom.from_sctype(&#39;float64&#39;)</span>
 <span class="sd">            Float64Atom(shape=(), dflt=0.0)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sctype</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
-           <span class="ow">or</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">sctype</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">generic</span><span class="p">)):</span>
-            <span class="k">if</span> <span class="n">sctype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sctypeDict</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unknown NumPy scalar type: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sctype</span><span class="p">))</span>
-            <span class="n">sctype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sctypeDict</span><span class="p">[</span><span class="n">sctype</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">sctype</span><span class="p">,</span> <span class="n">shape</span><span class="p">)),</span> <span class="n">dflt</span><span class="p">)</span></div>
+           <span class="ow">or</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">sctype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">sctype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">sctypeDict</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown NumPy scalar type: </span><span class="si">{</span><span class="n">sctype</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">sctype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sctypeDict</span><span class="p">[</span><span class="n">sctype</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">sctype</span><span class="p">,</span> <span class="n">shape</span><span class="p">)),</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Atom.from_dtype"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Atom.from_dtype">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_dtype</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">dflt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -531,10 +508,10 @@
 <span class="sd">        argument. Information in the dtype not represented in an Atom is</span>
 <span class="sd">        ignored::</span>
 
-<span class="sd">            &gt;&gt;&gt; import numpy</span>
-<span class="sd">            &gt;&gt;&gt; Atom.from_dtype(numpy.dtype((numpy.int16, (2, 2))))</span>
+<span class="sd">            &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">            &gt;&gt;&gt; Atom.from_dtype(np.dtype((np.int16, (2, 2))))</span>
 <span class="sd">            Int16Atom(shape=(2, 2), dflt=0)</span>
-<span class="sd">            &gt;&gt;&gt; Atom.from_dtype(numpy.dtype(&#39;float64&#39;))</span>
+<span class="sd">            &gt;&gt;&gt; Atom.from_dtype(np.dtype(&#39;float64&#39;))</span>
 <span class="sd">            Float64Atom(shape=(), dflt=0.0)</span>
 
 <span class="sd">        Note: for easier use in Python 3, where all strings lead to the</span>
@@ -542,9 +519,9 @@
 <span class="sd">        this is only viable for strings that are castable as ascii, a</span>
 <span class="sd">        warning is issued.</span>
 
-<span class="sd">            &gt;&gt;&gt; Atom.from_dtype(numpy.dtype(&#39;U20&#39;)) # doctest: +SKIP</span>
-<span class="sd">            Atom.py:392: FlavorWarning: support for unicode type is very limited,</span>
-<span class="sd">                and only works for strings that can be cast as ascii</span>
+<span class="sd">            &gt;&gt;&gt; Atom.from_dtype(np.dtype(&#39;U20&#39;)) # doctest: +SKIP</span>
+<span class="sd">            Atom.py:392: FlavorWarning: support for unicode type is very</span>
+<span class="sd">                limited, and only works for strings that can be cast as ascii</span>
 <span class="sd">            StringAtom(itemsize=20, shape=(), dflt=b&#39;&#39;)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -560,10 +537,12 @@
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">dtype</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;U&#39;</span><span class="p">:</span>
             <span class="c1"># workaround for unicode type (standard string type in Python 3)</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;support for unicode type is very limited, &quot;</span>
-                          <span class="s2">&quot;and only works for strings that can be cast as ascii&quot;</span><span class="p">,</span> <span class="n">FlavorWarning</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;support for unicode type is very limited, and &quot;</span>
+                          <span class="s2">&quot;only works for strings that can be cast as ascii&quot;</span><span class="p">,</span>
+                          <span class="n">FlavorWarning</span><span class="p">)</span>
             <span class="n">itemsize</span> <span class="o">=</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">//</span> <span class="mi">4</span>
-            <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">itemsize</span><span class="p">)</span> <span class="ow">in</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="s2">&quot;something went wrong in handling unicode.&quot;</span>
+            <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">itemsize</span><span class="p">)</span> <span class="ow">in</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="p">(</span>
+                <span class="s2">&quot;something went wrong in handling unicode.&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">dtype</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
         <span class="c1"># Most NumPy types have direct correspondence with PyTables types.</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_type</span><span class="p">(</span><span class="n">basedtype</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dtype</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
@@ -591,7 +570,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="nb">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_types</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unknown type: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown type: </span><span class="si">{</span><span class="nb">type</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span> <span class="o">=</span> <span class="n">split_type</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
@@ -632,7 +611,7 @@
 
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;shape&#39;</span><span class="p">:</span> <span class="n">shape</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">atom_map</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unknown kind: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kind</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown kind: </span><span class="si">{</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="c1"># This incompatibility detection may get out-of-date and is</span>
         <span class="c1"># too hard-wired, but I couldn&#39;t come up with something</span>
         <span class="c1"># smarter.  -- Ivan (2007-02-08)</span>
@@ -663,8 +642,6 @@
 
         <span class="k">return</span> <span class="n">atomclass</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-    <span class="c1"># Properties</span>
-    <span class="c1"># ~~~~~~~~~~</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Total size in bytes of the atom.&quot;&quot;&quot;</span>
@@ -682,9 +659,6 @@
 <span class="sd">        .. versionadded:: 2.4&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-
-    <span class="c1"># Special methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nptype</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;``</span><span class="si">%s</span><span class="s2">`` is an abstract class; &quot;</span>
@@ -695,7 +669,7 @@
         <span class="c1"># Curiously enough, NumPy isn&#39;t generally able to accept NumPy</span>
         <span class="c1"># integers in a shape. ;(</span>
         <span class="n">npshape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">nptype</span><span class="p">,</span> <span class="n">npshape</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">nptype</span><span class="p">,</span> <span class="n">npshape</span><span class="p">))</span>
         <span class="sd">&quot;&quot;&quot;The NumPy dtype that most closely matches this atom.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dflt</span> <span class="o">=</span> <span class="n">_normalize_default</span><span class="p">(</span><span class="n">dflt</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
         <span class="sd">&quot;&quot;&quot;The default value of the atom.</span>
@@ -710,10 +684,10 @@
 <span class="sd">        as NumPy objects.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">args</span> <span class="o">=</span> <span class="s1">&#39;shape=</span><span class="si">{}</span><span class="s1">, dflt=</span><span class="si">{!r}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dflt</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;shape=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">, dflt=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span><span class="si">!r}</span><span class="s1">&#39;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">itemsize</span><span class="p">,</span> <span class="s1">&#39;__int__&#39;</span><span class="p">):</span>  <span class="c1"># non-fixed</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="s1">&#39;itemsize=</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">itemsize</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">(</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;itemsize=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">itemsize</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">(</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1">)&#39;</span>
 
     <span class="fm">__eq__</span> <span class="o">=</span> <span class="n">_cmp_dispatcher</span><span class="p">(</span><span class="s1">&#39;_is_equal_to_atom&#39;</span><span class="p">)</span>
 
@@ -726,8 +700,6 @@
     <span class="c1">#    return hash((self.__class__, self.type, self.shape, self.itemsize,</span>
     <span class="c1">#                 self.dflt))</span>
 
-    <span class="c1"># Public methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~</span>
 <div class="viewcode-block" id="Atom.copy"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Atom.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">override</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a copy of the atom, possibly overriding some arguments.</span>
 
@@ -745,18 +717,16 @@
 <span class="sd">            &gt;&gt;&gt; atom3 = atom1.copy(shape=(2, 2))</span>
 <span class="sd">            &gt;&gt;&gt; print(atom3)</span>
 <span class="sd">            Int32Atom(shape=(2, 2), dflt=0)</span>
-<span class="sd">            &gt;&gt;&gt; atom1.copy(foobar=42)</span>
+<span class="sd">            &gt;&gt;&gt; atom1.copy(foobar=42) #doctest: +ELLIPSIS</span>
 <span class="sd">            Traceback (most recent call last):</span>
 <span class="sd">            ...</span>
-<span class="sd">            TypeError: __init__() got an unexpected keyword argument &#39;foobar&#39;</span>
+<span class="sd">            TypeError: ...__init__() got an unexpected keyword argument &#39;foobar&#39;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">newargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_init_args</span><span class="p">()</span>
         <span class="n">newargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">override</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="o">**</span><span class="n">newargs</span><span class="p">)</span></div>
 
-    <span class="c1"># Private methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="nf">_get_init_args</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a dictionary of instance constructor arguments.</span>
 
@@ -767,7 +737,7 @@
         <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
         <span class="n">parameters</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">arg</span> <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="ow">is</span> <span class="n">p</span><span class="o">.</span><span class="n">POSITIONAL_OR_KEYWORD</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="ow">is</span> <span class="n">p</span><span class="o">.</span><span class="n">POSITIONAL_OR_KEYWORD</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="p">{</span><span class="n">arg</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">arg</span> <span class="o">!=</span> <span class="s1">&#39;self&#39;</span><span class="p">}</span>
 
@@ -776,7 +746,7 @@
 
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">type</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">shape</span>
                 <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">itemsize</span>
-                <span class="ow">and</span> <span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">dflt</span><span class="p">))</span></div>
+                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">dflt</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="StringAtom"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.StringAtom">[docs]</a><span class="k">class</span> <span class="nc">StringAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span>
@@ -869,13 +839,13 @@
 <span class="n">UInt32Atom</span> <span class="o">=</span> <span class="n">_create_numeric_class</span><span class="p">(</span><span class="n">UIntAtom</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 <span class="n">UInt64Atom</span> <span class="o">=</span> <span class="n">_create_numeric_class</span><span class="p">(</span><span class="n">UIntAtom</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
 
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;float16&#39;</span><span class="p">):</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float16&#39;</span><span class="p">):</span>
     <span class="n">Float16Atom</span> <span class="o">=</span> <span class="n">_create_numeric_class</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">Float32Atom</span> <span class="o">=</span> <span class="n">_create_numeric_class</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 <span class="n">Float64Atom</span> <span class="o">=</span> <span class="n">_create_numeric_class</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;float96&#39;</span><span class="p">):</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float96&#39;</span><span class="p">):</span>
     <span class="n">Float96Atom</span> <span class="o">=</span> <span class="n">_create_numeric_class</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;float128&#39;</span><span class="p">):</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float128&#39;</span><span class="p">):</span>
     <span class="n">Float128Atom</span> <span class="o">=</span> <span class="n">_create_numeric_class</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
 
 
@@ -908,10 +878,10 @@
     <span class="c1"># registered by hand.</span>
     <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;complex64&#39;</span><span class="p">)</span>
     <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;complex128&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;complex192&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;complex192&#39;</span><span class="p">):</span>
         <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;complex192&#39;</span><span class="p">)</span>
         <span class="n">_isizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;complex256&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;complex256&#39;</span><span class="p">):</span>
         <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;complex256&#39;</span><span class="p">)</span>
         <span class="n">_isizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
 
@@ -931,10 +901,12 @@
             <span class="s2">&quot;please use ``ComplexAtom(itemsize=N)``, &quot;</span>
             <span class="s2">&quot;where N=8 for single precision complex atoms, &quot;</span>
             <span class="s2">&quot;and N=16 for double precision complex atoms&quot;</span><span class="p">)</span>
+
+
 <span class="n">Complex32Atom</span> <span class="o">=</span> <span class="n">Complex64Atom</span> <span class="o">=</span> <span class="n">Complex128Atom</span> <span class="o">=</span> <span class="n">_ComplexErrorAtom</span>
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;complex192&#39;</span><span class="p">):</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;complex192&#39;</span><span class="p">):</span>
     <span class="n">Complex192Atom</span> <span class="o">=</span> <span class="n">_ComplexErrorAtom</span>
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="p">,</span> <span class="s1">&#39;complex256&#39;</span><span class="p">):</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;complex256&#39;</span><span class="p">):</span>
     <span class="n">Complex256Atom</span> <span class="o">=</span> <span class="n">_ComplexErrorAtom</span>
 
 
@@ -1071,15 +1043,11 @@
     <span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;enum&#39;</span>
     <span class="nb">type</span> <span class="o">=</span> <span class="s1">&#39;enum&#39;</span>
 
-    <span class="c1"># Properties</span>
-    <span class="c1"># ~~~~~~~~~~</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Size in bytes of a single item in the atom.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">itemsize</span>
 
-    <span class="c1"># Private methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="nf">_checkbase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check the `base` storage atom.&quot;&quot;&quot;</span>
 
@@ -1092,11 +1060,11 @@
         <span class="n">basedtype</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">dtype</span>
         <span class="n">pyvalues</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span> <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enum</span><span class="p">]</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">npgenvalues</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pyvalues</span><span class="p">)</span>
+            <span class="n">npgenvalues</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pyvalues</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;concrete values are not uniformly-shaped&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">npvalues</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">npgenvalues</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">basedtype</span><span class="o">.</span><span class="n">base</span><span class="p">)</span>
+            <span class="n">npvalues</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">npgenvalues</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">basedtype</span><span class="o">.</span><span class="n">base</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;storage atom type is incompatible with &quot;</span>
                             <span class="s2">&quot;concrete values in the enumeration&quot;</span><span class="p">)</span>
@@ -1108,13 +1076,12 @@
                             <span class="s2">&quot;concrete values in the enumeration&quot;</span><span class="p">)</span>
 
         <span class="c1"># ...with some implementation limitations.</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">npvalues</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;u&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">npvalues</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;u&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;only integer concrete values &quot;</span>
                                       <span class="s2">&quot;are supported for the moment, sorry&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npvalues</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;only scalar concrete values &quot;</span>
                                       <span class="s2">&quot;are supported for the moment, sorry&quot;</span><span class="p">)</span>
-
 
     <span class="k">def</span> <span class="nf">_get_init_args</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a dictionary of instance constructor arguments.&quot;&quot;&quot;</span>
@@ -1131,11 +1098,9 @@
         <span class="sd">&quot;&quot;&quot;Is this object equal to the given `enumatom`?&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enum</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">enum</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">shape</span>
-                <span class="ow">and</span> <span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">dflt</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">dflt</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">base</span><span class="p">)</span>
 
-    <span class="c1"># Special methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enum</span><span class="p">,</span> <span class="n">dflt</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">()):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enum</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
             <span class="n">enum</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="n">enum</span><span class="p">)</span>
@@ -1158,7 +1123,7 @@
         <span class="n">basedtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">dtype</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_names</span> <span class="o">=</span> <span class="n">names</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_values</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">basedtype</span><span class="o">.</span><span class="n">base</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">basedtype</span><span class="o">.</span><span class="n">base</span><span class="p">)</span>
 
         <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basedtype</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
 
@@ -1185,8 +1150,6 @@
     <span class="n">_deftype</span> <span class="o">=</span> <span class="s1">&#39;NoneType&#39;</span>
     <span class="n">_defvalue</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="c1"># Properties</span>
-    <span class="c1"># ~~~~~~~~~~</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Size in bytes of a single item in the atom.&quot;&quot;&quot;</span>
@@ -1196,7 +1159,7 @@
         <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_defvalue</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">&#39;ReferenceAtom(shape=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;ReferenceAtom(shape=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">)&#39;</span>
 
 <span class="c1"># Pseudo-atom classes</span>
 <span class="c1"># ===================</span>
@@ -1247,8 +1210,8 @@
 
     <span class="k">def</span> <span class="nf">toarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">):</span>
         <span class="n">buffer_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tobuffer</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
-        <span class="n">array</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">buffer</span><span class="o">=</span><span class="n">buffer_</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
-                              <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">buffer_</span><span class="p">))</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">buffer</span><span class="o">=</span><span class="n">buffer_</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                           <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">buffer_</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">array</span>
 
     <span class="k">def</span> <span class="nf">_tobuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">):</span>
@@ -1292,8 +1255,8 @@
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Storing non bytestrings in VLStringAtom is &quot;</span>
                           <span class="s2">&quot;deprecated.&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;object is not a string: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">object_</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">string_</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;object is not a string: </span><span class="si">{</span><span class="n">object_</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">string_</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
 
 <div class="viewcode-block" id="VLStringAtom.fromarray"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.VLStringAtom.fromarray">[docs]</a>    <span class="k">def</span> <span class="nf">fromarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">array</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span></div></div>
@@ -1334,10 +1297,10 @@
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Storing bytestrings in VLUnicodeAtom is &quot;</span>
                           <span class="s2">&quot;deprecated.&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;object is not a string: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">object_</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;object is not a string: </span><span class="si">{</span><span class="n">object_</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">ustr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
-        <span class="n">uarr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ustr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span>
+        <span class="n">uarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ustr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span>
             <span class="n">buffer</span><span class="o">=</span><span class="n">uarr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">ustr</span><span class="p">))</span></div>
 
     <span class="k">def</span> <span class="nf">_tobuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">):</span>
@@ -1348,8 +1311,8 @@
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Storing bytestrings in VLUnicodeAtom is &quot;</span>
                           <span class="s2">&quot;deprecated.&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;object is not a string: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">object_</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unicode_</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;object is not a string: </span><span class="si">{</span><span class="n">object_</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">unicode_</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
 
 <div class="viewcode-block" id="VLUnicodeAtom.fromarray"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.VLUnicodeAtom.fromarray">[docs]</a>    <span class="k">def</span> <span class="nf">fromarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
         <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
@@ -1394,28 +1357,25 @@
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2011–2020, PyTables maintainers
+        &#169; Copyright 2011–2021, PyTables maintainers.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

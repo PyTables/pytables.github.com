@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>tables.earray &mdash; PyTables 3.6.2.dev0 documentation</title>
   
@@ -17,13 +17,13 @@
 
   
   
+
   
   
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+
+  
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -150,6 +150,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -174,19 +176,9 @@
            <div itemprop="articleBody">
             
   <h1>Source code for tables.earray</h1><div class="highlight"><pre>
-<span></span><span class="c1">########################################################################</span>
-<span class="c1">#</span>
-<span class="c1"># License: BSD</span>
-<span class="c1"># Created: December 15, 2003</span>
-<span class="c1"># Author: Francesc Alted - faltet@pytables.com</span>
-<span class="c1">#</span>
-<span class="c1"># $Id$</span>
-<span class="c1">#</span>
-<span class="c1">########################################################################</span>
+<span></span><span class="sd">&quot;&quot;&quot;Here is defined the EArray class.&quot;&quot;&quot;</span>
 
-<span class="sd">&quot;&quot;&quot;Here is defined the EArray class.&quot;&quot;&quot;</span>
-
-<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">convert_to_np_atom2</span><span class="p">,</span> <span class="n">SizeType</span>
 <span class="kn">from</span> <span class="nn">.carray</span> <span class="kn">import</span> <span class="n">CArray</span>
@@ -282,17 +274,17 @@
 <span class="sd">    See below a small example of the use of the `EArray` class.  The</span>
 <span class="sd">    code is available in ``examples/earray1.py``::</span>
 
-<span class="sd">        import tables</span>
-<span class="sd">        import numpy</span>
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import tables as tb</span>
 
-<span class="sd">        fileh = tables.open_file(&#39;earray1.h5&#39;, mode=&#39;w&#39;)</span>
-<span class="sd">        a = tables.StringAtom(itemsize=8)</span>
+<span class="sd">        fileh = tb.open_file(&#39;earray1.h5&#39;, mode=&#39;w&#39;)</span>
+<span class="sd">        a = tb.StringAtom(itemsize=8)</span>
 
 <span class="sd">        # Use ``a`` as the object type for the enlargeable array.</span>
 <span class="sd">        array_c = fileh.create_earray(fileh.root, &#39;array_c&#39;, a, (0,),</span>
 <span class="sd">                                      \&quot;Chars\&quot;)</span>
-<span class="sd">        array_c.append(numpy.array([&#39;a&#39;*2, &#39;b&#39;*4], dtype=&#39;S8&#39;))</span>
-<span class="sd">        array_c.append(numpy.array([&#39;a&#39;*6, &#39;b&#39;*8, &#39;c&#39;*10], dtype=&#39;S8&#39;))</span>
+<span class="sd">        array_c.append(np.array([&#39;a&#39;*2, &#39;b&#39;*4], dtype=&#39;S8&#39;))</span>
+<span class="sd">        array_c.append(np.array([&#39;a&#39;*6, &#39;b&#39;*8, &#39;c&#39;*10], dtype=&#39;S8&#39;))</span>
 
 <span class="sd">        # Read the string ``EArray`` we have created on disk.</span>
 <span class="sd">        for s in array_c:</span>
@@ -313,9 +305,6 @@
     <span class="c1"># Class identifier.</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;EARRAY&#39;</span>
 
-
-    <span class="c1"># Special methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">atom</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
                  <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -332,13 +321,11 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span>
                          <span class="n">chunkshape</span><span class="p">,</span> <span class="n">byteorder</span><span class="p">,</span> <span class="n">_log</span><span class="p">,</span> <span class="n">track_times</span><span class="p">)</span>
 
-    <span class="c1"># Public and private methods</span>
-    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
     <span class="k">def</span> <span class="nf">_g_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a new array in file (specific part).&quot;&quot;&quot;</span>
 
         <span class="c1"># Pre-conditions and extdim computation</span>
-        <span class="n">zerodims</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">zerodims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">zerodims</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">zerodims</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">extdim</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -369,7 +356,6 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span><span class="s2">&quot;the shapes of the appended object and the &quot;</span>
                                   <span class="s2">&quot;``</span><span class="si">%s</span><span class="s2">`` EArray differ in non-enlargeable &quot;</span>
                                   <span class="s2">&quot;dimension </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
-
 
 <div class="viewcode-block" id="EArray.append"><a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.EArray.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add a sequence of data to the end of the dataset.</span>
@@ -428,45 +414,34 @@
             <span class="nb">object</span><span class="o">.</span><span class="n">_append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">slices</span><span class="p">)))</span>
         <span class="c1"># Active the conversion again (default)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">nbytes</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">itemsize</span>
+        <span class="n">nbytes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">itemsize</span>
 
         <span class="k">return</span> <span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">nbytes</span><span class="p">)</span></div>
-
-
-<span class="c1">## Local Variables:</span>
-<span class="c1">## mode: python</span>
-<span class="c1">## py-indent-offset: 4</span>
-<span class="c1">## tab-width: 4</span>
-<span class="c1">## fill-column: 72</span>
-<span class="c1">## End:</span>
 </pre></div>
 
            </div>
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2011–2020, PyTables maintainers
+        &#169; Copyright 2011–2021, PyTables maintainers.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

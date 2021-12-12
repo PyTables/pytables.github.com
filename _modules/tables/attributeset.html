@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>tables.attributeset &mdash; PyTables 3.6.2.dev0 documentation</title>
   
@@ -17,13 +17,13 @@
 
   
   
+
   
   
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+
+  
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -150,6 +150,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -174,23 +176,13 @@
            <div itemprop="articleBody">
             
   <h1>Source code for tables.attributeset</h1><div class="highlight"><pre>
-<span></span><span class="c1">########################################################################</span>
-<span class="c1">#</span>
-<span class="c1"># License: BSD</span>
-<span class="c1"># Created: May 26, 2003</span>
-<span class="c1"># Author: Francesc Alted - faltet@pytables.com</span>
-<span class="c1">#</span>
-<span class="c1"># $Id$</span>
-<span class="c1">#</span>
-<span class="c1">########################################################################</span>
-
-<span class="sd">&quot;&quot;&quot;Here is defined the AttributeSet class.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Here is defined the AttributeSet class.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
-<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">SizeType</span>
@@ -199,7 +191,6 @@
 <span class="kn">from</span> <span class="nn">.path</span> <span class="kn">import</span> <span class="n">check_attribute_name</span>
 <span class="kn">from</span> <span class="nn">.undoredo</span> <span class="kn">import</span> <span class="n">attr_to_shadow</span>
 <span class="kn">from</span> <span class="nn">.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
-
 
 
 <span class="c1"># System attributes</span>
@@ -235,12 +226,8 @@
 <span class="k">def</span> <span class="nf">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Check if a name is a system attribute or not&quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="n">name</span> <span class="ow">in</span> <span class="n">SYS_ATTRS</span> <span class="ow">or</span>
-            <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">SYS_ATTRS_PREFIXES</span><span class="p">])):</span>
-        <span class="k">return</span> <span class="kc">True</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">name</span> <span class="ow">in</span> <span class="n">SYS_ATTRS</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">SYS_ATTRS_PREFIXES</span><span class="p">]))</span>
 
 
 <div class="viewcode-block" id="AttributeSet"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet">[docs]</a><span class="k">class</span> <span class="nc">AttributeSet</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">AttributeSet</span><span class="p">):</span>
@@ -291,21 +278,21 @@
 <span class="sd">    get an idea of where things went wrong, as shown in this example::</span>
 
 <span class="sd">        &gt;&gt;&gt; import os, tempfile</span>
-<span class="sd">        &gt;&gt;&gt; import tables</span>
+<span class="sd">        &gt;&gt;&gt; import tables as tb</span>
 <span class="sd">        &gt;&gt;&gt;</span>
 <span class="sd">        &gt;&gt;&gt; class MyClass(object):</span>
 <span class="sd">        ...   foo = &#39;bar&#39;</span>
 <span class="sd">        ...</span>
 <span class="sd">        &gt;&gt;&gt; myObject = MyClass()  # save object of custom class in HDF5 attr</span>
 <span class="sd">        &gt;&gt;&gt; h5fname = tempfile.mktemp(suffix=&#39;.h5&#39;)</span>
-<span class="sd">        &gt;&gt;&gt; h5f = tables.open_file(h5fname, &#39;w&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; h5f = tb.open_file(h5fname, &#39;w&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; h5f.root._v_attrs.obj = myObject  # store the object</span>
 <span class="sd">        &gt;&gt;&gt; print(h5f.root._v_attrs.obj.foo)  # retrieve it</span>
 <span class="sd">        bar</span>
 <span class="sd">        &gt;&gt;&gt; h5f.close()</span>
 <span class="sd">        &gt;&gt;&gt;</span>
 <span class="sd">        &gt;&gt;&gt; del MyClass, myObject  # delete class of object and reopen file</span>
-<span class="sd">        &gt;&gt;&gt; h5f = tables.open_file(h5fname, &#39;r&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; h5f = tb.open_file(h5fname, &#39;r&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; print(repr(h5f.root._v_attrs.obj))</span>
 <span class="sd">        &#39;ccopy_reg\\n_reconstructor...</span>
 <span class="sd">        &gt;&gt;&gt; import pickle  # let&#39;s unpickle that to see what went wrong</span>
@@ -323,7 +310,8 @@
 
 <span class="sd">    Note that this class overrides the __getattr__(), __setattr__(),</span>
 <span class="sd">    __delattr__() and __dir__() special methods.  This allows you to</span>
-<span class="sd">    read, assign or delete attributes on disk by just using the next constructs::</span>
+<span class="sd">    read, assign or delete attributes on disk by just using the next</span>
+<span class="sd">    constructs::</span>
 
 <span class="sd">        leaf.attrs.myattr = &#39;str attr&#39;    # set a string (native support)</span>
 <span class="sd">        leaf.attrs.myattr2 = 3            # set an integer (native support)</span>
@@ -439,7 +427,6 @@
         <span class="c1"># hdf5extension operations:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_new</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
 
-
 <div class="viewcode-block" id="AttributeSet._f_list"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_list">[docs]</a>    <span class="k">def</span> <span class="nf">_f_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrset</span><span class="o">=</span><span class="s1">&#39;user&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a list of attribute names.</span>
 
@@ -470,9 +457,9 @@
         <span class="sd">&quot;&quot;&quot;Get the attribute named &quot;name&quot;.&quot;&quot;&quot;</span>
 
         <span class="c1"># If attribute does not exist, raise AttributeError</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Attribute &#39;</span><span class="si">%s</span><span class="s2">&#39; does not exist in node: &quot;</span>
-                                 <span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attribute </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> does not exist &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;in node: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># Read the attribute from disk. This is an optimization to read</span>
         <span class="c1"># quickly system attributes that are _string_ values, but it</span>
@@ -484,8 +471,8 @@
         <span class="c1"># Check whether the value is pickled</span>
         <span class="c1"># Pickled values always seems to end with a &quot;.&quot;</span>
         <span class="n">maybe_pickled</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">generic</span><span class="p">)</span> <span class="ow">and</span>  <span class="c1"># NumPy scalar?</span>
-            <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">bytes_</span> <span class="ow">and</span>  <span class="c1"># string type?</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)</span> <span class="ow">and</span>  <span class="c1"># NumPy scalar?</span>
+            <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">bytes_</span> <span class="ow">and</span>  <span class="c1"># string type?</span>
             <span class="n">value</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;.&#39;</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">maybe_pickled</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">[</span><span class="sa">b</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;0.&quot;</span><span class="p">]):</span>
@@ -498,10 +485,13 @@
             <span class="c1"># for string defaults.</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">retval</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-                <span class="n">retval</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">retval</span><span class="p">)</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">retval</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
                 <span class="n">retval</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># signal error avoiding exception</span>
-        <span class="k">elif</span> <span class="n">maybe_pickled</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;FILTERS&#39;</span> <span class="ow">and</span> <span class="n">format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">format_version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">maybe_pickled</span> <span class="ow">and</span>
+              <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;FILTERS&#39;</span> <span class="ow">and</span>
+              <span class="n">format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
+              <span class="n">format_version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
             <span class="c1"># This is a big hack, but we don&#39;t have other way to recognize</span>
             <span class="c1"># pickled filters of PyTables 1.x files.</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">_old_filters_re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">_new_filters_sub</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -525,11 +515,11 @@
                 <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">retval</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;bytes&#39;</span><span class="p">)</span>
-                    <span class="k">except</span><span class="p">:</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                         <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
-                <span class="k">except</span><span class="p">:</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
-            <span class="k">except</span><span class="p">:</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="c1"># catch other unpickling errors:</span>
                 <span class="c1"># ivb (2005-09-07): It is too hard to tell</span>
                 <span class="c1"># whether the unpickling failed</span>
@@ -542,8 +532,10 @@
                 <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
             <span class="c1"># Additional check for allowing a workaround for #307</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">retval</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">retval</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
-                <span class="n">retval</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">retval</span><span class="p">)[()]</span>
-        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;FILTERS&#39;</span> <span class="ow">and</span> <span class="n">format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">retval</span><span class="p">)[()]</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;FILTERS&#39;</span> <span class="ow">and</span>
+              <span class="n">format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
+              <span class="n">format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">retval</span> <span class="o">=</span> <span class="n">Filters</span><span class="o">.</span><span class="n">_unpack</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -580,12 +572,14 @@
         <span class="n">stvalue</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">if</span> <span class="n">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;EXTDIM&quot;</span><span class="p">,</span> <span class="s2">&quot;AUTO_INDEX&quot;</span><span class="p">,</span> <span class="s2">&quot;DIRTY&quot;</span><span class="p">,</span> <span class="s2">&quot;NODE_TYPE_VERSION&quot;</span><span class="p">]:</span>
-                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">stvalue</span><span class="p">[()]</span>
             <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;NROWS&quot;</span><span class="p">:</span>
-                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
+                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">stvalue</span><span class="p">[()]</span>
-            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;FILTERS&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;FILTERS&quot;</span> <span class="ow">and</span>
+                  <span class="bp">self</span><span class="o">.</span><span class="n">_v__format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
+                  <span class="bp">self</span><span class="o">.</span><span class="n">_v__format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
                 <span class="n">stvalue</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">_pack</span><span class="p">()</span>
                 <span class="c1"># value will remain as a Filters instance here</span>
         <span class="c1"># Convert value from a Python scalar into a NumPy scalar</span>
@@ -593,12 +587,12 @@
         <span class="c1"># Fixes ticket #59</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">stvalue</span> <span class="ow">is</span> <span class="n">value</span> <span class="ow">and</span>
                 <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span>
-                                <span class="n">numpy</span><span class="o">.</span><span class="n">unicode_</span><span class="p">)):</span>
+                                <span class="n">np</span><span class="o">.</span><span class="n">unicode_</span><span class="p">)):</span>
             <span class="c1"># Additional check for allowing a workaround for #307</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">stvalue</span><span class="p">[()]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_node</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">stvalue</span><span class="p">)</span>
@@ -609,7 +603,7 @@
 
         <span class="c1"># Finally, add this attribute to the list if not present</span>
         <span class="n">attrnames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">attrnames</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">attrnames</span><span class="p">:</span>
             <span class="n">attrnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
             <span class="n">attrnames</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
@@ -668,14 +662,12 @@
     <span class="k">def</span> <span class="nf">_g_log_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s1">&#39;ADDATTR&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
-
     <span class="k">def</span> <span class="nf">_g_del_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="n">nodefile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span>
         <span class="n">node_pathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span>
         <span class="c1"># Log *before* moving to use the right shadow name.</span>
         <span class="n">nodefile</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s1">&#39;DELATTR&#39;</span><span class="p">,</span> <span class="n">node_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="n">attr_to_shadow</span><span class="p">(</span><span class="n">nodefile</span><span class="p">,</span> <span class="n">node_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-
 
     <span class="k">def</span> <span class="nf">_g__delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Delete a PyTables attribute.</span>
@@ -835,7 +827,7 @@
         <span class="c1"># However, we need to know Node here.</span>
         <span class="c1"># Using class_name_dict avoids a circular import.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">class_name_dict</span><span class="p">[</span><span class="s1">&#39;Node&#39;</span><span class="p">]):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;destination object is not a node: </span><span class="si">{!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">where</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;destination object is not a node: </span><span class="si">{</span><span class="n">where</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_g_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -851,21 +843,17 @@
         <span class="c1"># Get this class name</span>
         <span class="n">classname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="c1"># The attribute names</span>
-        <span class="n">attrnumber</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">])</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">._v_attrs (</span><span class="si">%s</span><span class="s2">), </span><span class="si">%s</span><span class="s2"> attributes&quot;</span> <span class="o">%</span> \
-               <span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="n">classname</span><span class="p">,</span> <span class="n">attrnumber</span><span class="p">)</span>
+        <span class="n">attrnumber</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pathname</span><span class="si">}</span><span class="s2">._v_attrs (</span><span class="si">{</span><span class="n">classname</span><span class="si">}</span><span class="s2">), </span><span class="si">{</span><span class="n">attrnumber</span><span class="si">}</span><span class="s2"> attributes&quot;</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;A detailed string representation for this object.&quot;&quot;&quot;</span>
 
         <span class="c1"># print additional info only if there are attributes to show</span>
-        <span class="n">attrnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attrnames</span><span class="p">):</span>
-            <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> := </span><span class="si">{!r}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span>
-                   <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrnames</span><span class="p">]</span>
-            <span class="n">attrlist</span> <span class="o">=</span> <span class="s1">&#39;[</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;,</span><span class="se">\n</span><span class="s1">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rep</span><span class="p">))</span>
-
-            <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">   </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">attrlist</span><span class="p">)</span>
+        <span class="n">attrnames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">attrnames</span><span class="p">:</span>
+            <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s1"> := </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span><span class="si">!r}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrnames</span><span class="p">]</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="si">!s}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">   [&quot;</span> <span class="o">+</span> <span class="s1">&#39;,</span><span class="se">\n</span><span class="s1">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rep</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;]&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
@@ -874,45 +862,33 @@
     <span class="k">def</span> <span class="nf">_g_log_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="k">pass</span>
 
-
     <span class="k">def</span> <span class="nf">_g_del_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g__delattr</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-
-
-<span class="c1">## Local Variables:</span>
-<span class="c1">## mode: python</span>
-<span class="c1">## py-indent-offset: 4</span>
-<span class="c1">## tab-width: 4</span>
-<span class="c1">## fill-column: 72</span>
-<span class="c1">## End:</span>
 </pre></div>
 
            </div>
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2011–2020, PyTables maintainers
+        &#169; Copyright 2011–2021, PyTables maintainers.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
