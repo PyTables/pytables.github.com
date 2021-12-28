@@ -1,39 +1,22 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Optimization tips &mdash; PyTables 3.7.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  <title>Optimization tips &mdash; PyTables 3.6.2.dev0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="filenode - simulating a filesystem with PyTables" href="filenode.html" />
@@ -52,36 +35,17 @@
 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../index.html">
-          
-
-          
-            
             <img src="../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
-          
           </a>
-
-          
-            
-            
               <div class="version">
-                3.6.2.dev0
+                3.7.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -89,18 +53,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="index.html">User’s Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
@@ -114,74 +67,32 @@
 <li class="toctree-l1"><a class="reference internal" href="../dev_team.html">Development Team</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">PyTables</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="index.html">PyTables User’s Guide</a> &raquo;</li>
-        
       <li>Optimization tips</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="../_sources/usersguide/optimization.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="optimization-tips">
+             
+  <section id="optimization-tips">
 <h1>Optimization tips<a class="headerlink" href="#optimization-tips" title="Permalink to this headline">¶</a></h1>
 <blockquote class="epigraph">
 <div><p>… durch planmässiges Tattonieren.</p>
@@ -197,7 +108,7 @@ efficiency boost for your code.  But if your datasets are small (say, up to
 worry about that as the default parameters in PyTables are already tuned for
 those sizes (although you may want to adjust them further anyway).  At any
 rate, reading this chapter will help you in your life with PyTables.</p>
-<div class="section" id="understanding-chunking">
+<section id="understanding-chunking">
 <h2>Understanding chunking<a class="headerlink" href="#understanding-chunking" title="Permalink to this headline">¶</a></h2>
 <p>The underlying HDF5 library that is used by PyTables allows for certain
 datasets (the so-called <em>chunked</em> datasets) to take the data in bunches of a
@@ -220,7 +131,7 @@ Although doing this latter is only reserved to experienced people, these
 benchmarks may allow you to understand more deeply the chunk size
 implications and let you quickly start with the fine-tuning of this important
 parameter.</p>
-<div class="section" id="informing-pytables-about-expected-number-of-rows-in-tables-or-arrays">
+<section id="informing-pytables-about-expected-number-of-rows-in-tables-or-arrays">
 <span id="expectedrowsoptim"></span><h3>Informing PyTables about expected number of rows in tables or arrays<a class="headerlink" href="#informing-pytables-about-expected-number-of-rows-in-tables-or-arrays" title="Permalink to this headline">¶</a></h3>
 <p>PyTables can determine a sensible chunk size to your dataset size if you
 help it by providing an estimation of the final number of rows for an
@@ -234,8 +145,8 @@ access to your data.  When the table or array size is larger than, say 100MB,
 you are <em>strongly</em> suggested to provide such a guess; failing to do that may
 cause your application to do very slow I/O operations and to demand <em>huge</em>
 amounts of memory. You have been warned!</p>
-</div>
-<div class="section" id="fine-tuning-the-chunksize">
+</section>
+<section id="fine-tuning-the-chunksize">
 <span id="chunksizefinetune"></span><h3>Fine-tuning the chunksize<a class="headerlink" href="#fine-tuning-the-chunksize" title="Permalink to this headline">¶</a></h3>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -279,34 +190,42 @@ increase the chunksize to 512 KB (see <a class="reference internal" href="#seqti
 will not normally get a drastic increase in performance, but at least, you
 have the opportunity to fine-tune such an important parameter for improve
 performance.</p>
-<div class="figure align-center" id="id9">
+<figure class="align-center" id="id9">
 <span id="createtime-chunksize"></span><img alt="../_images/create-chunksize-15GB.png" src="../_images/create-chunksize-15GB.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 1. Creation time per element for a 15 GB EArray and different
+<figcaption>
+<p><span class="caption-text"><strong>Figure 1. Creation time per element for a 15 GB EArray and different
 chunksizes.</strong></span><a class="headerlink" href="#id9" title="Permalink to this image">¶</a></p>
-</div>
-<div class="figure align-center" id="id10">
+</figcaption>
+</figure>
+<figure class="align-center" id="id10">
 <span id="filesizes-chunksize"></span><img alt="../_images/filesizes-chunksize-15GB.png" src="../_images/filesizes-chunksize-15GB.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 2. File sizes for a 15 GB EArray and different chunksizes.</strong></span><a class="headerlink" href="#id10" title="Permalink to this image">¶</a></p>
-</div>
-<div class="figure align-center" id="id11">
+<figcaption>
+<p><span class="caption-text"><strong>Figure 2. File sizes for a 15 GB EArray and different chunksizes.</strong></span><a class="headerlink" href="#id10" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<figure class="align-center" id="id11">
 <span id="seqtime-chunksize"></span><img alt="../_images/seq-chunksize-15GB.png" src="../_images/seq-chunksize-15GB.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 3. Sequential access time per element for a 15 GB EArray and
+<figcaption>
+<p><span class="caption-text"><strong>Figure 3. Sequential access time per element for a 15 GB EArray and
 different chunksizes.</strong></span><a class="headerlink" href="#id11" title="Permalink to this image">¶</a></p>
-</div>
-<div class="figure align-center" id="id12">
+</figcaption>
+</figure>
+<figure class="align-center" id="id12">
 <span id="randomtime-chunksize"></span><img alt="../_images/random-chunksize-15GB.png" src="../_images/random-chunksize-15GB.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 4. Random access time per element for a 15 GB EArray and
+<figcaption>
+<p><span class="caption-text"><strong>Figure 4. Random access time per element for a 15 GB EArray and
 different chunksizes.</strong></span><a class="headerlink" href="#id12" title="Permalink to this image">¶</a></p>
-</div>
+</figcaption>
+</figure>
 <p>Finally, it is worth noting that adjusting the chunksize can be specially
 important if you want to access your dataset by blocks of certain dimensions.
 In this case, it is normally a good idea to set your chunkshape to be the
 same than these dimensions; you only have to be careful to not end with a too
 small or too large chunksize.  As always, experimenting prior to pass your
 application into production is your best ally.</p>
-</div>
-</div>
-<div class="section" id="accelerating-your-searches">
+</section>
+</section>
+<section id="accelerating-your-searches">
 <span id="searchoptim"></span><h2>Accelerating your searches<a class="headerlink" href="#accelerating-your-searches" title="Permalink to this headline">¶</a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -354,7 +273,7 @@ complex query like this:</p>
 <p>(for future reference, we will call this sort of queries <em>regular</em> queries).
 So, if you want to see how to greatly improve the time taken to run queries
 like this, keep reading.</p>
-<div class="section" id="in-kernel-searches">
+<section id="in-kernel-searches">
 <span id="inkernelsearch"></span><h3>In-kernel searches<a class="headerlink" href="#in-kernel-searches" title="Permalink to this headline">¶</a></h3>
 <p>PyTables provides a way to accelerate data selections inside of a single
 table, through the use of the <a class="reference internal" href="libref/structured_storage.html#tablemethods-querying"><span class="std std-ref">Table methods - querying</span></a> iterator and
@@ -371,11 +290,13 @@ mentioned above:</p>
 actually make PyTables very competitive when compared against typical
 relational databases as you can see in <a class="reference internal" href="#sequentialtimes-10m"><span class="std std-ref">Figure 5</span></a>
 and <a class="reference internal" href="#sequentialtimes-1g"><span class="std std-ref">Figure 6</span></a>.</p>
-<div class="figure align-center" id="id13">
+<figure class="align-center" id="id13">
 <span id="sequentialtimes-10m"></span><img alt="../_images/Q7-10m-noidx.png" src="../_images/Q7-10m-noidx.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 5. Times for non-indexed complex queries in a small table with
+<figcaption>
+<p><span class="caption-text"><strong>Figure 5. Times for non-indexed complex queries in a small table with
 10 millions of rows: the data fits in memory.</strong></span><a class="headerlink" href="#id13" title="Permalink to this image">¶</a></p>
-</div>
+</figcaption>
+</figure>
 <p>By looking at <a class="reference internal" href="#sequentialtimes-10m"><span class="std std-ref">Figure 5</span></a> you can see how in the
 case that table data fits easily in memory, in-kernel searches on
 uncompressed tables are generally much faster (10x) than standard queries as
@@ -418,11 +339,13 @@ I/O subsystem, not in the CPU).  In this case the compression rate is around
 using the LZO compressor is the best way to ensure best reading/querying
 performance for out-of-core datasets (more about how compression affects
 performance in <a class="reference internal" href="#compressionissues"><span class="std std-ref">Compression issues</span></a>).</p>
-<div class="figure align-center" id="id14">
+<figure class="align-center" id="id14">
 <span id="sequentialtimes-1g"></span><img alt="../_images/Q8-1g-noidx.png" src="../_images/Q8-1g-noidx.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 6. Times for non-indexed complex queries in a large table with 1
+<figcaption>
+<p><span class="caption-text"><strong>Figure 6. Times for non-indexed complex queries in a large table with 1
 billion of rows: the data does not fit in memory.</strong></span><a class="headerlink" href="#id14" title="Permalink to this image">¶</a></p>
-</div>
+</figcaption>
+</figure>
 <p>Furthermore, you can mix the <em>in-kernel</em> and <em>regular</em> selection modes for
 evaluating arbitrarily complex conditions making use of external functions.
 Look at this example:</p>
@@ -444,8 +367,8 @@ many typical functions, it is unlikely that you will be forced to use
 external regular selections in conditions of small to medium complexity.
 See <a class="reference internal" href="condition_syntax.html#condition-syntax"><span class="std std-ref">Condition Syntax</span></a> for more information on in-kernel condition
 syntax.</p>
-</div>
-<div class="section" id="indexed-searches">
+</section>
+<section id="indexed-searches">
 <h3>Indexed searches<a class="headerlink" href="#indexed-searches" title="Permalink to this headline">¶</a></h3>
 <p>When you need more speed than <em>in-kernel</em> selections can offer you, PyTables
 offers a third selection method, the so-called <em>indexed</em> mode (based on the
@@ -514,14 +437,18 @@ the contrary, most relational databases have to deliver decent performance in
 other scenarios as well (specially updates and deletions), and this fact
 leads not only to slower index creation times, but also to indexes taking
 much more space on disk, as you can see in <a class="reference internal" href="#indexsizes"><span class="std std-ref">Figure 8</span></a>.</p>
-<div class="figure align-center" id="id15">
+<figure class="align-center" id="id15">
 <span id="createindextimes"></span><img alt="../_images/create-index-time-int32-float64.png" src="../_images/create-index-time-int32-float64.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 7. Times for indexing an Int32 and Float64 column.</strong></span><a class="headerlink" href="#id15" title="Permalink to this image">¶</a></p>
-</div>
-<div class="figure align-center" id="id16">
+<figcaption>
+<p><span class="caption-text"><strong>Figure 7. Times for indexing an Int32 and Float64 column.</strong></span><a class="headerlink" href="#id15" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<figure class="align-center" id="id16">
 <span id="indexsizes"></span><img alt="../_images/indexes-sizes2.png" src="../_images/indexes-sizes2.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 8. Sizes for an index of a Float64 column with 1 billion of rows.</strong></span><a class="headerlink" href="#id16" title="Permalink to this image">¶</a></p>
-</div>
+<figcaption>
+<p><span class="caption-text"><strong>Figure 8. Sizes for an index of a Float64 column with 1 billion of rows.</strong></span><a class="headerlink" href="#id16" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
 <p>The user can select the index quality by passing the desired optlevel and
 kind arguments to the <a class="reference internal" href="libref/structured_storage.html#tables.Column.create_index" title="tables.Column.create_index"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Column.create_index()</span></code></a> method.  We can see in
 figures <a class="reference internal" href="#createindextimes"><span class="std std-ref">Figure 7</span></a> and <a class="reference internal" href="#indexsizes"><span class="std std-ref">Figure 8</span></a>
@@ -529,26 +456,30 @@ how the different optimization levels affects index time creation and index
 sizes.</p>
 <p>So, which is the effect of the different optimization levels in terms of
 query times?  You can see that in <a class="reference internal" href="#querytimes-indexed-optlevels"><span class="std std-ref">Figure 9</span></a>.</p>
-<div class="figure align-center" id="id17">
+<figure class="align-center" id="id17">
 <span id="querytimes-indexed-optlevels"></span><img alt="../_images/Q8-1g-idx-optlevels.png" src="../_images/Q8-1g-idx-optlevels.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 9. Times for complex queries with a cold cache (mean of 5 first
+<figcaption>
+<p><span class="caption-text"><strong>Figure 9. Times for complex queries with a cold cache (mean of 5 first
 random queries) for different optimization levels. Benchmark made on a machine with Intel Core2 (64-bit) &#64; 3 GHz processor with RAID-0 disk storage.</strong></span><a class="headerlink" href="#id17" title="Permalink to this image">¶</a></p>
-</div>
+</figcaption>
+</figure>
 <p>Of course, compression also has an effect when doing indexed queries,
 although not very noticeable, as can be seen in
 <a class="reference internal" href="#querytimes-indexed-compress"><span class="std std-ref">Figure 10</span></a>.
 As you can see, the difference between using no compression and using Zlib or
 LZO is very little, although LZO achieves relatively better performance
 generally speaking.</p>
-<div class="figure align-center" id="id18">
+<figure class="align-center" id="id18">
 <span id="querytimes-indexed-compress"></span><img alt="../_images/Q8-1g-idx-compress.png" src="../_images/Q8-1g-idx-compress.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 10. Times for complex queries with a cold cache (mean of 5 first
+<figcaption>
+<p><span class="caption-text"><strong>Figure 10. Times for complex queries with a cold cache (mean of 5 first
 random queries) for different compressors.</strong></span><a class="headerlink" href="#id18" title="Permalink to this image">¶</a></p>
-</div>
+</figcaption>
+</figure>
 <p>You can find a more complete description and benchmarks about OPSI, the
 indexing system of PyTables (&gt;= 2.3) in <a class="reference internal" href="bibliography.html#opsi"><span class="std std-ref">[OPSI]</span></a>.</p>
-</div>
-<div class="section" id="indexing-and-solid-state-disks-ssd">
+</section>
+<section id="indexing-and-solid-state-disks-ssd">
 <h3>Indexing and Solid State Disks (SSD)<a class="headerlink" href="#indexing-and-solid-state-disks-ssd" title="Permalink to this headline">¶</a></h3>
 <p>Lately, the long promised Solid State Disks (SSD for brevity) with decent
 capacities and affordable prices have finally hit the market and will
@@ -573,11 +504,13 @@ is nothing to sneeze at, and should be kept in mind when really high
 performance in queries is needed.  It is also interesting that using
 compression with LZO does have a clear advantage over when no compression is
 done.</p>
-<div class="figure align-center" id="id19">
+<figure class="align-center" id="id19">
 <span id="querytimes-indexed-ssd"></span><img alt="../_images/Q8-1g-idx-SSD.png" src="../_images/Q8-1g-idx-SSD.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 11. Times for complex queries with a cold cache (mean of 5 first
+<figcaption>
+<p><span class="caption-text"><strong>Figure 11. Times for complex queries with a cold cache (mean of 5 first
 random queries) for different disk storage (SSD vs spinning disks).</strong></span><a class="headerlink" href="#id19" title="Permalink to this image">¶</a></p>
-</div>
+</figcaption>
+</figure>
 <p>Finally, we should remark that SSD can’t compete with traditional spinning
 disks in terms of capacity as they can only provide, for a similar cost,
 between 1/10th and 1/50th of the size of traditional disks.  It is here where
@@ -593,8 +526,8 @@ would require spinning disks when using other databases</p>
 the space needed exceeded the capacity of our SSD., while allowing
 improvements in the speed of indexed queries between 2x (for medium to low
 selectivity queries) and 10x (for high selectivity queries).</p>
-</div>
-<div class="section" id="achieving-ultimate-speed-sorted-tables-and-beyond">
+</section>
+<section id="achieving-ultimate-speed-sorted-tables-and-beyond">
 <h3>Achieving ultimate speed: sorted tables and beyond<a class="headerlink" href="#achieving-ultimate-speed-sorted-tables-and-beyond" title="Permalink to this headline">¶</a></h3>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -630,11 +563,13 @@ other hand, when the number of hits is large (&gt; 1 million), the query times
 grow almost linearly, showing a near-perfect scalability for both RAID-0 and
 SSD setups (the sequential access to disk becomes the bottleneck in this
 case).</p>
-<div class="figure align-center" id="id20">
+<figure class="align-center" id="id20">
 <span id="querytimes-indexed-sorted"></span><img alt="../_images/Q8-1g-idx-sorted.png" src="../_images/Q8-1g-idx-sorted.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 12. Times for complex queries with a cold cache (mean of 5 first
+<figcaption>
+<p><span class="caption-text"><strong>Figure 12. Times for complex queries with a cold cache (mean of 5 first
 random queries) for unsorted and sorted tables.</strong></span><a class="headerlink" href="#id20" title="Permalink to this image">¶</a></p>
-</div>
+</figcaption>
+</figure>
 <p>Even though we have shown many ways to improve query times that should
 fulfill the needs of most of people, for those needing more, you can for sure
 discover new optimization opportunities.  For example, querying against
@@ -645,9 +580,9 @@ Reading the other sections of this chapter will help in finding new roads for
 increasing the performance as well.  You know, the limit for stopping the
 optimization process is basically your imagination (but, most plausibly, your
 available time ;-).</p>
-</div>
-</div>
-<div class="section" id="compression-issues">
+</section>
+</section>
+<section id="compression-issues">
 <span id="compressionissues"></span><h2>Compression issues<a class="headerlink" href="#compression-issues" title="Permalink to this headline">¶</a></h2>
 <p>One of the beauties of PyTables is that it supports compression on tables and
 arrays <a class="footnote-reference brackets" href="#id6" id="id2">2</a>, although it is not used by default. Compression of big amounts
@@ -656,7 +591,7 @@ being a very big consumer of CPU time resources. However, if you are willing
 to check if compression can help not only by reducing your dataset file size
 but <em>also</em> by improving I/O efficiency, specially when dealing with very
 large datasets, keep reading.</p>
-<div class="section" id="a-study-on-supported-compression-libraries">
+<section id="a-study-on-supported-compression-libraries">
 <h3>A study on supported compression libraries<a class="headerlink" href="#a-study-on-supported-compression-libraries" title="Permalink to this headline">¶</a></h3>
 <p>The compression library used by default is the <em>Zlib</em> (see
 <a class="reference internal" href="bibliography.html#zlib"><span class="std std-ref">[ZLIB]</span></a>). Since HDF5 <em>requires</em> it, you can safely use it and
@@ -708,10 +643,12 @@ bytes). Here is its definition:</p>
 in <a class="reference internal" href="#comprtblcomparison"><span class="std std-ref">Figure 13</span></a>. As you can see, LZO is the
 compressor that performs worse in this sense, but, curiously enough, there is
 not much difference between Zlib and bzip2.</p>
-<div class="figure align-center" id="id21">
+<figure class="align-center" id="id21">
 <span id="comprtblcomparison"></span><img alt="../_images/compressed-recordsize.png" src="../_images/compressed-recordsize.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 13. Comparison between different compression libraries.</strong></span><a class="headerlink" href="#id21" title="Permalink to this image">¶</a></p>
-</div>
+<figcaption>
+<p><span class="caption-text"><strong>Figure 13. Comparison between different compression libraries.</strong></span><a class="headerlink" href="#id21" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
 <p>Also, PyTables lets you select different compression levels for Zlib and
 bzip2, although you may get a bit disappointed by the small improvement that
 these compressors show when dealing with a combination of numbers and strings
@@ -720,18 +657,22 @@ as in our example. As a reference, see plot
 achieved by selecting different levels of Zlib.  Very oddly, the best
 compression ratio corresponds to level 1 (!).  See later for an explanation
 and more figures on this subject.</p>
-<div class="figure align-center" id="id22">
+<figure class="align-center" id="id22">
 <span id="comprzlibcomparison"></span><img alt="../_images/compressed-recordsize-zlib.png" src="../_images/compressed-recordsize-zlib.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 14. Comparison between different compression levels of Zlib.</strong></span><a class="headerlink" href="#id22" title="Permalink to this image">¶</a></p>
-</div>
+<figcaption>
+<p><span class="caption-text"><strong>Figure 14. Comparison between different compression levels of Zlib.</strong></span><a class="headerlink" href="#id22" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
 <p>Have also a look at <a class="reference internal" href="#comprwritecomparison"><span class="std std-ref">Figure 15</span></a>. It shows how the
 speed of writing rows evolves as the size (number of rows) of the table
 grows. Even though in these graphs the size of one single row is 16 bytes,
 you can most probably extrapolate these figures to other row sizes.</p>
-<div class="figure align-center" id="id23">
+<figure class="align-center" id="id23">
 <span id="comprwritecomparison"></span><img alt="../_images/compressed-writing.png" src="../_images/compressed-writing.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 15. Writing tables with several compressors.</strong></span><a class="headerlink" href="#id23" title="Permalink to this image">¶</a></p>
-</div>
+<figcaption>
+<p><span class="caption-text"><strong>Figure 15. Writing tables with several compressors.</strong></span><a class="headerlink" href="#id23" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
 <p>In <a class="reference internal" href="#comprreadnocachecomparison"><span class="std std-ref">Figure 16</span></a> you can see how compression
 affects the reading performance. In fact, what you see in the plot is an
 <em>in-kernel selection</em> speed, but provided that this operation is very fast
@@ -757,16 +698,20 @@ they do not fit in the OS filesystem cache) can be actually <em>better</em> than
 using compression at all. Finally, one can see that reading performance is
 very badly affected when bzip2 is used (it is 10x slower than LZO and 4x than
 Zlib), but this was somewhat expected anyway.</p>
-<div class="figure align-center" id="id24">
+<figure class="align-center" id="id24">
 <span id="comprreadnocachecomparison"></span><img alt="../_images/compressed-select-nocache.png" src="../_images/compressed-select-nocache.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 16. Selecting values in tables with several compressors.
+<figcaption>
+<p><span class="caption-text"><strong>Figure 16. Selecting values in tables with several compressors.
 The file is not in the OS cache.</strong></span><a class="headerlink" href="#id24" title="Permalink to this image">¶</a></p>
-</div>
-<div class="figure align-center" id="id25">
+</figcaption>
+</figure>
+<figure class="align-center" id="id25">
 <span id="comprreadcachecomparison"></span><img alt="../_images/compressed-select-cache.png" src="../_images/compressed-select-cache.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 17. Selecting values in tables with several compressors.
+<figcaption>
+<p><span class="caption-text"><strong>Figure 17. Selecting values in tables with several compressors.
 The file is in the OS cache.</strong></span><a class="headerlink" href="#id25" title="Permalink to this image">¶</a></p>
-</div>
+</figcaption>
+</figure>
 <p>So, generally speaking and looking at the experiments above, you can expect
 that LZO will be the fastest in both compressing and decompressing, but the
 one that achieves the worse compression ratio (although that may be just OK
@@ -803,17 +748,21 @@ Well, looking at the results, it is difficult to recommend its use in
 general, but you may want to experiment with it in those cases where you know
 that it is well suited for your data pattern (for example, for dealing with
 repetitive string datasets).</p>
-<div class="figure align-center" id="id26">
+<figure class="align-center" id="id26">
 <span id="comprwritezlibcomparison"></span><img alt="../_images/compressed-writing-zlib.png" src="../_images/compressed-writing-zlib.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 18. Writing in tables with different levels of compression.</strong></span><a class="headerlink" href="#id26" title="Permalink to this image">¶</a></p>
-</div>
-<div class="figure align-center" id="id27">
+<figcaption>
+<p><span class="caption-text"><strong>Figure 18. Writing in tables with different levels of compression.</strong></span><a class="headerlink" href="#id26" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<figure class="align-center" id="id27">
 <span id="comprreadzlibcomparison"></span><img alt="../_images/compressed-select-cache-zlib.png" src="../_images/compressed-select-cache-zlib.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 19. Selecting values in tables with different levels of
+<figcaption>
+<p><span class="caption-text"><strong>Figure 19. Selecting values in tables with different levels of
 compression. The file is in the OS cache.</strong></span><a class="headerlink" href="#id27" title="Permalink to this image">¶</a></p>
-</div>
-</div>
-<div class="section" id="shuffling-or-how-to-make-the-compression-process-more-effective">
+</figcaption>
+</figure>
+</section>
+<section id="shuffling-or-how-to-make-the-compression-process-more-effective">
 <span id="shufflingoptim"></span><h3>Shuffling (or how to make the compression process more effective)<a class="headerlink" href="#shuffling-or-how-to-make-the-compression-process-more-effective" title="Permalink to this headline">¶</a></h3>
 <p>The HDF5 library provides an interesting filter that can leverage the results
 of your favorite compressor. Its name is <em>shuffle</em>, and because it can
@@ -853,11 +802,13 @@ compressing data. In this experiment, shuffle has made LZO compress almost 3x
 more (!), while Zlib and bzip2 are seeing improvements of 2x. Once again, the
 data for this experiment is synthetic, and <em>shuffle</em> seems to do a great work
 with it, but in general, the results will vary in each case <a class="footnote-reference brackets" href="#id7" id="id3">3</a>.</p>
-<div class="figure align-center" id="id28">
+<figure class="align-center" id="id28">
 <span id="comprshufflecomparison"></span><img alt="../_images/compressed-recordsize-shuffle.png" src="../_images/compressed-recordsize-shuffle.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 20. Comparison between different compression libraries with and
+<figcaption>
+<p><span class="caption-text"><strong>Figure 20. Comparison between different compression libraries with and
 without the shuffle filter.</strong></span><a class="headerlink" href="#id28" title="Permalink to this image">¶</a></p>
-</div>
+</figcaption>
+</figure>
 <p>At any rate, the most remarkable fact about the <em>shuffle</em> filter is the
 relatively high level of compression that compressor filters can achieve when
 used in combination with it. A curious thing to note is that the Bzip2
@@ -878,21 +829,27 @@ Bzip2 and a 80% for Zlib), which is an interesting result by itself.
 But perhaps more exciting is the fact that the reading process
 (unshuffling+decompressing) is also accelerated by a similar extent (a 20%
 for LZO, 60% for Zlib and a 75% for Bzip2, roughly).</p>
-<div class="figure align-center" id="id29">
+<figure class="align-center" id="id29">
 <span id="comprwriteshufflecomparison"></span><img alt="../_images/compressed-writing-shuffle.png" src="../_images/compressed-writing-shuffle.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 21. Writing with different compression libraries with and
+<figcaption>
+<p><span class="caption-text"><strong>Figure 21. Writing with different compression libraries with and
 without the shuffle filter.</strong></span><a class="headerlink" href="#id29" title="Permalink to this image">¶</a></p>
-</div>
-<div class="figure align-center" id="id30">
+</figcaption>
+</figure>
+<figure class="align-center" id="id30">
 <span id="comprreadnocacheshufflecomparison"></span><img alt="../_images/compressed-select-nocache-shuffle-only.png" src="../_images/compressed-select-nocache-shuffle-only.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 22. Reading with different compression libraries with the
+<figcaption>
+<p><span class="caption-text"><strong>Figure 22. Reading with different compression libraries with the
 shuffle filter. The file is not in OS cache.</strong></span><a class="headerlink" href="#id30" title="Permalink to this image">¶</a></p>
-</div>
-<div class="figure align-center" id="id31">
+</figcaption>
+</figure>
+<figure class="align-center" id="id31">
 <span id="comprreadcacheshufflecomparison"></span><img alt="../_images/compressed-select-cache-shuffle.png" src="../_images/compressed-select-cache-shuffle.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 23. Reading with different compression libraries with and
+<figcaption>
+<p><span class="caption-text"><strong>Figure 23. Reading with different compression libraries with and
 without the shuffle filter. The file is in OS cache.</strong></span><a class="headerlink" href="#id31" title="Permalink to this image">¶</a></p>
-</div>
+</figcaption>
+</figure>
 <p>You may wonder why introducing another filter in the write/read pipelines
 does effectively accelerate the throughput. Well, maybe data elements are
 more similar or related column-wise than row-wise, i.e. contiguous elements
@@ -905,9 +862,9 @@ better use of the cache (i.e. reducing the number of CPU cache faults).</p>
 much improved compression level), it is a good thing to have such a filter
 enabled by default in the battle for discovering redundancy when you want to
 compress your data, just as PyTables does.</p>
-</div>
-</div>
-<div class="section" id="using-psyco">
+</section>
+</section>
+<section id="using-psyco">
 <h2>Using Psyco<a class="headerlink" href="#using-psyco" title="Permalink to this headline">¶</a></h2>
 <p>Psyco (see <a class="reference internal" href="bibliography.html#psyco"><span class="std std-ref">[PSYCO]</span></a>) is a kind of specialized compiler for
 Python that typically accelerates Python applications with no change in
@@ -962,16 +919,20 @@ progressively when the number of rows grows well over one million. However if
 you use compression, you will probably see improvements even beyond this
 limit (see <a class="reference internal" href="#compressionissues"><span class="std std-ref">Compression issues</span></a>).
 As always, there is no substitute for experimentation with your own dataset.</p>
-<div class="figure align-center" id="id32">
+<figure class="align-center" id="id32">
 <span id="psycowritecomparison"></span><img alt="../_images/write-medium-psyco-nopsyco-comparison.png" src="../_images/write-medium-psyco-nopsyco-comparison.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 24. Writing tables with/without Psyco.</strong></span><a class="headerlink" href="#id32" title="Permalink to this image">¶</a></p>
-</div>
-<div class="figure align-center" id="id33">
+<figcaption>
+<p><span class="caption-text"><strong>Figure 24. Writing tables with/without Psyco.</strong></span><a class="headerlink" href="#id32" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<figure class="align-center" id="id33">
 <span id="psycoreadcomparison"></span><img alt="../_images/read-medium-psyco-nopsyco-comparison.png" src="../_images/read-medium-psyco-nopsyco-comparison.png" />
-<p class="caption"><span class="caption-text"><strong>Figure 25. Reading tables with/without Psyco.</strong></span><a class="headerlink" href="#id33" title="Permalink to this image">¶</a></p>
-</div>
-</div>
-<div class="section" id="getting-the-most-from-the-node-lru-cache">
+<figcaption>
+<p><span class="caption-text"><strong>Figure 25. Reading tables with/without Psyco.</strong></span><a class="headerlink" href="#id33" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="getting-the-most-from-the-node-lru-cache">
 <span id="lruoptim"></span><h2>Getting the most from the node LRU cache<a class="headerlink" href="#getting-the-most-from-the-node-lru-cache" title="Permalink to this headline">¶</a></h2>
 <p>One limitation of the initial versions of PyTables was that they needed to
 load all nodes in a file completely before being ready to deal with them,
@@ -1117,8 +1078,8 @@ been completely redesigned so while all comments above are still valid,
 numerical values could be a little bit different from the ones reported in
 <a class="reference internal" href="#optimization-table-1"><span class="std std-ref">table</span></a>.</p>
 </div>
-</div>
-<div class="section" id="compacting-your-pytables-files">
+</section>
+<section id="compacting-your-pytables-files">
 <h2>Compacting your PyTables files<a class="headerlink" href="#compacting-your-pytables-files" title="Permalink to this headline">¶</a></h2>
 <p>Let’s suppose that you have a file where you have made a lot of row deletions
 on one or more tables, or deleted many leaves or even entire subtrees. These
@@ -1160,55 +1121,38 @@ datasets.</p>
 with recent versions of PyTables anymore.</p>
 </dd>
 </dl>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="filenode.html" class="btn btn-neutral float-right" title="filenode - simulating a filesystem with PyTables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="libref/filenode_classes.html" class="btn btn-neutral float-left" title="Filenode Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="filenode.html" class="btn btn-neutral float-right" title="filenode - simulating a filesystem with PyTables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2011–2021, PyTables maintainers.
-
-    </p>
+    <p>&#169; Copyright 2011–2021, PyTables maintainers.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
