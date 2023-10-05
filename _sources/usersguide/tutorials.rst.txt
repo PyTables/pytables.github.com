@@ -743,6 +743,12 @@ file written to disk.
 Attributes are a useful mechanism to add persistent (meta) information to
 your data.
 
+Starting with PyTables 3.9.0, you can also set, delete, or rename attributes on individual columns. The API is designed to behave the same way as attributes on a table::
+
+    >>> table.cols.pressure.attrs['units'] = 'kPa'
+    >>> table.cols.energy.attrs['units'] = 'MeV'
+
+
 
 Getting object metadata
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -2222,20 +2228,20 @@ object is returned.
 
 It is possible to create arrays that immitate nested table-like structure with _v_nested_descr attribute::
 
-    >>> import numpy
+    >>> import numpy as np
     >>> table.description._v_nested_descr
     [('info2', [('info3', [('x', '()f8'), ('y', '()u1')]), ('name', '()S10'),
      ('value', '()f8')]), ('info1', [('name', '()S10'), ('value', '()f8')]),
      ('color', '()u4')]
-    >>> numpy.rec.array(None, shape=0,
-                        dtype=table.description._v_nested_descr)
+    >>> np.rec.array(None, shape=0, dtype=table.description._v_nested_descr)
     recarray([],
           dtype=[('info2', [('info3', [('x', '>f8'), ('y', '|u1')]),
                  ('name', '|S10'), ('value', '>f8')]),
                  ('info1', [('name', '|S10'), ('value', '>f8')]),
                  ('color', '>u4')])
-    >>> numpy.rec.array(None, shape=0,
-                        dtype=table.description.info2._v_nested_descr)
+    >>> np.rec.array(
+            None, shape=0, dtype=table.description.info2._v_nested_descr
+        )
     recarray([],
           dtype=[('info3', [('x', '>f8'), ('y', '|u1')]), ('name', '|S10'),
                  ('value', '>f8')])
