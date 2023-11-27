@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Optimization tips &mdash; PyTables 3.9.1 documentation</title>
+  <title>Optimization tips &mdash; PyTables 3.9.2 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
@@ -50,7 +50,7 @@
               <img src="../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                3.9.1
+                3.9.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -255,15 +255,17 @@ you choose an algorithm which fits your data, you may use the program
 examples/get_blocksize.c in the C-Blosc2 package to get the default blocksize
 for the different levels of that compression algorithm (it already contains
 some sample output for zstd).  In the example benchmarks below, with the LZ4
-algorithm and compression level 8, we got a blocksize of 2MB which fitted in
-the L2 cache of each of our CPU cores.</p>
+algorithm with shuffling and compression level 8, we got a blocksize of 2MB
+which fitted in the L2 cache of each of our CPU cores.</p>
 <p>With that compression setup, we ran the benchmark in
 bench/b2nd_compare_getslice.py, which compares the throughput of slicing a
 4-dimensional array of 50x100x300x250 long floats (2.8GB) along each of its
 dimensions for PyTables with flat slicing (via the HDF5 filter mechanism),
 PyTables with b2nd slicing (optimized via direct chunk access), and h5py
-(which also uses the HDF5 filter).  The result for a chunkshape of 10x25x50x50
-is shown in <a class="reference internal" href="#b2ndslicing-vs-filter-smallchunk"><span class="std std-ref">figure</span></a>.</p>
+(which also uses the HDF5 filter).  We repeated the benchmark with different
+values of the <code class="docutils literal notranslate"><span class="pre">BLOSC_NTHREADS</span></code> environment variable so as to find the best
+number of parallel Blosc2 threads (6 for our CPU).  The result for the
+original chunkshape of 10x25x50x50 is shown in <a class="reference internal" href="#b2ndslicing-vs-filter-smallchunk"><span class="std std-ref">figure</span></a>.</p>
 <figure class="align-center" id="id11">
 <span id="b2ndslicing-vs-filter-smallchunk"></span><img alt="../_images/b2nd_getslice_small.png" src="../_images/b2nd_getslice_small.png" />
 <figcaption>
@@ -275,7 +277,7 @@ small chunk.</strong></span><a class="headerlink" href="#id11" title="Permalink 
 <p>The optimized b2nd slicing of PyTables already provided some sizable speedups
 in comparison with flat slicing based on the HDF5 filter pipeline in the inner
 dimensions.  But the 4.8MB chunksize was probably too small for the CPU’s L3
-cache of 32MB, causing extra overhead.  By proceeding to adjust the chunkshape
+cache of 36MB, causing extra overhead.  By proceeding to adjust the chunkshape
 to 10x25x150x100 (28.6MB), that fits in the L3 cache, the performance gains
 are palpable, as shown in <a class="reference internal" href="#b2ndslicing-vs-filter-bigchunk"><span class="std std-ref">figure</span></a>.</p>
 <figure class="align-center" id="id12">
@@ -290,10 +292,11 @@ chunk.</strong></span><a class="headerlink" href="#id12" title="Permalink to thi
 PyTables optimized case, it also resulted in 3x-4x speedups compared to the
 performance of the HDF5 filter.</p>
 <p>Optimized b2nd slicing in PyTables has its limitations, though: it only works
-with contiguous slices (that is, with step 1) and on datasets with the same
-byte ordering as the host machine.  However, the performance gains may be
-worth the extra effort of choosing the right compression parameters and
-chunksizes when your use case is not affected by those limitations.</p>
+with contiguous slices (that is, with step 1 on every dimension) and on
+datasets with the same byte ordering as the host machine.  However, the
+performance gains may be worth the extra effort of choosing the right
+compression parameters and chunksizes when your use case is not affected by
+those limitations.</p>
 </section>
 </section>
 <section id="accelerating-your-searches">
