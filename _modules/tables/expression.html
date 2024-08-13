@@ -1,22 +1,21 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.expression &mdash; PyTables 3.9.2 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <title>tables.expression &mdash; PyTables 3.9.3.dev0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/documentation_options.js?v=f9369ea6"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -47,7 +46,7 @@
               <img src="../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                3.9.2
+                3.9.3.dev0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -99,6 +98,7 @@
 
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">import</span> <span class="nn">numexpr</span> <span class="k">as</span> <span class="nn">ne</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -107,8 +107,17 @@
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">PerformanceWarning</span>
 <span class="kn">from</span> <span class="nn">.parameters</span> <span class="kn">import</span> <span class="n">IO_BUFFER_SIZE</span><span class="p">,</span> <span class="n">BUFFER_TIMES</span>
 
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">.array</span> <span class="kn">import</span> <span class="n">Array</span>
+    <span class="kn">from</span> <span class="nn">.table</span> <span class="kn">import</span> <span class="n">Column</span>
+    <span class="kn">from</span> <span class="nn">.tableextension</span> <span class="kn">import</span> <span class="n">Row</span>
 
-<div class="viewcode-block" id="Expr"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr">[docs]</a><span class="k">class</span> <span class="nc">Expr</span><span class="p">:</span>
+<span class="n">ContainerType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="s2">&quot;Array&quot;</span><span class="p">,</span> <span class="s2">&quot;Column&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Expr">
+<a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr">[docs]</a>
+<span class="k">class</span> <span class="nc">Expr</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A class for evaluating expressions with arbitrary array-like objects.</span>
 
 <span class="sd">    Expr is a class for evaluating expressions containing array-like objects.</span>
@@ -230,37 +239,37 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expr</span><span class="p">,</span> <span class="n">uservars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">uservars</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">append_mode</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The append mode for user-provided output containers.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Common main dimension for inputs in expression.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The names of variables in expression (list).&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ContainerType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The user-provided container (if any) for the expression outcome.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">o_start</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The start range selection for the user-provided output.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">o_stop</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The stop range selection for the user-provided output.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">o_step</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The step range selection for the user-provided output.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Common shape for the arrays in expression.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The start range selection for the input.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The stop range selection for the input.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The step range selection for the input.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The values of variables in expression (list).&quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ne</span><span class="o">.</span><span class="n">interpreter</span><span class="o">.</span><span class="n">NumExpr</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The compiled expression.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_single_row_out</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_single_row_out</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A sample of the output with just a single row.&quot;&quot;&quot;</span>
 
         <span class="c1"># First, get the signature for the arrays in expression</span>
@@ -322,7 +331,10 @@
 
     <span class="c1"># The next method is similar to their counterpart in `Table`, but</span>
     <span class="c1"># adapted to the `Expr` own requirements.</span>
-    <span class="k">def</span> <span class="nf">_required_expr_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">,</span> <span class="n">uservars</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_required_expr_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                            <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                            <span class="n">uservars</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+                            <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the variables required by the `expression`.</span>
 
 <span class="sd">        A new dictionary defining the variables used in the `expression`</span>
@@ -399,7 +411,12 @@
             <span class="n">reqvars</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
         <span class="k">return</span> <span class="n">reqvars</span>
 
-<div class="viewcode-block" id="Expr.set_inputs_range"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_inputs_range">[docs]</a>    <span class="k">def</span> <span class="nf">set_inputs_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Expr.set_inputs_range">
+<a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_inputs_range">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_inputs_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Define a range for all inputs in expression.</span>
 
 <span class="sd">        The computation will only take place for the range defined by</span>
@@ -415,7 +432,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="n">stop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">step</span></div>
 
-<div class="viewcode-block" id="Expr.set_output"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_output">[docs]</a>    <span class="k">def</span> <span class="nf">set_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">append_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Expr.set_output">
+<a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_output">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">:</span> <span class="n">ContainerType</span><span class="p">,</span> <span class="n">append_mode</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set out as container for output as well as the append_mode.</span>
 
 <span class="sd">        The out must be a container that is meant to keep the outcome of</span>
@@ -447,7 +467,13 @@
                 <span class="s2">&quot;with an `append()` method (like the `EArray`)&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">append_mode</span> <span class="o">=</span> <span class="n">append_mode</span></div>
 
-<div class="viewcode-block" id="Expr.set_output_range"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_output_range">[docs]</a>    <span class="k">def</span> <span class="nf">set_output_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Expr.set_output_range">
+<a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_output_range">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_output_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Define a range for user-provided output object.</span>
 
 <span class="sd">        The output object will only be modified in the range specified by the</span>
@@ -464,9 +490,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">o_stop</span> <span class="o">=</span> <span class="n">stop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">o_step</span> <span class="o">=</span> <span class="n">step</span></div>
 
+
     <span class="c1"># Although the next code is similar to the method in `Leaf`, it</span>
     <span class="c1"># allows the use of pure NumPy objects.</span>
-    <span class="k">def</span> <span class="nf">_calc_nrowsinbuf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_calc_nrowsinbuf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the number of rows that will fit in a buffer.&quot;&quot;&quot;</span>
 
         <span class="c1"># Compute the rowsize for the *leading* dimension</span>
@@ -499,7 +526,10 @@
 
         <span class="k">return</span> <span class="n">nrowsinbuf</span>
 
-    <span class="k">def</span> <span class="nf">_guess_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_guess_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Guess the shape of the output of the expression.&quot;&quot;&quot;</span>
 
         <span class="c1"># First, compute the maximum dimension of inputs and maindim</span>
@@ -547,7 +577,14 @@
             <span class="n">shape</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">maindim</span><span class="p">,</span> <span class="n">minlen</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span>
 
-    <span class="k">def</span> <span class="nf">_get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span><span class="p">,</span> <span class="n">itermode</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+      <span class="n">shape</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+      <span class="n">maindim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+      <span class="n">itermode</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span>
+  <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ContainerType</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return various info needed for evaluating the computation loop.&quot;&quot;&quot;</span>
 
         <span class="c1"># Compute the shape of the resulting container having</span>
@@ -626,7 +663,9 @@
             <span class="c1"># For itermode, we don&#39;t need the out info</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">i_nrows</span><span class="p">,</span> <span class="n">slice_pos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">nrowsinbuf</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Expr.eval"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.eval">[docs]</a>    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Expr.eval">
+<a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.eval">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ContainerType</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the expression and return the outcome.</span>
 
 <span class="sd">        Because of performance reasons, the computation order tries to go along</span>
@@ -647,7 +686,7 @@
 <span class="sd">        NumPy, although you should check the Numexpr manual for the exceptions)</span>
 <span class="sd">        are applied to determine the output type.</span>
 
-<span class="sd">        Finally, if the setOuput() method specifying a user container has</span>
+<span class="sd">        Finally, if the set_output() method specifying a user container has</span>
 <span class="sd">        already been called, the output is sent to this user-provided</span>
 <span class="sd">        container.  If not, a fresh NumPy container is returned instead.</span>
 
@@ -721,7 +760,10 @@
 
         <span class="k">return</span> <span class="n">out</span></div>
 
-<div class="viewcode-block" id="Expr.__iter__"><a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.__iter__">[docs]</a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Expr.__iter__">
+<a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.__iter__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="s2">&quot;Row&quot;</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over the rows of the outcome of the expression.</span>
 
 <span class="sd">        This iterator always returns rows as NumPy objects, so a possible out</span>
@@ -773,7 +815,9 @@
         <span class="c1"># Activate the conversion again (default)</span>
         <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;maindim&#39;</span><span class="p">):</span>
-                <span class="n">val</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="kc">True</span></div></div>
+                <span class="n">val</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="kc">True</span></div>
+</div>
+
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>

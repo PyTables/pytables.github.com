@@ -1,22 +1,21 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.attributeset &mdash; PyTables 3.9.2 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <title>tables.attributeset &mdash; PyTables 3.9.3.dev0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/documentation_options.js?v=f9369ea6"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -47,7 +46,7 @@
               <img src="../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                3.9.2
+                3.9.3.dev0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -100,6 +99,8 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
@@ -109,6 +110,9 @@
 <span class="kn">from</span> <span class="nn">.path</span> <span class="kn">import</span> <span class="n">check_attribute_name</span>
 <span class="kn">from</span> <span class="nn">.undoredo</span> <span class="kn">import</span> <span class="n">attr_to_shadow</span>
 <span class="kn">from</span> <span class="nn">.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">.node</span> <span class="kn">import</span> <span class="n">Node</span>
 
 
 <span class="c1"># System attributes</span>
@@ -141,14 +145,16 @@
 <span class="n">_new_filters_sub</span> <span class="o">=</span> <span class="sa">br</span><span class="s1">&#39;(\1tables.filters\n&#39;</span>
 
 
-<span class="k">def</span> <span class="nf">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a name is a system attribute or not&quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">name</span> <span class="ow">in</span> <span class="n">SYS_ATTRS</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span>
         <span class="p">[</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">SYS_ATTRS_PREFIXES</span><span class="p">]))</span>
 
 
-<div class="viewcode-block" id="AttributeSet"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet">[docs]</a><span class="k">class</span> <span class="nc">AttributeSet</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">AttributeSet</span><span class="p">):</span>
+<div class="viewcode-block" id="AttributeSet">
+<a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet">[docs]</a>
+<span class="k">class</span> <span class="nc">AttributeSet</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">AttributeSet</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for the HDF5 attributes of a Node.</span>
 
 <span class="sd">    This class provides methods to create new HDF5 node attributes,</span>
@@ -174,7 +180,7 @@
 <span class="sd">    read, these values are always loaded as NumPy scalar or array</span>
 <span class="sd">    objects, as needed.</span>
 
-<span class="sd">    For that reason, attributes in native HDF5 files will be always</span>
+<span class="sd">    For that reason, attributes in native HDF5 files will always be</span>
 <span class="sd">    mapped into NumPy objects.  Specifically, a multidimensional</span>
 <span class="sd">    attribute will be mapped into a multidimensional ndarray and a</span>
 <span class="sd">    scalar will be mapped into a NumPy scalar object (for example, a</span>
@@ -274,15 +280,15 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_g_getnode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_getnode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Node&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_v_node</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_v_node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Node&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The :class:`Node` instance this attribute set is associated with.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_getnode</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="s2">&quot;Node&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the basic structures to keep the attribute information.</span>
 
 <span class="sd">        Reads all the HDF5 attributes (if any) on disk for the node &quot;node&quot;.</span>
@@ -336,7 +342,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_g_update_node_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_update_node_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="s2">&quot;Node&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates the location information about the associated `node`.&quot;&quot;&quot;</span>
 
         <span class="n">dict_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span>
@@ -345,7 +351,9 @@
         <span class="c1"># hdf5extension operations:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_new</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
 
-<div class="viewcode-block" id="AttributeSet._f_list"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_list">[docs]</a>    <span class="k">def</span> <span class="nf">_f_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrset</span><span class="o">=</span><span class="s1">&#39;user&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="AttributeSet._f_list">
+<a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_list">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrset</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;sys&quot;</span><span class="p">,</span> <span class="s2">&quot;user&quot;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;user&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a list of attribute names.</span>
 
 <span class="sd">        The attrset string selects the attribute set to be used.  A</span>
@@ -362,7 +370,8 @@
         <span class="k">elif</span> <span class="n">attrset</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">[:]</span></div>
 
-    <span class="k">def</span> <span class="fm">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Autocomplete only children named as valid python identifiers.</span>
 
 <span class="sd">        Only PY3 supports this special method.</span>
@@ -371,7 +380,7 @@
                     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__dir__</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span>
                     <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">()})</span>
 
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the attribute named &quot;name&quot;.&quot;&quot;&quot;</span>
 
         <span class="c1"># If attribute does not exist, raise AttributeError</span>
@@ -473,7 +482,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">retval</span>
         <span class="k">return</span> <span class="n">retval</span>
 
-    <span class="k">def</span> <span class="nf">_g__setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g__setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set a PyTables attribute.</span>
 
 <span class="sd">        Sets a (maybe new) PyTables attribute with the specified `name`</span>
@@ -532,7 +541,7 @@
                 <span class="n">attrnamesuser</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
                 <span class="n">attrnamesuser</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set a PyTables attribute.</span>
 
 <span class="sd">        Sets a (maybe new) PyTables attribute with the specified `name`</span>
@@ -576,17 +585,17 @@
         <span class="k">if</span> <span class="n">undo_enabled</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_g_log_add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_g_log_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_log_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s1">&#39;ADDATTR&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_g_del_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_del_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">nodefile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span>
         <span class="n">node_pathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span>
         <span class="c1"># Log *before* moving to use the right shadow name.</span>
         <span class="n">nodefile</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s1">&#39;DELATTR&#39;</span><span class="p">,</span> <span class="n">node_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="n">attr_to_shadow</span><span class="p">(</span><span class="n">nodefile</span><span class="p">,</span> <span class="n">node_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_g__delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g__delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete a PyTables attribute.</span>
 
 <span class="sd">        Deletes the specified existing PyTables attribute.</span>
@@ -609,7 +618,7 @@
         <span class="c1"># closes (#1049285)</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete a PyTables attribute.</span>
 
 <span class="sd">        Deletes the specified existing PyTables attribute from the</span>
@@ -634,34 +643,36 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_g__delattr</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The dictionary like interface for __getattr__().&quot;&quot;&quot;</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="c1"># Capture the AttributeError an re-raise a KeyError one</span>
+            <span class="c1"># Capture the AttributeError and re-raise a KeyError one</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
                 <span class="s2">&quot;Attribute (&#39;</span><span class="si">%s</span><span class="s2">&#39;) does not exist in node &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
                 <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The dictionary like interface for __setattr__().&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The dictionary like interface for __delattr__().&quot;&quot;&quot;</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="fm">__delattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="c1"># Capture the AttributeError an re-raise a KeyError one</span>
+            <span class="c1"># Capture the AttributeError and re-raise a KeyError one</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
                 <span class="s2">&quot;Attribute (&#39;</span><span class="si">%s</span><span class="s2">&#39;) does not exist in node &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
                 <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">))</span>
 
-<div class="viewcode-block" id="AttributeSet.__contains__"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet.__contains__">[docs]</a>    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<div class="viewcode-block" id="AttributeSet.__contains__">
+<a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet.__contains__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is there an attribute with that name?</span>
 
 <span class="sd">        A true value is returned if the attribute set has an attribute</span>
@@ -671,7 +682,10 @@
 
         <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span></div>
 
-<div class="viewcode-block" id="AttributeSet._f_rename"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_rename">[docs]</a>    <span class="k">def</span> <span class="nf">_f_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">,</span> <span class="n">newattrname</span><span class="p">):</span>
+
+<div class="viewcode-block" id="AttributeSet._f_rename">
+<a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_rename">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">newattrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Rename an attribute from oldattrname to newattrname.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">oldattrname</span> <span class="o">==</span> <span class="n">newattrname</span><span class="p">:</span>
@@ -687,7 +701,11 @@
         <span class="c1"># Finally, remove the old attribute</span>
         <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newset</span><span class="p">,</span> <span class="n">set_attr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">copyclass</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">newset</span><span class="p">:</span> <span class="s2">&quot;AttributeSet&quot;</span><span class="p">,</span>
+                <span class="n">set_attr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">copyclass</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy set attributes.</span>
 
 <span class="sd">        Copies all user and allowed system PyTables attributes to the</span>
@@ -731,7 +749,9 @@
                     <span class="k">if</span> <span class="n">attrname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="p">:</span>
                         <span class="n">set_attr</span><span class="p">(</span><span class="n">attrname</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">))</span>
 
-<div class="viewcode-block" id="AttributeSet._f_copy"><a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_copy">[docs]</a>    <span class="k">def</span> <span class="nf">_f_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">):</span>
+<div class="viewcode-block" id="AttributeSet._f_copy">
+<a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_copy">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="s2">&quot;Node&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy attributes to the where node.</span>
 
 <span class="sd">        Copies all user and certain system attributes to the given where</span>
@@ -747,12 +767,13 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;destination object is not a node: </span><span class="si">{</span><span class="n">where</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_g_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_g_close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Nothing will be done here, as the existing instance is completely</span>
         <span class="c1"># operative now.</span>
         <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The string representation for this object.&quot;&quot;&quot;</span>
 
         <span class="c1"># The pathname</span>
@@ -763,7 +784,7 @@
         <span class="n">attrnumber</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">)</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pathname</span><span class="si">}</span><span class="s2">._v_attrs (</span><span class="si">{</span><span class="n">classname</span><span class="si">}</span><span class="s2">), </span><span class="si">{</span><span class="n">attrnumber</span><span class="si">}</span><span class="s2"> attributes&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A detailed string representation for this object.&quot;&quot;&quot;</span>
 
         <span class="c1"># print additional info only if there are attributes to show</span>
@@ -775,11 +796,12 @@
             <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
+
 <span class="k">class</span> <span class="nc">NotLoggedAttributeSet</span><span class="p">(</span><span class="n">AttributeSet</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">_g_log_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_log_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="nf">_g_del_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_del_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g__delattr</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </pre></div>
 

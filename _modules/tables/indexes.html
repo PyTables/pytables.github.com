@@ -1,22 +1,21 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.indexes &mdash; PyTables 3.9.2 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <title>tables.indexes &mdash; PyTables 3.9.3.dev0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/documentation_options.js?v=f9369ea6"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -47,7 +46,7 @@
               <img src="../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                3.9.2
+                3.9.3.dev0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -98,12 +97,17 @@
 <span></span><span class="sd">&quot;&quot;&quot;Here is defined the IndexArray class.&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">bisect</span> <span class="kn">import</span> <span class="n">bisect_left</span><span class="p">,</span> <span class="n">bisect_right</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">from</span> <span class="nn">.node</span> <span class="kn">import</span> <span class="n">NotLoggedMixin</span>
 <span class="kn">from</span> <span class="nn">.carray</span> <span class="kn">import</span> <span class="n">CArray</span>
 <span class="kn">from</span> <span class="nn">.earray</span> <span class="kn">import</span> <span class="n">EArray</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">indexesextension</span>
 
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">.atom</span> <span class="kn">import</span> <span class="n">Atom</span>
+    <span class="kn">from</span> <span class="nn">.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
+    <span class="kn">from</span> <span class="nn">.group</span> <span class="kn">import</span> <span class="n">Group</span>
 
 <span class="c1"># Declarations for inheriting</span>
 
@@ -123,7 +127,9 @@
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;LASTROWARRAY&#39;</span>
 
 
-<div class="viewcode-block" id="IndexArray"><a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.indexes.IndexArray">[docs]</a><span class="k">class</span> <span class="nc">IndexArray</span><span class="p">(</span><span class="n">indexesextension</span><span class="o">.</span><span class="n">IndexArray</span><span class="p">,</span> <span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">EArray</span><span class="p">):</span>
+<div class="viewcode-block" id="IndexArray">
+<a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.indexes.IndexArray">[docs]</a>
+<span class="k">class</span> <span class="nc">IndexArray</span><span class="p">(</span><span class="n">indexesextension</span><span class="o">.</span><span class="n">IndexArray</span><span class="p">,</span> <span class="n">NotLoggedMixin</span><span class="p">,</span> <span class="n">EArray</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent the index (sorted or reverse index) dataset in HDF5 file.</span>
 
 <span class="sd">    All NumPy typecodes are supported except for complex datatypes.</span>
@@ -155,18 +161,18 @@
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;INDEXARRAY&#39;</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">chunksize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">chunksize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The chunksize for this object.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">slicesize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">slicesize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The slicesize for this object.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
-                 <span class="n">atom</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-                 <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">:</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">atom</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Atom&quot;</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Filters&quot;</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an IndexArray instance.&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">=</span> <span class="n">parentnode</span><span class="o">.</span><span class="n">_g_join</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
@@ -192,7 +198,7 @@
     <span class="c1"># bounds (2nd level) caches. It uses a cache for boundary rows,</span>
     <span class="c1"># but not for &#39;sorted&#39; rows (this is only supported for the</span>
     <span class="c1"># &#39;optimized&#39; types).</span>
-    <span class="k">def</span> <span class="nf">_search_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nrow</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_search_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nrow</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
         <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span> <span class="o">=</span> <span class="n">item</span>
         <span class="n">result1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">result2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
@@ -250,11 +256,11 @@
             <span class="n">result2</span> <span class="o">+=</span> <span class="n">chunksize</span> <span class="o">*</span> <span class="n">nchunk2</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">result1</span><span class="p">,</span> <span class="n">result2</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A compact representation of this class&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;IndexArray(path=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="si">}</span><span class="s2">)&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A verbose representation of this class.&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="si">{</span><span class="bp">self</span><span class="si">}</span>
@@ -264,6 +270,7 @@
 <span class="s2">  chunksize = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chunksize</span><span class="si">}</span>
 <span class="s2">  slicesize = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">slicesize</span><span class="si">}</span>
 <span class="s2">  byteorder = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="si">!r}</span><span class="s2">&quot;&quot;&quot;</span></div>
+
 </pre></div>
 
            </div>

@@ -1,22 +1,21 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.file &mdash; PyTables 3.9.2 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <title>tables.file &mdash; PyTables 3.9.3.dev0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/documentation_options.js?v=f9369ea6"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -47,7 +46,7 @@
               <img src="../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                3.9.2
+                3.9.3.dev0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -112,6 +111,7 @@
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numexpr</span> <span class="k">as</span> <span class="nn">ne</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -125,7 +125,7 @@
 <span class="kn">from</span> <span class="nn">.registry</span> <span class="kn">import</span> <span class="n">get_class_by_name</span>
 <span class="kn">from</span> <span class="nn">.path</span> <span class="kn">import</span> <span class="n">join_path</span><span class="p">,</span> <span class="n">split_path</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">undoredo</span>
-<span class="kn">from</span> <span class="nn">.description</span> <span class="kn">import</span> <span class="p">(</span><span class="n">IsDescription</span><span class="p">,</span> <span class="n">UInt8Col</span><span class="p">,</span> <span class="n">StringCol</span><span class="p">,</span>
+<span class="kn">from</span> <span class="nn">.description</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Description</span><span class="p">,</span> <span class="n">IsDescription</span><span class="p">,</span> <span class="n">UInt8Col</span><span class="p">,</span> <span class="n">StringCol</span><span class="p">,</span>
                           <span class="n">descr_from_dtype</span><span class="p">,</span> <span class="n">dtype_from_descr</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
 <span class="kn">from</span> <span class="nn">.node</span> <span class="kn">import</span> <span class="n">Node</span><span class="p">,</span> <span class="n">NotLoggedMixin</span>
@@ -168,30 +168,30 @@
 
 
 <span class="k">class</span> <span class="nc">_FileRegistry</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_name_mapping</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name_mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="n">File</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">File</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">filenames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">filenames</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name_mapping</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="s2">&quot;File&quot;</span><span class="p">]:</span>
         <span class="c1"># return set(self._handlers)  # return a copy</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">filename</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">filenames</span>
 
-    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="s2">&quot;File&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name_mapping</span><span class="p">[</span><span class="n">handler</span><span class="o">.</span><span class="n">filename</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="s2">&quot;File&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">filename</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name_mapping</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
         <span class="c1"># remove enpty keys</span>
@@ -199,11 +199,11 @@
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_mapping</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">get_handlers_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_handlers_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="s2">&quot;File&quot;</span><span class="p">]:</span>
         <span class="c1"># return set(self._name_mapping[filename])  # return a copy</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_mapping</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">close_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">close_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">handlers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="p">)</span>  <span class="c1"># make a copy</span>
         <span class="k">for</span> <span class="n">fileh</span> <span class="ow">in</span> <span class="n">handlers</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Closing remaining open file: </span><span class="si">{</span><span class="n">fileh</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -251,7 +251,7 @@
 <span class="n">_shadow_path</span> <span class="o">=</span> <span class="n">join_path</span><span class="p">(</span><span class="n">_shadow_parent</span><span class="p">,</span> <span class="n">_shadow_name</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_checkfilters</span><span class="p">(</span><span class="n">filters</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_checkfilters</span><span class="p">(</span><span class="n">filters</span><span class="p">:</span> <span class="n">Filters</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">filters</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>
             <span class="nb">isinstance</span><span class="p">(</span><span class="n">filters</span><span class="p">,</span> <span class="n">Filters</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;filter parameter has to be None or a Filter &quot;</span>
@@ -259,7 +259,9 @@
                         <span class="nb">type</span><span class="p">(</span><span class="n">filters</span><span class="p">))</span>
 
 
-<div class="viewcode-block" id="copy_file"><a class="viewcode-back" href="../../usersguide/libref/top_level.html#tables.copy_file">[docs]</a><span class="k">def</span> <span class="nf">copy_file</span><span class="p">(</span><span class="n">srcfilename</span><span class="p">,</span> <span class="n">dstfilename</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="copy_file">
+<a class="viewcode-back" href="../../usersguide/libref/top_level.html#tables.copy_file">[docs]</a>
+<span class="k">def</span> <span class="nf">copy_file</span><span class="p">(</span><span class="n">srcfilename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dstfilename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;An easy way of copying one PyTables file to another.</span>
 
 <span class="sd">    This function allows you to copy an existing PyTables file named</span>
@@ -287,13 +289,17 @@
         <span class="n">srcfileh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
+
 <span class="n">hdf5_version_str</span> <span class="o">=</span> <span class="n">utilsextension</span><span class="o">.</span><span class="n">get_hdf5_version</span><span class="p">()</span>
 <span class="n">hdf5_version_tup</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">hdf5_version_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)))</span>
 <span class="n">_FILE_OPEN_POLICY</span> <span class="o">=</span> <span class="s1">&#39;strict&#39;</span> <span class="k">if</span> <span class="n">hdf5_version_tup</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;default&#39;</span>
 
 
-<div class="viewcode-block" id="open_file"><a class="viewcode-back" href="../../usersguide/libref/top_level.html#tables.open_file">[docs]</a><span class="k">def</span> <span class="nf">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">root_uep</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-              <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="open_file">
+<a class="viewcode-back" href="../../usersguide/libref/top_level.html#tables.open_file">[docs]</a>
+<span class="k">def</span> <span class="nf">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;r+&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span>
+              <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">root_uep</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Filters</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;File&quot;</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Open a PyTables (or generic HDF5) file and return a File object.</span>
 
 <span class="sd">    Parameters</span>
@@ -391,18 +397,19 @@
     <span class="k">return</span> <span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">root_uep</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
-<span class="c1"># A dumb class that doesn&#39;t keep nothing at all</span>
+
+<span class="c1"># A dumb class that doesn&#39;t keep anything at all</span>
 <span class="k">class</span> <span class="nc">_NoCache</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
 
-    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">([])</span>
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>
 
     <span class="n">__marker</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
@@ -414,13 +421,13 @@
 
 
 <span class="k">class</span> <span class="nc">_DictCache</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nslots</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nslots</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">nslots</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid number of slots: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nslots</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nslots</span> <span class="o">=</span> <span class="n">nslots</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Check if we are running out of space</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslots</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
@@ -432,7 +439,7 @@
 
 
 <span class="k">class</span> <span class="nc">NodeManager</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nslots</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">node_factory</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nslots</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">node_factory</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">registry</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakValueDictionary</span><span class="p">()</span>
@@ -450,7 +457,7 @@
         <span class="c1"># node_factory(node_path)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">node_factory</span> <span class="o">=</span> <span class="n">node_factory</span>
 
-    <span class="k">def</span> <span class="nf">register_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">register_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">key</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span>
 
@@ -464,7 +471,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">registry</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span>
 
-    <span class="k">def</span> <span class="nf">cache_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">cache_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">key</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span>
 
@@ -477,7 +484,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span>
 
-    <span class="k">def</span> <span class="nf">get_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Node</span><span class="p">:</span>
         <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
@@ -510,19 +517,19 @@
 
         <span class="k">return</span> <span class="n">node</span>
 
-    <span class="k">def</span> <span class="nf">rename_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldkey</span><span class="p">,</span> <span class="n">newkey</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">rename_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldkey</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">newkey</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">cache</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">registry</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">oldkey</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">:</span>
                 <span class="n">node</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">oldkey</span><span class="p">)</span>
                 <span class="n">cache</span><span class="p">[</span><span class="n">newkey</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span>
 
-    <span class="k">def</span> <span class="nf">drop_from_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodepath</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">drop_from_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the node from cache&quot;&quot;&quot;</span>
 
         <span class="c1"># Remove the node from the cache.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">nodepath</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">drop_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">check_unregistered</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">drop_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">,</span> <span class="n">check_unregistered</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Drop the `node`.</span>
 
 <span class="sd">        Remove the node from the cache and, if it has no more references,</span>
@@ -550,8 +557,8 @@
                 <span class="n">node</span><span class="o">.</span><span class="n">_g_pre_kill_hook</span><span class="p">()</span>
                 <span class="n">node</span><span class="o">.</span><span class="n">_f_close</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">flush_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># Only iter on the nodes in the registry since nodes in the cahce</span>
+    <span class="k">def</span> <span class="nf">flush_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Only iter on the nodes in the registry since nodes in the cache</span>
         <span class="c1"># should always have an entry in the registry</span>
         <span class="n">closed_keys</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
@@ -569,7 +576,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_close_nodes</span><span class="p">(</span><span class="n">nodepaths</span><span class="p">,</span> <span class="n">get_node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_close_nodes</span><span class="p">(</span><span class="n">nodepaths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">get_node</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="n">Node</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">nodepath</span> <span class="ow">in</span> <span class="n">nodepaths</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">node</span> <span class="o">=</span> <span class="n">get_node</span><span class="p">(</span><span class="n">nodepath</span><span class="p">)</span>
@@ -599,7 +606,7 @@
                     <span class="c1">#     &quot;%s&quot; % (type_.__name__, exception_dump))</span>
                     <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="nf">close_subtree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;/&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">close_subtree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">prefix</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">):</span>
             <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
 
@@ -628,7 +635,7 @@
         <span class="n">paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">path</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">registry</span> <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_close_nodes</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="n">registry</span><span class="o">.</span><span class="n">pop</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">registry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">registry</span>
         <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
 
@@ -647,7 +654,9 @@
                 <span class="n">node</span><span class="o">.</span><span class="n">_f_close</span><span class="p">()</span>
 
 
-<div class="viewcode-block" id="File"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File">[docs]</a><span class="k">class</span> <span class="nc">File</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">File</span><span class="p">):</span>
+<div class="viewcode-block" id="File">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File">[docs]</a>
+<span class="k">class</span> <span class="nc">File</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">File</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The in-memory representation of a PyTables file.</span>
 
 <span class="sd">    An instance of this class is returned when a PyTables file is</span>
@@ -776,34 +785,34 @@
     <span class="n">_node_kinds</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Group&#39;</span><span class="p">,</span> <span class="s1">&#39;Leaf&#39;</span><span class="p">,</span> <span class="s1">&#39;Link&#39;</span><span class="p">,</span> <span class="s1">&#39;Unknown&#39;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The title of the root group in the file.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_title</span>
 
     <span class="nd">@title</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_title</span> <span class="o">=</span> <span class="n">title</span>
 
     <span class="nd">@title</span><span class="o">.</span><span class="n">deleter</span>
-    <span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_title</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">filters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">filters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Filters</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Default filter properties for the root group</span>
 <span class="sd">        (see :ref:`FiltersClassDescr`).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_filters</span>
 
     <span class="nd">@filters</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">filters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">filters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Filters</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_filters</span> <span class="o">=</span> <span class="n">filters</span>
 
     <span class="nd">@filters</span><span class="o">.</span><span class="n">deleter</span>
-    <span class="k">def</span> <span class="nf">filters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">filters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_v_filters</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-                 <span class="n">root_uep</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;r+&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">root_uep</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Filters</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fspath</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The name of the opened file.&quot;&quot;&quot;</span>
@@ -849,7 +858,7 @@
 
         <span class="c1"># The node manager must be initialized before the root group</span>
         <span class="c1"># initialization but the node_factory attribute is set onl later</span>
-        <span class="c1"># because it is a bount method of the root grop itself.</span>
+        <span class="c1"># because it is a bound method of the root grop itself.</span>
         <span class="n">node_cache_slots</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;NODE_CACHE_SLOTS&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_node_manager</span> <span class="o">=</span> <span class="n">NodeManager</span><span class="p">(</span><span class="n">nslots</span><span class="o">=</span><span class="n">node_cache_slots</span><span class="p">)</span>
 
@@ -872,7 +881,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_root_group</span><span class="p">(</span><span class="n">root_uep</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="p">)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The *root* of the object tree hierarchy (a Group instance).&quot;&quot;&quot;</span>
         <span class="c1"># Complete the creation of the root node</span>
-        <span class="c1"># (see the explanation in ``RootGroup.__init__()``.</span>
+        <span class="c1"># (see the explanation in ``RootGroup.__init__()``).</span>
         <span class="n">root</span><span class="o">.</span><span class="n">_g_post_init_hook</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_node_manager</span><span class="o">.</span><span class="n">node_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_g_load_child</span>
 
@@ -891,7 +900,8 @@
         <span class="c1"># Set the maximum number of threads for Numexpr</span>
         <span class="n">ne</span><span class="o">.</span><span class="n">set_vml_num_threads</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;MAX_NUMEXPR_THREADS&#39;</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="nf">__get_root_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_uep</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__get_root_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_uep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                         <span class="n">filters</span><span class="p">:</span> <span class="n">Filters</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RootGroup</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a Group instance which will act as the root group in the</span>
 <span class="sd">        hierarchical tree.</span>
 
@@ -927,7 +937,8 @@
         <span class="c1"># create the object tree</span>
         <span class="k">return</span> <span class="n">RootGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_uep</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="n">new</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_or_create_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">create</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_or_create_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                            <span class="n">create</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="n">Node</span><span class="p">,</span> <span class="n">RootGroup</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the given `path` or create it if `create` is true.</span>
 
 <span class="sd">        If `create` is true, `path` *must* be a string path and not a</span>
@@ -940,7 +951,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_create_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_create_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Group</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the groups needed for the `path` to exist.</span>
 
 <span class="sd">        The group associated with the given `path` is returned.</span>
@@ -962,8 +973,14 @@
             <span class="n">parent</span> <span class="o">=</span> <span class="n">child</span>
         <span class="k">return</span> <span class="n">parent</span>
 
-<div class="viewcode-block" id="File.create_group"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_group">[docs]</a>    <span class="k">def</span> <span class="nf">create_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                     <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="File.create_group">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_group">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                     <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Filters</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Group</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new group.</span>
 
 <span class="sd">        Parameters</span>
@@ -999,10 +1016,21 @@
         <span class="k">return</span> <span class="n">Group</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                      <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.create_table"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_table">[docs]</a>    <span class="k">def</span> <span class="nf">create_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-                     <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="mi">10_000</span><span class="p">,</span>
-                     <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                     <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">track_times</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.create_table">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_table">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                     <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Description</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                     <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Filters</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">expectedrows</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">10_000</span><span class="p">,</span>
+                     <span class="n">chunkshape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">byteorder</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">obj</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">track_times</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Table</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new table with the given name in where location.</span>
 
 <span class="sd">        Parameters</span>
@@ -1121,9 +1149,19 @@
 
         <span class="k">return</span> <span class="n">ptobj</span></div>
 
-<div class="viewcode-block" id="File.create_array"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_array">[docs]</a>    <span class="k">def</span> <span class="nf">create_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-                     <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                     <span class="n">atom</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">track_times</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.create_array">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_array">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                     <span class="n">obj</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                     <span class="n">byteorder</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">atom</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Atom</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">shape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">track_times</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new array.</span>
 
 <span class="sd">        Parameters</span>
@@ -1217,10 +1255,21 @@
                      <span class="n">obj</span><span class="o">=</span><span class="n">obj</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="n">byteorder</span><span class="p">,</span>
                      <span class="n">track_times</span><span class="o">=</span><span class="n">track_times</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.create_carray"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_carray">[docs]</a>    <span class="k">def</span> <span class="nf">create_carray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-                      <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                      <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                      <span class="n">track_times</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.create_carray">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_carray">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_carray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                      <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                      <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                      <span class="n">atom</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Atom</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">shape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                      <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Filters</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">chunkshape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">byteorder</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                      <span class="n">obj</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">track_times</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CArray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new chunked array.</span>
 
 <span class="sd">        Parameters</span>
@@ -1333,10 +1382,22 @@
 
         <span class="k">return</span> <span class="n">ptobj</span></div>
 
-<div class="viewcode-block" id="File.create_earray"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_earray">[docs]</a>    <span class="k">def</span> <span class="nf">create_earray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-                      <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
-                      <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                      <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">track_times</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.create_earray">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_earray">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_earray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                      <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                      <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                      <span class="n">atom</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Atom</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">shape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                      <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Filters</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">expectedrows</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                      <span class="n">chunkshape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">byteorder</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                      <span class="n">obj</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">track_times</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EArray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new enlargeable array.</span>
 
 <span class="sd">        Parameters</span>
@@ -1368,6 +1429,10 @@
 <span class="sd">        title : str, optional</span>
 <span class="sd">            A description for this node (it sets the TITLE HDF5 attribute on</span>
 <span class="sd">            disk).</span>
+<span class="sd">        filters : Filters, optional</span>
+<span class="sd">            An instance of the Filters class (see :ref:`FiltersClassDescr`)</span>
+<span class="sd">            that provides information about the desired I/O filters to</span>
+<span class="sd">            be applied during the life of this object.</span>
 <span class="sd">        expectedrows : int, optional</span>
 <span class="sd">            A user estimate about the number of row elements that will be added</span>
 <span class="sd">            to the growable dimension in the EArray node.  If not provided, the</span>
@@ -1450,11 +1515,21 @@
 
         <span class="k">return</span> <span class="n">ptobj</span></div>
 
-<div class="viewcode-block" id="File.create_vlarray"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_vlarray">[docs]</a>    <span class="k">def</span> <span class="nf">create_vlarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-                       <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                       <span class="n">chunkshape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                       <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                       <span class="n">track_times</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.create_vlarray">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_vlarray">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_vlarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                       <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                       <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                       <span class="n">atom</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Atom</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                       <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Filters</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">expectedrows</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">chunkshape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">byteorder</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">obj</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">track_times</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VLArray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new variable-length array.</span>
 
 <span class="sd">        Parameters</span>
@@ -1562,7 +1637,14 @@
 
         <span class="k">return</span> <span class="n">ptobj</span></div>
 
-<div class="viewcode-block" id="File.create_hard_link"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_hard_link">[docs]</a>    <span class="k">def</span> <span class="nf">create_hard_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.create_hard_link">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_hard_link">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_hard_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                         <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                         <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="n">Leaf</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a hard link.</span>
 
 <span class="sd">        Create a hard link to a `target` node with the given `name` in</span>
@@ -1583,7 +1665,14 @@
         <span class="c1"># Return the target node</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.create_soft_link"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_soft_link">[docs]</a>    <span class="k">def</span> <span class="nf">create_soft_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.create_soft_link">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_soft_link">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_soft_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                         <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                         <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SoftLink</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a soft link (aka symbolic link) to a `target` node.</span>
 
 <span class="sd">        Create a soft link (aka symbolic link) to a `target` nodewith</span>
@@ -1611,7 +1700,14 @@
         <span class="n">parentnode</span><span class="o">.</span><span class="n">_g_add_children_names</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">slink</span></div>
 
-<div class="viewcode-block" id="File.create_external_link"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_external_link">[docs]</a>    <span class="k">def</span> <span class="nf">create_external_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.create_external_link">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.create_external_link">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_external_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                             <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                             <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                             <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                             <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ExternalLink</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an external link.</span>
 
 <span class="sd">        Create an external link to a *target* node with the given *name*</span>
@@ -1639,7 +1735,8 @@
         <span class="n">parentnode</span><span class="o">.</span><span class="n">_g_add_children_names</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">elink</span></div>
 
-    <span class="k">def</span> <span class="nf">_get_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodepath</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_get_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="n">RootGroup</span><span class="p">]:</span>
         <span class="c1"># The root node is always at hand.</span>
         <span class="k">if</span> <span class="n">nodepath</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span>
@@ -1649,7 +1746,10 @@
 
         <span class="k">return</span> <span class="n">node</span>
 
-<div class="viewcode-block" id="File.get_node"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.get_node">[docs]</a>    <span class="k">def</span> <span class="nf">get_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">classname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="File.get_node">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.get_node">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">classname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Node</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the node under where with the given name.</span>
 
 <span class="sd">        Parameters</span>
@@ -1718,7 +1818,10 @@
 
         <span class="k">return</span> <span class="n">node</span></div>
 
-<div class="viewcode-block" id="File.is_visible_node"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.is_visible_node">[docs]</a>    <span class="k">def</span> <span class="nf">is_visible_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.is_visible_node">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.is_visible_node">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_visible_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is the node under `path` visible?</span>
 
 <span class="sd">        If the node does not exist, a NoSuchNodeError is raised.</span>
@@ -1728,7 +1831,11 @@
         <span class="c1"># ``util.isvisiblepath()`` is still recommended for internal use.</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">_f_isvisible</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="File.rename_node"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.rename_node">[docs]</a>    <span class="k">def</span> <span class="nf">rename_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.rename_node">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.rename_node">[docs]</a>
+    <span class="k">def</span> <span class="nf">rename_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">newname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                    <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the name of the node specified by where and name to newname.</span>
 
 <span class="sd">        Parameters</span>
@@ -1747,8 +1854,12 @@
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
         <span class="n">obj</span><span class="o">.</span><span class="n">_f_rename</span><span class="p">(</span><span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.move_node"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.move_node">[docs]</a>    <span class="k">def</span> <span class="nf">move_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.move_node">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.move_node">[docs]</a>
+    <span class="k">def</span> <span class="nf">move_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">newparent</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">newname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Move the node specified by where and name to newparent/newname.</span>
 
 <span class="sd">        Parameters</span>
@@ -1766,6 +1877,12 @@
 <span class="sd">            destination (a string). If it is not specified or</span>
 <span class="sd">            None, the current name is chosen as the</span>
 <span class="sd">            new name.</span>
+<span class="sd">        overwrite : bool, optional</span>
+<span class="sd">            Whether to allow moving over another node, in which case that</span>
+<span class="sd">            node is recursively removed before moving (not done by default).</span>
+<span class="sd">        createparents : bool, optional</span>
+<span class="sd">            If True, any necessary parents of newparent will be created.</span>
+<span class="sd">            Defaults to False.</span>
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
@@ -1776,9 +1893,18 @@
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
         <span class="n">obj</span><span class="o">.</span><span class="n">_f_move</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">createparents</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.copy_node"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.copy_node">[docs]</a>    <span class="k">def</span> <span class="nf">copy_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                  <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.copy_node">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.copy_node">[docs]</a>
+    <span class="k">def</span> <span class="nf">copy_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                  <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                  <span class="n">newparent</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">newname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Node</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy the node specified by where and name to newparent/newname.</span>
 
 <span class="sd">        Parameters</span>
@@ -1805,10 +1931,10 @@
 <span class="sd">            If True, the destination group will be overwritten if it already</span>
 <span class="sd">            exists.  Defaults to False.</span>
 <span class="sd">        recursive : bool, optional</span>
-<span class="sd">            If True, all descendant nodes of srcgroup are recursively copied.</span>
-<span class="sd">            Defaults to False.</span>
+<span class="sd">            If True, all descendant nodes of the node to be acted upon are</span>
+<span class="sd">            recursively copied.  Defaults to False.</span>
 <span class="sd">        createparents : bool, optional</span>
-<span class="sd">            If True, any necessary parents of dstgroup will be created.</span>
+<span class="sd">            If True, any necessary parents of newparent will be created.</span>
 <span class="sd">            Defaults to False.</span>
 <span class="sd">        kwargs</span>
 <span class="sd">           Additional keyword arguments can be used to customize the copying</span>
@@ -1838,7 +1964,11 @@
         <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">_f_copy</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span>
                            <span class="n">overwrite</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">createparents</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.remove_node"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.remove_node">[docs]</a>    <span class="k">def</span> <span class="nf">remove_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.remove_node">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.remove_node">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the object node *name* under *where* location.</span>
 
 <span class="sd">        Parameters</span>
@@ -1858,7 +1988,11 @@
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
         <span class="n">obj</span><span class="o">.</span><span class="n">_f_remove</span><span class="p">(</span><span class="n">recursive</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.get_node_attr"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.get_node_attr">[docs]</a>    <span class="k">def</span> <span class="nf">get_node_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.get_node_attr">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.get_node_attr">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_node_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">attrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                      <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a PyTables attribute from the given node.</span>
 
 <span class="sd">        Parameters</span>
@@ -1875,7 +2009,11 @@
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">_f_getattr</span><span class="p">(</span><span class="n">attrname</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.set_node_attr"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.set_node_attr">[docs]</a>    <span class="k">def</span> <span class="nf">set_node_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="n">attrvalue</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.set_node_attr">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.set_node_attr">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_node_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">attrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">attrvalue</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+                      <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set a PyTables attribute for the given node.</span>
 
 <span class="sd">        Parameters</span>
@@ -1903,7 +2041,11 @@
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
         <span class="n">obj</span><span class="o">.</span><span class="n">_f_setattr</span><span class="p">(</span><span class="n">attrname</span><span class="p">,</span> <span class="n">attrvalue</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.del_node_attr"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.del_node_attr">[docs]</a>    <span class="k">def</span> <span class="nf">del_node_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.del_node_attr">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.del_node_attr">[docs]</a>
+    <span class="k">def</span> <span class="nf">del_node_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">attrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                      <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete a PyTables attribute from the given node.</span>
 
 <span class="sd">        Parameters</span>
@@ -1920,7 +2062,11 @@
         <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
         <span class="n">obj</span><span class="o">.</span><span class="n">_f_delattr</span><span class="p">(</span><span class="n">attrname</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.copy_node_attrs"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.copy_node_attrs">[docs]</a>    <span class="k">def</span> <span class="nf">copy_node_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">dstnode</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.copy_node_attrs">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.copy_node_attrs">[docs]</a>
+    <span class="k">def</span> <span class="nf">copy_node_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">dstnode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy PyTables attributes from one node to another.</span>
 
 <span class="sd">        Parameters</span>
@@ -1938,9 +2084,12 @@
         <span class="n">dstobject</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">(</span><span class="n">dstnode</span><span class="p">)</span>
         <span class="n">srcobject</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_f_copy</span><span class="p">(</span><span class="n">dstobject</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.copy_children"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.copy_children">[docs]</a>    <span class="k">def</span> <span class="nf">copy_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">srcgroup</span><span class="p">,</span> <span class="n">dstgroup</span><span class="p">,</span>
-                      <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                      <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.copy_children">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.copy_children">[docs]</a>
+    <span class="k">def</span> <span class="nf">copy_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">srcgroup</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dstgroup</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                      <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                      <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy the children of a group into another group.</span>
 
 <span class="sd">        Parameters</span>
@@ -1971,7 +2120,10 @@
         <span class="n">srcgroup</span><span class="o">.</span><span class="n">_f_copy_children</span><span class="p">(</span>
             <span class="n">dstgroup</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">createparents</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.copy_file"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.copy_file">[docs]</a>    <span class="k">def</span> <span class="nf">copy_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dstfilename</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.copy_file">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.copy_file">[docs]</a>
+    <span class="k">def</span> <span class="nf">copy_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dstfilename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy the contents of this file to dstfilename.</span>
 
 <span class="sd">        Parameters</span>
@@ -2045,7 +2197,10 @@
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">dstfileh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="File.list_nodes"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.list_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">list_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">classname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.list_nodes">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.list_nodes">[docs]</a>
+    <span class="k">def</span> <span class="nf">list_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">classname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Node</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a *list* with children nodes hanging from where.</span>
 
 <span class="sd">        This is a list-returning version of :meth:`File.iter_nodes`.</span>
@@ -2057,7 +2212,11 @@
 
         <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">_f_list_nodes</span><span class="p">(</span><span class="n">classname</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.iter_nodes"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.iter_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">iter_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">classname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.iter_nodes">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.iter_nodes">[docs]</a>
+    <span class="k">def</span> <span class="nf">iter_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                   <span class="n">classname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over children nodes hanging from where.</span>
 
 <span class="sd">        Parameters</span>
@@ -2082,7 +2241,10 @@
 
         <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">_f_iter_nodes</span><span class="p">(</span><span class="n">classname</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.__contains__"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__contains__">[docs]</a>    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.__contains__">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__contains__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is there a node with that path?</span>
 
 <span class="sd">        Returns True if the file has a node with the given path (a</span>
@@ -2097,7 +2259,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="File.__iter__"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__iter__">[docs]</a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.__iter__">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__iter__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursively iterate over the nodes in the tree.</span>
 
 <span class="sd">        This is equivalent to calling :meth:`File.walk_nodes` with no</span>
@@ -2118,7 +2283,11 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">walk_nodes</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.walk_nodes"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.walk_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">walk_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">classname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.walk_nodes">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.walk_nodes">[docs]</a>
+    <span class="k">def</span> <span class="nf">walk_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span>
+                   <span class="n">classname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursively iterate over nodes hanging from where.</span>
 
 <span class="sd">        Parameters</span>
@@ -2162,7 +2331,10 @@
             <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">walk_groups</span><span class="p">(</span><span class="n">where</span><span class="p">):</span>
                 <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">iter_nodes</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">classname</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.walk_groups"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.walk_groups">[docs]</a>    <span class="k">def</span> <span class="nf">walk_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.walk_groups">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.walk_groups">[docs]</a>
+    <span class="k">def</span> <span class="nf">walk_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursively iterate over groups (not leaves) hanging from where.</span>
 
 <span class="sd">        The where group itself is listed first (preorder), then each of its</span>
@@ -2179,7 +2351,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_group</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>  <span class="c1"># Is it a group?</span>
         <span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">_f_walk_groups</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">_check_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_check_open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check the state of the file.</span>
 
 <span class="sd">        If the file is closed, a `ClosedFileError` is raised.</span>
@@ -2189,12 +2362,12 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isopen</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ClosedFileError</span><span class="p">(</span><span class="s2">&quot;the file object is closed&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_iswritable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_iswritable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this file writable?&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;r+&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_check_writable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_check_writable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check whether the file is writable.</span>
 
 <span class="sd">        If the file is not writable, a `FileModeError` is raised.</span>
@@ -2204,12 +2377,14 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iswritable</span><span class="p">():</span>
             <span class="k">raise</span> <span class="n">FileModeError</span><span class="p">(</span><span class="s2">&quot;the file is not writable&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_check_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_check_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Group</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># `node` must already be a node.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">Group</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;node ``</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span><span class="si">}</span><span class="s2">`` is not a group&quot;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="File.is_undo_enabled"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.is_undo_enabled">[docs]</a>    <span class="k">def</span> <span class="nf">is_undo_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="File.is_undo_enabled">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.is_undo_enabled">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_undo_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is the Undo/Redo mechanism enabled?</span>
 
 <span class="sd">        Returns True if the Undo/Redo mechanism has been enabled for</span>
@@ -2222,11 +2397,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_open</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_undoEnabled</span></div>
 
-    <span class="k">def</span> <span class="nf">_check_undo_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_check_undo_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_undoEnabled</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">UndoRedoError</span><span class="p">(</span><span class="s2">&quot;Undo/Redo feature is currently disabled!&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_create_transaction_group</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_create_transaction_group</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TransactionGroupG</span><span class="p">:</span>
         <span class="n">tgroup</span> <span class="o">=</span> <span class="n">TransactionGroupG</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">_trans_group_name</span><span class="p">,</span>
             <span class="s2">&quot;Transaction information container&quot;</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -2234,17 +2410,19 @@
         <span class="n">tgroup</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_g__setattr</span><span class="p">(</span><span class="s1">&#39;FORMATVERSION&#39;</span><span class="p">,</span> <span class="n">_trans_version</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">tgroup</span>
 
-    <span class="k">def</span> <span class="nf">_create_transaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">troot</span><span class="p">,</span> <span class="n">tid</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_create_transaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">troot</span><span class="p">:</span> <span class="n">TransactionGroupG</span><span class="p">,</span> <span class="n">tid</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TransactionG</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">TransactionG</span><span class="p">(</span>
             <span class="n">troot</span><span class="p">,</span> <span class="n">_trans_name</span> <span class="o">%</span> <span class="n">tid</span><span class="p">,</span>
             <span class="s2">&quot;Transaction number </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tid</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_create_mark</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trans</span><span class="p">,</span> <span class="n">mid</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_create_mark</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trans</span><span class="p">:</span> <span class="n">TransactionG</span><span class="p">,</span> <span class="n">mid</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MarkG</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">MarkG</span><span class="p">(</span>
             <span class="n">trans</span><span class="p">,</span> <span class="n">_markName</span> <span class="o">%</span> <span class="n">mid</span><span class="p">,</span>
             <span class="s2">&quot;Mark number </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">mid</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<div class="viewcode-block" id="File.enable_undo"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.enable_undo">[docs]</a>    <span class="k">def</span> <span class="nf">enable_undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">Filters</span><span class="p">(</span><span class="n">complevel</span><span class="o">=</span><span class="mi">1</span><span class="p">)):</span>
+<div class="viewcode-block" id="File.enable_undo">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.enable_undo">[docs]</a>
+    <span class="k">def</span> <span class="nf">enable_undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Filters</span><span class="o">=</span><span class="n">Filters</span><span class="p">(</span><span class="n">complevel</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Enable the Undo/Redo mechanism.</span>
 
 <span class="sd">        This operation prepares the database for undoing and redoing</span>
@@ -2283,8 +2461,8 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_undo_enabled</span><span class="p">():</span>
             <span class="k">raise</span> <span class="n">UndoRedoError</span><span class="p">(</span><span class="s2">&quot;Undo/Redo feature is already enabled!&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_markers</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_seqmarkers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_markers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_seqmarkers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nmarks</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_curtransaction</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_curmark</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>  <span class="c1"># No marks yet</span>
@@ -2339,7 +2517,10 @@
         <span class="c1"># The Undo/Redo mechanism has been enabled.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_undoEnabled</span> <span class="o">=</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="File.disable_undo"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.disable_undo">[docs]</a>    <span class="k">def</span> <span class="nf">disable_undo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.disable_undo">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.disable_undo">[docs]</a>
+    <span class="k">def</span> <span class="nf">disable_undo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Disable the Undo/Redo mechanism.</span>
 
 <span class="sd">        Disabling the Undo/Redo mechanism leaves the database in the</span>
@@ -2374,7 +2555,10 @@
         <span class="c1"># The Undo/Redo mechanism has been disabled.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_undoEnabled</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="File.mark"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.mark">[docs]</a>    <span class="k">def</span> <span class="nf">mark</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.mark">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.mark">[docs]</a>
+    <span class="k">def</span> <span class="nf">mark</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Mark the state of the database.</span>
 
 <span class="sd">        Creates a mark for the current state of the database. A unique (and</span>
@@ -2417,7 +2601,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_create_mark</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_trans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curmark</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curmark</span></div>
 
-    <span class="k">def</span> <span class="nf">_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Log an action.</span>
 
 <span class="sd">        The `action` must be an all-uppercase string identifying it.</span>
@@ -2474,7 +2659,7 @@
                                  <span class="n">arg2</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_curaction</span> <span class="o">+=</span> <span class="mi">1</span>
 
-    <span class="k">def</span> <span class="nf">_get_mark_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mark</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_mark_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mark</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an integer markid from a mark sequence number or name.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mark</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
@@ -2492,7 +2677,7 @@
         <span class="c1"># print(&quot;markid, self._nmarks:&quot;, markid, self._nmarks)</span>
         <span class="k">return</span> <span class="n">markid</span>
 
-    <span class="k">def</span> <span class="nf">_get_final_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">markid</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_final_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">markid</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the action to go.</span>
 
 <span class="sd">        It does not touch the self private attributes</span>
@@ -2510,8 +2695,8 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seqmarkers</span><span class="p">[</span><span class="n">markid</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">_doundo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finalaction</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo/Redo actions up to final action in the specificed direction.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_doundo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finalaction</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo/Redo actions up to final action in the specified direction.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">direction</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">actionlog</span> <span class="o">=</span> \
@@ -2559,7 +2744,9 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">_curmark</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_curaction</span> <span class="o">+=</span> <span class="n">direction</span>
 
-<div class="viewcode-block" id="File.undo"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.undo">[docs]</a>    <span class="k">def</span> <span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mark</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="File.undo">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.undo">[docs]</a>
+    <span class="k">def</span> <span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mark</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Go to a past state of the database.</span>
 
 <span class="sd">        Returns the database to the state associated with the specified mark.</span>
@@ -2602,10 +2789,13 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curaction</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actionlog</span><span class="o">.</span><span class="n">nrows</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_curaction</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_curmark</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_actionlog</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">arg1</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_curaction</span><span class="p">])</span></div>
+
 <span class="c1">#         print(&quot;(post)UNDO: (curaction, curmark) = (%s,%s)&quot; % \</span>
 <span class="c1">#               (self._curaction, self._curmark))</span>
 
-<div class="viewcode-block" id="File.redo"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.redo">[docs]</a>    <span class="k">def</span> <span class="nf">redo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mark</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="File.redo">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.redo">[docs]</a>
+    <span class="k">def</span> <span class="nf">redo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mark</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Go to a future state of the database.</span>
 
 <span class="sd">        Returns the database to the state associated with the specified</span>
@@ -2652,10 +2842,13 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_curmark</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curaction</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actionlog</span><span class="o">.</span><span class="n">nrows</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_curaction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actionlog</span><span class="o">.</span><span class="n">nrows</span> <span class="o">-</span> <span class="mi">1</span></div>
+
 <span class="c1">#         print(&quot;(post)REDO: (curaction, curmark) = (%s,%s)&quot; % \</span>
 <span class="c1">#               (self._curaction, self._curmark))</span>
 
-<div class="viewcode-block" id="File.goto"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.goto">[docs]</a>    <span class="k">def</span> <span class="nf">goto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mark</span><span class="p">):</span>
+<div class="viewcode-block" id="File.goto">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.goto">[docs]</a>
+    <span class="k">def</span> <span class="nf">goto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mark</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Go to a specific mark of the database.</span>
 
 <span class="sd">        Returns the database to the state associated with the specified mark.</span>
@@ -2679,7 +2872,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">redo</span><span class="p">(</span><span class="n">mark</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.get_current_mark"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.get_current_mark">[docs]</a>    <span class="k">def</span> <span class="nf">get_current_mark</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.get_current_mark">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.get_current_mark">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_current_mark</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the identifier of the current mark.</span>
 
 <span class="sd">        Returns the identifier of the current mark. This can be used</span>
@@ -2697,7 +2893,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_undo_enabled</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curmark</span></div>
 
-    <span class="k">def</span> <span class="nf">_shadow_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_shadow_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Node</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute and return a shadow name.</span>
 
 <span class="sd">        Computes the current shadow name according to the current</span>
@@ -2712,7 +2909,9 @@
 
         <span class="k">return</span> <span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
-<div class="viewcode-block" id="File.flush"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.flush">[docs]</a>    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="File.flush">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.flush">[docs]</a>
+    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Flush all the alive leaves in the object tree.&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_open</span><span class="p">()</span>
@@ -2721,7 +2920,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_node_manager</span><span class="o">.</span><span class="n">flush_nodes</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flush_file</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># 0 means local scope, 1 global (virtual) scope</span></div>
 
-<div class="viewcode-block" id="File.close"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.close">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.close">[docs]</a>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Flush all the alive leaves in object tree and close the file.&quot;&quot;&quot;</span>
 
         <span class="c1"># If the file is already closed, return immediately</span>
@@ -2770,21 +2972,30 @@
         <span class="c1"># Restore the filename attribute that is used by _FileRegistry</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
 
-        <span class="c1"># Delete the entry from he registry of opened files</span>
+        <span class="c1"># Delete the entry from the registry of opened files</span>
         <span class="n">_open_files</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="File.__enter__"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__enter__">[docs]</a>    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.__enter__">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__enter__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;File&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Enter a context and return the same file.&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span></div>
 
-<div class="viewcode-block" id="File.__exit__"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__exit__">[docs]</a>    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">exc_info</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.__exit__">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__exit__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">exc_info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Exit a context and close the file.&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">return</span> <span class="kc">False</span>  <span class="c1"># do not hide exceptions</span></div>
 
-<div class="viewcode-block" id="File.__str__"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__str__">[docs]</a>    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.__str__">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a short string representation of the object tree.</span>
 
 <span class="sd">        Examples</span>
@@ -2830,7 +3041,10 @@
                     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span></div>
 
-<div class="viewcode-block" id="File.__repr__"><a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__repr__">[docs]</a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="File.__repr__">
+<a class="viewcode-back" href="../../usersguide/libref/file_class.html#tables.File.__repr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a detailed string representation of the object tree.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isopen</span><span class="p">:</span>
@@ -2848,7 +3062,8 @@
                     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">node</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span></div>
 
-    <span class="k">def</span> <span class="nf">_update_node_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldpath</span><span class="p">,</span> <span class="n">newpath</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_update_node_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">newpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update location information of nodes under `oldpath`.</span>
 
 <span class="sd">        This only affects *already loaded* nodes.</span>
@@ -2867,6 +3082,7 @@
                     <span class="n">newnodeppath</span> <span class="o">=</span> <span class="n">split_path</span><span class="p">(</span><span class="n">newnodepath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">descendent_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">nodepath</span><span class="p">)</span>
                     <span class="n">descendent_node</span><span class="o">.</span><span class="n">_g_update_location</span><span class="p">(</span><span class="n">newnodeppath</span><span class="p">)</span></div>
+
 
 
 <span class="c1"># If a user hits ^C during a run, it is wise to gracefully close the</span>

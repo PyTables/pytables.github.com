@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Optimization tips &mdash; PyTables 3.9.2 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+  <title>Optimization tips &mdash; PyTables 3.10.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -50,7 +52,7 @@
               <img src="../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                3.9.2
+                3.10.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -293,10 +295,82 @@ PyTables optimized case, it also resulted in 3x-4x speedups compared to the
 performance of the HDF5 filter.</p>
 <p>Optimized b2nd slicing in PyTables has its limitations, though: it only works
 with contiguous slices (that is, with step 1 on every dimension) and on
-datasets with the same byte ordering as the host machine.  However, the
-performance gains may be worth the extra effort of choosing the right
-compression parameters and chunksizes when your use case is not affected by
-those limitations.</p>
+datasets with the same byte ordering as the host machine and where Blosc2 is
+the only filter in the HDF5 pipeline (e.g. Fletcher32 checksumming is off).
+However, the performance gains may be worth the extra effort of choosing the
+right compression parameters and chunksizes when your use case is not affected
+by those limitations.</p>
+</section>
+<section id="low-level-access-to-chunks-direct-chunking">
+<span id="directchunking"></span><h3>Low-level access to chunks: direct chunking<a class="headerlink" href="#low-level-access-to-chunks-direct-chunking" title="Permalink to this heading">¶</a></h3>
+<p>Features like the aforementioned optimized b2nd slicing may spare you from
+some of the overhead of the HDF5 filter pipeline.  However, you may still want
+finer control on the processing of chunk data beyond what is offered natively
+by PyTables.</p>
+<p>The direct chunking API allows you to query, read and write raw chunks
+completely bypassing the HDF5 filter pipeline.  As we will see <a class="reference internal" href="#comprdirectchunking"><span class="std std-ref">while
+discussing compression</span></a>, this may allow you to better
+customize the store/load process and get substantial performance increases.
+You may also use a compressor not supported at all by PyTables or HDF5, for
+instance to help you develop an HDF5 C plugin for it, by first writing chunks
+in Python and implementing decompression in C for transparent reading
+operations.</p>
+<p>As an example, direct chunking support has been used in h5py to create
+JPEG2000-compressed tomographies which may be accessed normally on any device
+with h5py, hdf5plugin and the blosc2_grok plugin installed.  Creating such
+datasets using normal array operations would have otherwise been impossible in
+PyTables or h5py.</p>
+<p>Be warned that this is a very low-level functionality.  If done right
+(e.g. using proper in-memory layout and a robust compressor), you may be able
+to very efficiently produce datasets compatible with other HDF5 libraries, but
+you may otherwise produce broken or incompatible datasets.  As usual, consider
+your requirements and take measurements.</p>
+<p>The direct chunking API relies on three operations supported by any chunked
+leaf (CArray, EArray, Table).  The first one is <a class="reference internal" href="libref/hierarchy_classes.html#tables.Leaf.chunk_info" title="tables.Leaf.chunk_info"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Leaf.chunk_info()</span></code></a>, which
+returns a <a class="reference internal" href="libref/helper_classes.html#chunkinfoclassdescr"><span class="std std-ref">ChunkInfo</span></a> instance with information
+about the chunk containing the item at the given coordinates:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">carray</span> <span class="o">=</span> <span class="n">h5f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;carray&#39;</span><span class="p">,</span> <span class="n">chunkshape</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,),</span> <span class="n">obj</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">carray</span><span class="o">.</span><span class="n">chunk_info</span><span class="p">((</span><span class="mi">42</span><span class="p">,))</span>
+<span class="go">ChunkInfo(start=(40,), filter_mask=0, offset=4040, size=80)</span>
+</pre></div>
+</div>
+<p>This means that the item at coordinate 42 is stored in a chunk of 80 bytes
+which starts at coordinate 40 in the array and byte 4040 in the file.  The
+latter offset may be used to let other code access the chunk directly on
+storage (optimized b2nd slicing uses that approach).  The former chunk start
+coordinate may come in handy for other chunk operations, which expect chunk
+start coordinates.</p>
+<p>The second operation is <a class="reference internal" href="libref/hierarchy_classes.html#tables.Leaf.write_chunk" title="tables.Leaf.write_chunk"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Leaf.write_chunk()</span></code></a>, which stores the raw data
+bytes for the chunk that starts at the given coordinates.  The data must
+already have gone through dataset filters (i.e. compression):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># This is only to signal others that Blosc2 compression is used,</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># as actual parameters are stored in the chunk itself.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b2filters</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">Filters</span><span class="p">(</span><span class="n">complevel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">complib</span><span class="o">=</span><span class="s1">&#39;blosc2&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">earray</span> <span class="o">=</span> <span class="n">h5f</span><span class="o">.</span><span class="n">create_earray</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;earray&#39;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">b2filters</span><span class="p">,</span>
+<span class="gp">... </span>                           <span class="n">chunkshape</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,),</span> <span class="n">obj</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cdata</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">210</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cdata_b2</span> <span class="o">=</span> <span class="n">blosc2</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cdata</span><span class="p">)</span>  <span class="c1"># compress</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chunk</span> <span class="o">=</span> <span class="n">cdata_b2</span><span class="o">.</span><span class="n">to_cframe</span><span class="p">()</span>  <span class="c1"># serialize</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">earray</span><span class="o">.</span><span class="n">truncate</span><span class="p">((</span><span class="mi">110</span><span class="p">,))</span>  <span class="c1"># enlarge array cheaply</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">earray</span><span class="o">.</span><span class="n">write_chunk</span><span class="p">((</span><span class="mi">100</span><span class="p">,),</span> <span class="n">chunk</span><span class="p">)</span>  <span class="c1"># write directly</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">earray</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]</span> <span class="o">==</span> <span class="n">cdata</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>  <span class="c1"># access new chunk as usual</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The third operation is <a class="reference internal" href="libref/hierarchy_classes.html#tables.Leaf.read_chunk" title="tables.Leaf.read_chunk"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Leaf.read_chunk()</span></code></a>, which loads the raw data bytes
+for the chunk that starts at the given coordinates.  The data needs to go
+through dataset filters (i.e. decompression):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cdata</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">210</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rchunk</span> <span class="o">=</span> <span class="n">earray</span><span class="o">.</span><span class="n">read_chunk</span><span class="p">((</span><span class="mi">100</span><span class="p">,))</span>  <span class="c1"># read directly</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rcdata_b2</span> <span class="o">=</span> <span class="n">blosc2</span><span class="o">.</span><span class="n">ndarray_from_cframe</span><span class="p">(</span><span class="n">rchunk</span><span class="p">)</span>  <span class="c1"># deserialize</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rcdata</span> <span class="o">=</span> <span class="n">rcdata_b2</span><span class="p">[:]</span>  <span class="c1"># decompress</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">rcdata</span> <span class="o">==</span> <span class="n">cdata</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The file examples/direct-chunking.py contains a more elaborate illustration of direct chunking.</p>
 </section>
 </section>
 <section id="accelerating-your-searches">
@@ -1003,6 +1077,93 @@ much improved compression level), it is a good thing to have such a filter
 enabled by default in the battle for discovering redundancy when you want to
 compress your data, just as PyTables does.</p>
 </section>
+<section id="avoiding-filter-pipeline-overhead-with-direct-chunking">
+<span id="comprdirectchunking"></span><h3>Avoiding filter pipeline overhead with direct chunking<a class="headerlink" href="#avoiding-filter-pipeline-overhead-with-direct-chunking" title="Permalink to this heading">¶</a></h3>
+<p>Even if you hit a sweet performance spot in your combination of chunk size,
+compression and shuffling as discussed in the previous section, that may still
+not be enough for particular scenarios demanding very high I/O speeds (e.g. to
+cope with continuous collection or extraction of data).  As shown in the
+section about <a class="reference internal" href="#multidimslicing"><span class="std std-ref">multidimensional slicing</span></a>, the HDF5
+filter pipeline still introduces a significant overhead in the processing of
+chunk data for storage.  Here is where <a class="reference internal" href="#directchunking"><span class="std std-ref">direct chunking</span></a>
+may help you squeeze that needed extra performance.</p>
+<p>The notebook bench/direct-chunking-AMD-7800X3D.ipynb shows an experiment run
+on an AMD Ryzen 7 7800X3D CPU with 8 cores, 96 MB L3 cache and 8 MB L2 cache,
+clocked at 4.2 GHz.  The scenario is similar to that of
+examples/direct-chunking.py, with a tomography-like dataset (consisting of a
+stack of 10 greyscale images) stored as an EArray, where each image
+corresponds to a chunk:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">25600</span><span class="p">,</span> <span class="mi">19200</span><span class="p">)</span>
+<span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;u2&#39;</span><span class="p">)</span>
+<span class="n">chunkshape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+</pre></div>
+</div>
+<p>Chunks are compressed with Zstd at level 5 via Blosc2, both for direct and
+regular chunking.  Regular operations use plain slicing to write and read each
+image/chunk:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Write</span>
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="n">array</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">np_data</span>
+
+<span class="c1"># Read</span>
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="n">np_data2</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>In contrast, direct operations need to manually perform the (de)compression,
+(de)serialization and writing/reading of each image/chunk:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Write</span>
+<span class="n">coords_tail</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,)</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="n">b2_data</span> <span class="o">=</span> <span class="n">b2</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np_data</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="n">chunkshape</span><span class="p">,</span>
+                         <span class="n">cparams</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">clevel</span><span class="o">=</span><span class="n">clevel</span><span class="p">))</span>
+    <span class="n">wchunk</span> <span class="o">=</span> <span class="n">b2_data</span><span class="o">.</span><span class="n">to_cframe</span><span class="p">()</span>
+    <span class="n">chunk_coords</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="p">,)</span> <span class="o">+</span> <span class="n">coords_tail</span>
+    <span class="n">array</span><span class="o">.</span><span class="n">write_chunk</span><span class="p">(</span><span class="n">chunk_coords</span><span class="p">,</span> <span class="n">wchunk</span><span class="p">)</span>
+
+<span class="c1"># Read</span>
+<span class="n">coords_tail</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,)</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="n">chunk_coords</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="p">,)</span> <span class="o">+</span> <span class="n">coords_tail</span>
+    <span class="n">rchunk</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">read_chunk</span><span class="p">(</span><span class="n">chunk_coords</span><span class="p">)</span>
+    <span class="n">ndarr</span> <span class="o">=</span> <span class="n">b2</span><span class="o">.</span><span class="n">ndarray_from_cframe</span><span class="p">(</span><span class="n">rchunk</span><span class="p">)</span>
+    <span class="n">np_data2</span> <span class="o">=</span> <span class="n">ndarr</span><span class="p">[:]</span>
+</pre></div>
+</div>
+<p>Despite the more elaborate handling of data, we rest assured that HDF5
+performs no additional processing of chunks, while regular chunking implies
+data going through the whole filter pipeline.  Plotting the results shows that
+direct chunking yields 3.75x write and 4.4x read speedups, reaching write/read
+speeds of 1.7 GB/s and 5.2 GB/s.</p>
+<figure class="align-center" id="id35">
+<img alt="../_images/direct-chunking-AMD-7800X3D.png" src="../_images/direct-chunking-AMD-7800X3D.png" />
+<figcaption>
+<p><span class="caption-text"><strong>Figure 24. Comparing write/read speeds of regular vs. direct chunking
+(AMD 7800X3D).</strong></span><a class="headerlink" href="#id35" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Write performance may benefit even more of higher core counts, as shown in the
+plot below, where the same benchmark on an Intel Core i9-13900K CPU (24 mixed
+cores, 32 MB L2, 5.7 GHz) raises write speedup to 4.6x (2.6 GB/s).</p>
+<figure class="align-center" id="id36">
+<img alt="../_images/direct-chunking-i13900K.png" src="../_images/direct-chunking-i13900K.png" />
+<figcaption>
+<p><span class="caption-text"><strong>Figure 25. Comparing write/read speeds of regular vs. direct chunking
+(Intel 13900K).</strong></span><a class="headerlink" href="#id36" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>As we can see, bypassing the HDF5 pipeline with direct chunking offers
+immediate speed benefits for both writing and reading.  This is particularly
+beneficial for large datasets, where the overhead of the pipeline can be very
+significant.</p>
+<p>By using the Blosc2 library to serialize the data with the direct chunking
+method, the resulting HDF5 file can still be decompressed with any
+HDF5-enabled application, as long as it has the Blosc2 filter available
+(e.g. via hdf5plugin).  Direct chunking allows for more direct interaction
+with the Blosc2 library, so you can experiment with different blockshapes,
+compressors, filters and compression levels, to find the best configuration
+for your specific needs.</p>
+</section>
 </section>
 <section id="getting-the-most-from-the-node-lru-cache">
 <span id="lruoptim"></span><h2>Getting the most from the node LRU cache<a class="headerlink" href="#getting-the-most-from-the-node-lru-cache" title="Permalink to this heading">¶</a></h2>
@@ -1051,8 +1212,8 @@ fits better your needs.</p>
 this benchmark is run twice for two different values of the LRU cache size,
 specifically 256 and 1024. You can see the results in
 <a class="reference internal" href="#optimization-table-1"><span class="std std-ref">table</span></a>.</p>
-<span id="optimization-table-1"></span><table class="docutils align-default" id="id35">
-<caption><span class="caption-text"><strong>Retrieval speed and memory consumption depending on the number of nodes in LRU cache.</strong></span><a class="headerlink" href="#id35" title="Permalink to this table">¶</a></caption>
+<span id="optimization-table-1"></span><table class="docutils align-default" id="id37">
+<caption><span class="caption-text"><strong>Retrieval speed and memory consumption depending on the number of nodes in LRU cache.</strong></span><a class="headerlink" href="#id37" title="Permalink to this table">¶</a></caption>
 <thead>
 <tr class="row-odd"><th class="head" colspan="2"><p>Number:</p></th>
 <th class="head" colspan="4"><p>100 nodes</p></th>
@@ -1194,7 +1355,7 @@ datasets.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2011–2023, PyTables maintainers.</p>
+    <p>&#169; Copyright 2011–2024, PyTables maintainers.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

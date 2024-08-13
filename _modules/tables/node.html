@@ -1,22 +1,21 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.node &mdash; PyTables 3.9.2 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <title>tables.node &mdash; PyTables 3.9.3.dev0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/documentation_options.js?v=f9369ea6"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -47,7 +46,7 @@
               <img src="../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                3.9.2
+                3.9.3.dev0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -99,6 +98,7 @@
 
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">.registry</span> <span class="kn">import</span> <span class="n">class_name_dict</span><span class="p">,</span> <span class="n">class_id_dict</span>
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="p">(</span><span class="n">ClosedNodeError</span><span class="p">,</span> <span class="n">NodeError</span><span class="p">,</span> <span class="n">UndoRedoWarning</span><span class="p">,</span>
@@ -108,12 +108,17 @@
 <span class="kn">from</span> <span class="nn">.undoredo</span> <span class="kn">import</span> <span class="n">move_to_shadow</span>
 <span class="kn">from</span> <span class="nn">.attributeset</span> <span class="kn">import</span> <span class="n">AttributeSet</span><span class="p">,</span> <span class="n">NotLoggedAttributeSet</span>
 
+<span class="c1"># The following imports are just needed for type annotations.</span>
+<span class="c1"># However, actually importing them is not possible here as it will create a circular import.</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">.group</span> <span class="kn">import</span> <span class="n">Group</span>
+    <span class="kn">from</span> <span class="nn">.link</span> <span class="kn">import</span> <span class="n">SoftLink</span>
 
 <span class="n">__docformat__</span> <span class="o">=</span> <span class="s1">&#39;reStructuredText&#39;</span>
 <span class="sd">&quot;&quot;&quot;The format of documentation strings in this module.&quot;&quot;&quot;</span>
 
 
-<span class="k">def</span> <span class="nf">_closedrepr</span><span class="p">(</span><span class="n">oldmethod</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_closedrepr</span><span class="p">(</span><span class="n">oldmethod</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate string representation method to handle closed nodes.</span>
 
 <span class="sd">    If the node is closed, a string like this is returned::</span>
@@ -125,7 +130,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">oldmethod</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">newmethod</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">newmethod</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&lt;closed </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s1">.&#39;</span>
                     <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> at 0x</span><span class="si">{</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">:</span><span class="s1">x</span><span class="si">}</span><span class="s1">&gt;&#39;</span><span class="p">)</span>
@@ -149,7 +154,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="n">mcs</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dict_</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="n">mcs</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">bases</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">dict_</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;MetaNode&quot;</span><span class="p">:</span>
         <span class="c1"># Add default behaviour for representing closed nodes.</span>
         <span class="k">for</span> <span class="n">mname</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;__str__&#39;</span><span class="p">,</span> <span class="s1">&#39;__repr__&#39;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">mname</span> <span class="ow">in</span> <span class="n">dict_</span><span class="p">:</span>
@@ -157,7 +162,7 @@
 
         <span class="k">return</span> <span class="nb">type</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">mcs</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dict_</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dict_</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">bases</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">dict_</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dict_</span><span class="p">)</span>
 
         <span class="c1"># Always register into class name dictionary.</span>
@@ -175,7 +180,9 @@
                 <span class="n">class_id_dict</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span>
 
 
-<div class="viewcode-block" id="Node"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node">[docs]</a><span class="k">class</span> <span class="nc">Node</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">MetaNode</span><span class="p">):</span>
+<div class="viewcode-block" id="Node">
+<a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node">[docs]</a>
+<span class="k">class</span> <span class="nc">Node</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">MetaNode</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for all PyTables nodes.</span>
 
 <span class="sd">    This is the base class for *all* nodes in a PyTables hierarchy. It is an</span>
@@ -207,7 +214,7 @@
 
 <span class="sd">    .. attribute:: _v_depth</span>
 
-<span class="sd">        The depth of this node in the tree (an non-negative integer value).</span>
+<span class="sd">        The depth of this node in the tree (n non-negative integer value).</span>
 
 <span class="sd">    .. attribute:: _v_file</span>
 
@@ -234,7 +241,7 @@
     <span class="n">_AttributeSet</span> <span class="o">=</span> <span class="n">AttributeSet</span>
 
     <span class="c1"># `_v_parent` is accessed via its file to avoid upwards references.</span>
-    <span class="k">def</span> <span class="nf">_g_getparent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_getparent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Group&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The parent :class:`Group` instance&quot;&quot;&quot;</span>
         <span class="p">(</span><span class="n">parentpath</span><span class="p">,</span> <span class="n">nodename</span><span class="p">)</span> <span class="o">=</span> <span class="n">split_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">parentpath</span><span class="p">)</span>
@@ -244,7 +251,7 @@
     <span class="c1"># &#39;_v_attrs&#39; is defined as a lazy read-only attribute.</span>
     <span class="c1"># This saves 0.7s/3.8s.</span>
     <span class="nd">@lazyattr</span>
-    <span class="k">def</span> <span class="nf">_v_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_v_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeSet</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The associated `AttributeSet` instance.</span>
 
 <span class="sd">        See Also</span>
@@ -257,14 +264,14 @@
 
     <span class="c1"># &#39;_v_title&#39; is a direct read-write shorthand for the &#39;TITLE&#39; attribute</span>
     <span class="c1"># with the empty string as a default value.</span>
-    <span class="k">def</span> <span class="nf">_g_gettitle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_gettitle</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A description of this node. A shorthand for TITLE attribute.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="s1">&#39;TITLE&#39;</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">TITLE</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="s1">&#39;&#39;</span>
 
-    <span class="k">def</span> <span class="nf">_g_settitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_settitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">TITLE</span> <span class="o">=</span> <span class="n">title</span>
 
     <span class="n">_v_title</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_g_gettitle</span><span class="p">,</span> <span class="n">_g_settitle</span><span class="p">)</span>
@@ -272,11 +279,12 @@
     <span class="c1"># This may be looked up by ``__del__`` when ``__init__`` doesn&#39;t get</span>
     <span class="c1"># to be called.  See ticket #144 for more info.</span>
     <span class="n">_v_isopen</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whehter this node is open or not.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether this node is open or not.&quot;&quot;&quot;</span>
 
     <span class="c1"># The ``_log`` argument is only meant to be used by ``_g_copy_as_child()``</span>
     <span class="c1"># to avoid logging the creation of children nodes of a copied sub-tree.</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="s2">&quot;SoftLink&quot;</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">_log</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Remember to assign these values in the root group constructor</span>
         <span class="c1"># as it does not use this method implementation!</span>
 
@@ -361,10 +369,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_f_close</span><span class="p">()</span>
             <span class="k">raise</span>
 
-    <span class="k">def</span> <span class="nf">_g_log_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_log_create</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s1">&#39;CREATE&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Closed `Node` instances can not be killed and revived.</span>
         <span class="c1"># Instead, accessing a closed and deleted (from memory, not</span>
         <span class="c1"># disk) one yields a *new*, open `Node` instance.  This is</span>
@@ -399,19 +407,19 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_v__deleting</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_f_close</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_g_pre_kill_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_pre_kill_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Code to be called before killing the node.&quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="nf">_g_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_create</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new HDF5 node and return its object identifier.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-    <span class="k">def</span> <span class="nf">_g_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Open an existing HDF5 node and return its object identifier.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-    <span class="k">def</span> <span class="nf">_g_check_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_check_open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check that the node is open.</span>
 
 <span class="sd">        If the node is closed, a `ClosedNodeError` is raised.</span>
@@ -422,7 +430,7 @@
             <span class="k">raise</span> <span class="n">ClosedNodeError</span><span class="p">(</span><span class="s2">&quot;the node object is closed&quot;</span><span class="p">)</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">isopen</span><span class="p">,</span> <span class="s2">&quot;found an open node in a closed file&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_g_set_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_set_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">:</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set location-dependent attributes.</span>
 
 <span class="sd">        Sets the location-dependent attributes of this node to reflect</span>
@@ -468,7 +476,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">!=</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
             <span class="n">file_</span><span class="o">.</span><span class="n">_node_manager</span><span class="o">.</span><span class="n">cache_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_g_update_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparentpath</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_update_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparentpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update location-dependent attributes.</span>
 
 <span class="sd">        Updates location data when an ancestor node has changed its</span>
@@ -502,7 +510,7 @@
         <span class="c1"># Tell dependent objects about the new location of this node.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_update_dependent</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_g_del_location</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_del_location</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear location-dependent attributes.</span>
 
 <span class="sd">        This also triggers the removal of file references to this node.</span>
@@ -514,7 +522,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__deleting</span><span class="p">:</span>
             <span class="n">node_manager</span><span class="o">.</span><span class="n">drop_from_cache</span><span class="p">(</span><span class="n">pathname</span><span class="p">)</span>
-            <span class="c1"># Note: node_manager.drop_node do not removes the node form the</span>
+            <span class="c1"># Note: node_manager.drop_node does not remove the node from the</span>
             <span class="c1"># registry if it is still open</span>
             <span class="n">node_manager</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
@@ -524,11 +532,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_depth</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Code to be run after node creation and before creation logging.&quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="nf">_g_update_dependent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_update_dependent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update dependent objects after a location change.</span>
 
 <span class="sd">        All dependent objects (but not nodes!) referencing this node</span>
@@ -539,7 +547,9 @@
         <span class="k">if</span> <span class="s1">&#39;_v_attrs&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="n">_g_update_node_location</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Node._f_close"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_close">[docs]</a>    <span class="k">def</span> <span class="nf">_f_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Node._f_close">
+<a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_close">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Close this node in the tree.</span>
 
 <span class="sd">        This releases all resources held by the node, so it should not</span>
@@ -578,7 +588,8 @@
         <span class="c1"># Just add a final flag to signal that the node is closed:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-    <span class="k">def</span> <span class="nf">_g_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_g_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove this node from the hierarchy.</span>
 
 <span class="sd">        If the node has children, recursive removal must be stated by</span>
@@ -601,7 +612,9 @@
         <span class="c1"># Remove the node from the HDF5 hierarchy.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_delete</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Node._f_remove"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_remove">[docs]</a>    <span class="k">def</span> <span class="nf">_f_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Node._f_remove">
+<a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_remove">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove this node from the hierarchy.</span>
 
 <span class="sd">        If the node has children, recursive removal must be stated by giving</span>
@@ -621,14 +634,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_g_remove</span><span class="p">(</span><span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_g_remove_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_g_remove_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">file_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span>
         <span class="n">oldpathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
         <span class="c1"># Log *before* moving to use the right shadow name.</span>
         <span class="n">file_</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s1">&#39;REMOVE&#39;</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">)</span>
         <span class="n">move_to_shadow</span><span class="p">(</span><span class="n">file_</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_g_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">:</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="n">newname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Move this node in the hierarchy.</span>
 
 <span class="sd">        Moves the node into the given `newparent`, with the given</span>
@@ -664,7 +678,9 @@
         <span class="c1"># Tell dependent objects about the new location of this node.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_update_dependent</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Node._f_rename"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_rename">[docs]</a>    <span class="k">def</span> <span class="nf">_f_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Node._f_rename">
+<a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_rename">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Rename this node in place.</span>
 
 <span class="sd">        Changes the name of a node to *newname* (a string).  If a node with the</span>
@@ -675,8 +691,11 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_f_move</span><span class="p">(</span><span class="n">newname</span><span class="o">=</span><span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Node._f_move"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_move">[docs]</a>    <span class="k">def</span> <span class="nf">_f_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Node._f_move">
+<a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_move">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">newname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Move or rename this node.</span>
 
 <span class="sd">        Moves a node into a new parent group, or changes the name of the</span>
@@ -763,15 +782,16 @@
         <span class="k">if</span> <span class="n">file_</span><span class="o">.</span><span class="n">is_undo_enabled</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_g_log_move</span><span class="p">(</span><span class="n">oldpathname</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_g_log_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_g_log_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s1">&#39;MOVE&#39;</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">:</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="n">newname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">_log</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Node&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy this node and return the new one.</span>
 
 <span class="sd">        Creates and returns a copy of the node in the given `newparent`,</span>
 <span class="sd">        with the given `newname`.  If `recursive` copy is stated, all</span>
-<span class="sd">        descendents are copied as well.  Additional keyword argumens may</span>
+<span class="sd">        descendents are copied as well.  Additional keyword arguments may</span>
 <span class="sd">        affect the way that the copy is made.  Unknown arguments must be</span>
 <span class="sd">        ignored.  On recursive copies, all keyword arguments must be</span>
 <span class="sd">        passed on to the children invocation of this method.</span>
@@ -784,7 +804,7 @@
 
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-    <span class="k">def</span> <span class="nf">_g_copy_as_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_copy_as_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">:</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Node&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy this node as a child of another group.</span>
 
 <span class="sd">        Copies just this node into `newparent`, not recursing children</span>
@@ -796,9 +816,11 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">newparent</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_name</span><span class="p">,</span>
                             <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Node._f_copy"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_copy">[docs]</a>    <span class="k">def</span> <span class="nf">_f_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="Node._f_copy">
+<a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_copy">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">newname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Node&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy this node and return the new node.</span>
 
 <span class="sd">        Creates and returns a copy of the node, maybe in a different place in</span>
@@ -892,13 +914,17 @@
         <span class="c1"># The constructor of the new node takes care of logging.</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">dstparent</span><span class="p">,</span> <span class="n">dstname</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Node._f_isvisible"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_isvisible">[docs]</a>    <span class="k">def</span> <span class="nf">_f_isvisible</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Node._f_isvisible">
+<a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_isvisible">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_isvisible</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this node visible?&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_check_open</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">isvisiblepath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_g_check_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_g_check_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="s2">&quot;Group&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Node must be defined in order to define a Group.</span>
         <span class="c1"># However, we need to know Group here.</span>
         <span class="c1"># Using class_name_dict avoids a circular import.</span>
@@ -909,7 +935,7 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;new parent node ``</span><span class="si">%s</span><span class="s2">`` is not a group&quot;</span>
                             <span class="o">%</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_g_check_not_contains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pathname</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_check_not_contains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pathname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># The not-a-TARDIS test. ;)</span>
         <span class="n">mypathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">mypathname</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span>  <span class="c1"># all nodes fall below the root group</span>
@@ -918,7 +944,7 @@
             <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span><span class="s2">&quot;can not move or recursively copy node ``</span><span class="si">%s</span><span class="s2">`` &quot;</span>
                             <span class="s2">&quot;into itself&quot;</span> <span class="o">%</span> <span class="n">mypathname</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_g_maybe_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_maybe_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">parent</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">NodeError</span><span class="p">(</span>
@@ -927,7 +953,7 @@
                     <span class="sa">f</span><span class="s2">&quot;``overwrite`` argument&quot;</span><span class="p">)</span>
             <span class="n">parent</span><span class="o">.</span><span class="n">_f_get_child</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">_f_remove</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_g_check_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_check_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check validity of name for this particular kind of node.</span>
 
 <span class="sd">        This is invoked once the standard HDF5 and natural naming checks</span>
@@ -940,7 +966,9 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;node name starts with reserved prefix ``_i_``: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Node._f_getattr"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_getattr">[docs]</a>    <span class="k">def</span> <span class="nf">_f_getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<div class="viewcode-block" id="Node._f_getattr">
+<a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_getattr">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a PyTables attribute from this node.</span>
 
 <span class="sd">        If the named attribute does not exist, an AttributeError is</span>
@@ -950,7 +978,10 @@
 
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Node._f_setattr"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_setattr">[docs]</a>    <span class="k">def</span> <span class="nf">_f_setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Node._f_setattr">
+<a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_setattr">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set a PyTables attribute for this node.</span>
 
 <span class="sd">        If the node already has a large number of attributes, a</span>
@@ -960,7 +991,10 @@
 
         <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Node._f_delattr"><a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_delattr">[docs]</a>    <span class="k">def</span> <span class="nf">_f_delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Node._f_delattr">
+<a class="viewcode-back" href="../../usersguide/libref/hierarchy_classes.html#tables.Node._f_delattr">[docs]</a>
+    <span class="k">def</span> <span class="nf">_f_delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete a PyTables attribute from this node.</span>
 
 <span class="sd">        If the named attribute does not exist, an AttributeError is</span>
@@ -968,7 +1002,9 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div></div>
+        <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+</div>
+
 
     <span class="c1"># &lt;/attribute handling&gt;</span>
 
@@ -979,13 +1015,13 @@
 
     <span class="n">_AttributeSet</span> <span class="o">=</span> <span class="n">NotLoggedAttributeSet</span>
 
-    <span class="k">def</span> <span class="nf">_g_log_create</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_log_create</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="nf">_g_log_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_log_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldpathname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="nf">_g_remove_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_g_remove_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_remove</span><span class="p">(</span><span class="n">recursive</span><span class="p">,</span> <span class="n">force</span><span class="p">)</span>
 </pre></div>
 

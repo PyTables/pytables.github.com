@@ -1,22 +1,21 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.link &mdash; PyTables 3.9.2 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <title>tables.link &mdash; PyTables 3.9.3.dev0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/documentation_options.js?v=f9369ea6"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -47,7 +46,7 @@
               <img src="../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                3.9.2
+                3.9.3.dev0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -113,6 +112,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">import</span> <span class="nn">tables</span> <span class="k">as</span> <span class="nn">tb</span>
 
@@ -121,14 +121,20 @@
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">lazyattr</span>
 <span class="kn">from</span> <span class="nn">.attributeset</span> <span class="kn">import</span> <span class="n">AttributeSet</span>
 
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">.group</span> <span class="kn">import</span> <span class="n">Group</span>
 
-<span class="k">def</span> <span class="nf">_g_get_link_class</span><span class="p">(</span><span class="n">parent_id</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="nf">_g_get_link_class</span><span class="p">(</span><span class="n">parent_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                      <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;ExternalLink&quot;</span><span class="p">,</span> <span class="s2">&quot;HardLink&quot;</span><span class="p">,</span> <span class="s2">&quot;SoftLink&quot;</span><span class="p">,</span> <span class="s2">&quot;UnImplemented&quot;</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Guess the link class.&quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="n">linkextension</span><span class="o">.</span><span class="n">_get_link_class</span><span class="p">(</span><span class="n">parent_id</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Link"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.Link">[docs]</a><span class="k">class</span> <span class="nc">Link</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+<div class="viewcode-block" id="Link">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.Link">[docs]</a>
+<span class="k">class</span> <span class="nc">Link</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for all PyTables links.</span>
 
 <span class="sd">    A link is a node that refers to another node.  The Link class inherits from</span>
@@ -150,26 +156,30 @@
 
     <span class="c1"># Properties</span>
     <span class="nd">@lazyattr</span>
-    <span class="k">def</span> <span class="nf">_v_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_v_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeSet</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A *NoAttrs* instance replacing the typical *AttributeSet* instance of</span>
 <span class="sd">        other node objects.  The purpose of *NoAttrs* is to make clear that</span>
 <span class="sd">        HDF5 attributes are not supported in link nodes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">class</span> <span class="nc">NoAttrs</span><span class="p">(</span><span class="n">AttributeSet</span><span class="p">):</span>
-            <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;you cannot get attributes from this &quot;</span>
                                <span class="s2">&quot;`</span><span class="si">%s</span><span class="s2">` instance&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
 
-            <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;you cannot set attributes to this &quot;</span>
                                <span class="s2">&quot;`</span><span class="si">%s</span><span class="s2">` instance&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
 
-            <span class="k">def</span> <span class="nf">_g_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">_g_close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">pass</span>
         <span class="k">return</span> <span class="n">NoAttrs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">parentnode</span><span class="p">:</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span>
+                 <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">target</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">_log</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_new</span> <span class="o">=</span> <span class="n">target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">target</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The path string to the pointed node.&quot;&quot;&quot;</span>
@@ -177,8 +187,13 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">_log</span><span class="p">)</span>
 
     <span class="c1"># Public and tailored versions for copy, move, rename and remove methods</span>
-<div class="viewcode-block" id="Link.copy"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.Link.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-             <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">createparents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Link.copy">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.Link.copy">[docs]</a>
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+             <span class="n">newparent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Group&quot;</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">newname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">createparents</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Link&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy this link and return the new one.</span>
 
 <span class="sd">        See :meth:`Node._f_copy` for a complete explanation of the arguments.</span>
@@ -194,7 +209,13 @@
         <span class="n">newnode</span><span class="o">.</span><span class="n">_v_parent</span><span class="o">.</span><span class="n">_g_refnode</span><span class="p">(</span><span class="n">newnode</span><span class="p">,</span> <span class="n">newname</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">newnode</span></div>
 
-<div class="viewcode-block" id="Link.move"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.Link.move">[docs]</a>    <span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newparent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Link.move">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.Link.move">[docs]</a>
+    <span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+             <span class="n">newparent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Group&quot;</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">newname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Move or rename this link.</span>
 
 <span class="sd">        See :meth:`Node._f_move` for a complete explanation of the arguments.</span>
@@ -204,12 +225,18 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_move</span><span class="p">(</span><span class="n">newparent</span><span class="o">=</span><span class="n">newparent</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="n">newname</span><span class="p">,</span>
                             <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Link.remove"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.Link.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Link.remove">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.Link.remove">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove this link from the hierarchy.&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_remove</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Link.rename"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.Link.rename">[docs]</a>    <span class="k">def</span> <span class="nf">rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Link.rename">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.Link.rename">[docs]</a>
+    <span class="k">def</span> <span class="nf">rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Rename this link in place.</span>
 
 <span class="sd">        See :meth:`Node._f_rename` for a complete explanation of the arguments.</span>
@@ -218,11 +245,15 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_rename</span><span class="p">(</span><span class="n">newname</span><span class="o">=</span><span class="n">newname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span></div>
 
+
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="SoftLink"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.SoftLink">[docs]</a><span class="k">class</span> <span class="nc">SoftLink</span><span class="p">(</span><span class="n">linkextension</span><span class="o">.</span><span class="n">SoftLink</span><span class="p">,</span> <span class="n">Link</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SoftLink">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.SoftLink">[docs]</a>
+<span class="k">class</span> <span class="nc">SoftLink</span><span class="p">(</span><span class="n">linkextension</span><span class="o">.</span><span class="n">SoftLink</span><span class="p">,</span> <span class="n">Link</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a soft link (aka symbolic link).</span>
 
 <span class="sd">    A soft link is a reference to another node in the *same* file hierarchy.</span>
@@ -286,7 +317,9 @@
                        <span class="s1">&#39;__unicode__&#39;</span><span class="p">,</span> <span class="s1">&#39;__class__&#39;</span><span class="p">,</span> <span class="s1">&#39;__dict__&#39;</span><span class="p">)</span>
     <span class="n">_link_attrprefixes</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;_f_&#39;</span><span class="p">,</span> <span class="s1">&#39;_c_&#39;</span><span class="p">,</span> <span class="s1">&#39;_g_&#39;</span><span class="p">,</span> <span class="s1">&#39;_v_&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="SoftLink.__call__"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.SoftLink.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SoftLink.__call__">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.SoftLink.__call__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Node</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Dereference `self.target` and return the object.</span>
 
 <span class="sd">        Examples</span>
@@ -304,7 +337,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">dereference</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">dereference</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Node</span><span class="p">]:</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
             <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span>
@@ -315,7 +349,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 
         <span class="c1"># get attribute of the SoftLink itself</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">attrname</span> <span class="ow">in</span> <span class="n">SoftLink</span><span class="o">.</span><span class="n">_link_attrnames</span> <span class="ow">or</span>
@@ -336,7 +370,7 @@
                 <span class="c1"># some node classes (e.g. Array) don&#39;t implement __getattr__()</span>
                 <span class="k">return</span> <span class="n">target_node</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">attrname</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 
         <span class="c1"># set attribute of the SoftLink itself</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">attrname</span> <span class="ow">in</span> <span class="n">SoftLink</span><span class="o">.</span><span class="n">_link_attrnames</span> <span class="ow">or</span>
@@ -351,7 +385,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">attrname</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;__getitem__ must be defined in the SoftLink class in order for array</span>
 <span class="sd">        indexing syntax to work&quot;&quot;&quot;</span>
 
@@ -362,7 +396,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;__setitem__ must be defined in the SoftLink class in order for array</span>
 <span class="sd">        indexing syntax to work&quot;&quot;&quot;</span>
 
@@ -373,10 +407,12 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">is_dangling</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">is_dangling</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dereference</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="p">)</span>
 
-<div class="viewcode-block" id="SoftLink.__str__"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.SoftLink.__str__">[docs]</a>    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SoftLink.__str__">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.SoftLink.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a short string representation of the link.</span>
 
 <span class="sd">        Examples</span>
@@ -398,10 +434,14 @@
         <span class="n">closed</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_isopen</span> <span class="k">else</span> <span class="s2">&quot;closed &quot;</span>
         <span class="n">dangling</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span> <span class="k">else</span> <span class="s2">&quot; (dangling)&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">closed</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">) -&gt; &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="si">}{</span><span class="n">dangling</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div></div>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="si">}{</span><span class="n">dangling</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="ExternalLink"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.ExternalLink">[docs]</a><span class="k">class</span> <span class="nc">ExternalLink</span><span class="p">(</span><span class="n">linkextension</span><span class="o">.</span><span class="n">ExternalLink</span><span class="p">,</span> <span class="n">Link</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ExternalLink">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.ExternalLink">[docs]</a>
+<span class="k">class</span> <span class="nc">ExternalLink</span><span class="p">(</span><span class="n">linkextension</span><span class="o">.</span><span class="n">ExternalLink</span><span class="p">,</span> <span class="n">Link</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents an external link.</span>
 
 <span class="sd">    An external link is a reference to a node in *another* file.</span>
@@ -422,21 +462,27 @@
     <span class="c1"># Class identifier.</span>
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s1">&#39;EXTERNALLINK&#39;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_log</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">parentnode</span><span class="p">:</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span>
+                 <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">target</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">_log</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The external file handler, if the link has been dereferenced.</span>
 <span class="sd">        In case the link has not been dereferenced yet, its value is</span>
 <span class="sd">        None.&quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">_log</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_filename_node</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_filename_node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the external filename and nodepath from `self.target`.&quot;&quot;&quot;</span>
 
         <span class="c1"># This is needed for avoiding the &#39;C:\\file.h5&#39; filepath notation</span>
         <span class="n">filename</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:/&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">target</span>
 
-<div class="viewcode-block" id="ExternalLink.__call__"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.ExternalLink.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ExternalLink.__call__">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.ExternalLink.__call__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Node</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Dereference self.target and return the object.</span>
 
 <span class="sd">        You can pass all the arguments supported by the :func:`open_file`</span>
@@ -463,9 +509,9 @@
         <span class="n">filename</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_filename_node</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">is_absolute</span><span class="p">():</span>
-            <span class="c1"># Resolve the external link with respect to the this</span>
+            <span class="c1"># Resolve the external link with respect to this</span>
             <span class="c1"># file&#39;s directory.  See #306.</span>
-            <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_file</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="n">filename</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span><span class="o">.</span><span class="n">isopen</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -476,7 +522,10 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="n">target</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ExternalLink.umount"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.ExternalLink.umount">[docs]</a>    <span class="k">def</span> <span class="nf">umount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ExternalLink.umount">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.ExternalLink.umount">[docs]</a>
+    <span class="k">def</span> <span class="nf">umount</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Safely unmount self.extfile, if opened.&quot;&quot;&quot;</span>
 
         <span class="n">extfile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span>
@@ -485,13 +534,16 @@
             <span class="n">extfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">extfile</span> <span class="o">=</span> <span class="kc">None</span></div>
 
-    <span class="k">def</span> <span class="nf">_f_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_f_close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Especific close for external links.&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">umount</span><span class="p">()</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_f_close</span><span class="p">()</span>
 
-<div class="viewcode-block" id="ExternalLink.__str__"><a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.ExternalLink.__str__">[docs]</a>    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ExternalLink.__str__">
+<a class="viewcode-back" href="../../usersguide/libref/link_classes.html#tables.link.ExternalLink.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a short string representation of the link.</span>
 
 <span class="sd">        Examples</span>
@@ -507,7 +559,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pathname</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">) -&gt; &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div></div>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
