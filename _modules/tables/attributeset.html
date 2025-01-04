@@ -1,21 +1,21 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.attributeset &mdash; PyTables 3.10.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+  <title>tables.attributeset &mdash; PyTables 3.10.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/documentation_options.js?v=5ca81ab5"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=6b5090df"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -45,9 +45,6 @@
             
               <img src="../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
-              <div class="version">
-                3.10.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -96,31 +93,45 @@
   <h1>Source code for tables.attributeset</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Here is defined the AttributeSet class.&quot;&quot;&quot;</span>
 
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">SizeType</span>
-<span class="kn">from</span> <span class="nn">.registry</span> <span class="kn">import</span> <span class="n">class_name_dict</span>
-<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">ClosedNodeError</span><span class="p">,</span> <span class="n">FiltersWarning</span><span class="p">,</span> <span class="n">PerformanceWarning</span>
 <span class="kn">from</span> <span class="nn">.path</span> <span class="kn">import</span> <span class="n">check_attribute_name</span>
-<span class="kn">from</span> <span class="nn">.undoredo</span> <span class="kn">import</span> <span class="n">attr_to_shadow</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">SizeType</span>
 <span class="kn">from</span> <span class="nn">.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
+<span class="kn">from</span> <span class="nn">.registry</span> <span class="kn">import</span> <span class="n">class_name_dict</span>
+<span class="kn">from</span> <span class="nn">.undoredo</span> <span class="kn">import</span> <span class="n">attr_to_shadow</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">ClosedNodeError</span><span class="p">,</span> <span class="n">FiltersWarning</span><span class="p">,</span> <span class="n">PerformanceWarning</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">.node</span> <span class="kn">import</span> <span class="n">Node</span>
 
 
 <span class="c1"># System attributes</span>
-<span class="n">SYS_ATTRS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;CLASS&quot;</span><span class="p">,</span> <span class="s2">&quot;VERSION&quot;</span><span class="p">,</span> <span class="s2">&quot;TITLE&quot;</span><span class="p">,</span> <span class="s2">&quot;NROWS&quot;</span><span class="p">,</span> <span class="s2">&quot;EXTDIM&quot;</span><span class="p">,</span>
-             <span class="s2">&quot;ENCODING&quot;</span><span class="p">,</span> <span class="s2">&quot;PYTABLES_FORMAT_VERSION&quot;</span><span class="p">,</span>
-             <span class="s2">&quot;FLAVOR&quot;</span><span class="p">,</span> <span class="s2">&quot;FILTERS&quot;</span><span class="p">,</span> <span class="s2">&quot;AUTO_INDEX&quot;</span><span class="p">,</span>
-             <span class="s2">&quot;DIRTY&quot;</span><span class="p">,</span> <span class="s2">&quot;NODE_TYPE&quot;</span><span class="p">,</span> <span class="s2">&quot;NODE_TYPE_VERSION&quot;</span><span class="p">,</span>
-             <span class="s2">&quot;PSEUDOATOM&quot;</span><span class="p">]</span>
+<span class="n">SYS_ATTRS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;CLASS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;VERSION&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TITLE&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;NROWS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;EXTDIM&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ENCODING&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PYTABLES_FORMAT_VERSION&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FLAVOR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FILTERS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;AUTO_INDEX&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DIRTY&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;NODE_TYPE&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;NODE_TYPE_VERSION&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PSEUDOATOM&quot;</span><span class="p">,</span>
+<span class="p">]</span>
 <span class="c1"># Prefixes of other system attributes</span>
 <span class="n">SYS_ATTRS_PREFIXES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;FIELD_&quot;</span><span class="p">]</span>
 <span class="c1"># RO_ATTRS will be disabled and let the user modify them if they</span>
@@ -133,29 +144,38 @@
 <span class="c1"># RO_ATTRS = []</span>
 
 <span class="c1"># The next attributes are not meant to be copied during a Node copy process</span>
-<span class="n">SYS_ATTRS_NOTTOBECOPIED</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;CLASS&quot;</span><span class="p">,</span> <span class="s2">&quot;VERSION&quot;</span><span class="p">,</span> <span class="s2">&quot;TITLE&quot;</span><span class="p">,</span> <span class="s2">&quot;NROWS&quot;</span><span class="p">,</span> <span class="s2">&quot;EXTDIM&quot;</span><span class="p">,</span>
-                           <span class="s2">&quot;PYTABLES_FORMAT_VERSION&quot;</span><span class="p">,</span> <span class="s2">&quot;FILTERS&quot;</span><span class="p">,</span> <span class="s2">&quot;ENCODING&quot;</span><span class="p">]</span>
+<span class="n">SYS_ATTRS_NOTTOBECOPIED</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;CLASS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;VERSION&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TITLE&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;NROWS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;EXTDIM&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PYTABLES_FORMAT_VERSION&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FILTERS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ENCODING&quot;</span><span class="p">,</span>
+<span class="p">]</span>
 <span class="c1"># Attributes forced to be copied during node copies</span>
-<span class="n">FORCE_COPY_CLASS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;CLASS&#39;</span><span class="p">,</span> <span class="s1">&#39;VERSION&#39;</span><span class="p">]</span>
+<span class="n">FORCE_COPY_CLASS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;CLASS&quot;</span><span class="p">,</span> <span class="s2">&quot;VERSION&quot;</span><span class="p">]</span>
 <span class="c1"># Regular expression for column default values.</span>
-<span class="n">_field_fill_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;^FIELD_[0-9]+_FILL$&#39;</span><span class="p">)</span>
+<span class="n">_field_fill_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;^FIELD_[0-9]+_FILL$&quot;</span><span class="p">)</span>
 <span class="c1"># Regular expression for fixing old pickled filters.</span>
-<span class="n">_old_filters_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">br</span><span class="s1">&#39;\(([ic])tables\.Leaf\n&#39;</span><span class="p">)</span>
+<span class="n">_old_filters_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">rb</span><span class="s2">&quot;\(([ic])tables\.Leaf\n&quot;</span><span class="p">)</span>
 <span class="c1"># Fixed version of the previous string.</span>
-<span class="n">_new_filters_sub</span> <span class="o">=</span> <span class="sa">br</span><span class="s1">&#39;(\1tables.filters\n&#39;</span>
+<span class="n">_new_filters_sub</span> <span class="o">=</span> <span class="sa">rb</span><span class="s2">&quot;(\1tables.filters\n&quot;</span>
 
 
 <span class="k">def</span> <span class="nf">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a name is a system attribute or not&quot;&quot;&quot;</span>
-
-    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">name</span> <span class="ow">in</span> <span class="n">SYS_ATTRS</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span>
-        <span class="p">[</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">SYS_ATTRS_PREFIXES</span><span class="p">]))</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a name is a system attribute or not.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span>
+        <span class="n">name</span> <span class="ow">in</span> <span class="n">SYS_ATTRS</span>
+        <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">SYS_ATTRS_PREFIXES</span><span class="p">])</span>
+    <span class="p">)</span>
 
 
 <div class="viewcode-block" id="AttributeSet">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet">[docs]</a>
 <span class="k">class</span> <span class="nc">AttributeSet</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">AttributeSet</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for the HDF5 attributes of a Node.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Container for the HDF5 attributes of a Node.</span>
 
 <span class="sd">    This class provides methods to create new HDF5 node attributes,</span>
 <span class="sd">    and to get, rename or delete existing ones.</span>
@@ -280,15 +300,15 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_g_getnode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Node&quot;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_g_getnode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Node</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span><span class="o">.</span><span class="n">_get_node</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_v_node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Node&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The :class:`Node` instance this attribute set is associated with.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_v_node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Node</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;:class:`Node` instance this attribute set is associated with.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_getnode</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="s2">&quot;Node&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the basic structures to keep the attribute information.</span>
 
 <span class="sd">        Reads all the HDF5 attributes (if any) on disk for the node &quot;node&quot;.</span>
@@ -299,7 +319,6 @@
 <span class="sd">            The parent node</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Refuse to create an instance of an already closed node</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_isopen</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ClosedNodeError</span><span class="p">(</span><span class="s2">&quot;the node for attribute set is closed&quot;</span><span class="p">)</span>
@@ -320,10 +339,10 @@
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="n">parsed_version</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">format_version</span> <span class="o">==</span> <span class="s1">&#39;unknown&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">format_version</span> <span class="o">==</span> <span class="s2">&quot;unknown&quot;</span><span class="p">:</span>
                 <span class="n">parsed_version</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">parsed_version</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">format_version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)))</span>
+                <span class="n">parsed_version</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">format_version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)))</span>
         <span class="n">dict_</span><span class="p">[</span><span class="s2">&quot;_v__format_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parsed_version</span>
         <span class="c1"># Split the attribute list in system and user lists</span>
         <span class="n">dict_</span><span class="p">[</span><span class="s2">&quot;_v_attrnamessys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -342,18 +361,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_g_update_node_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="s2">&quot;Node&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates the location information about the associated `node`.&quot;&quot;&quot;</span>
-
+    <span class="k">def</span> <span class="nf">_g_update_node_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the location information about the associated `node`.&quot;&quot;&quot;</span>
         <span class="n">dict_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span>
-        <span class="n">dict_</span><span class="p">[</span><span class="s1">&#39;_v__nodefile&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_file</span>
-        <span class="n">dict_</span><span class="p">[</span><span class="s1">&#39;_v__nodepath&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span>
+        <span class="n">dict_</span><span class="p">[</span><span class="s2">&quot;_v__nodefile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_file</span>
+        <span class="n">dict_</span><span class="p">[</span><span class="s2">&quot;_v__nodepath&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_v_pathname</span>
         <span class="c1"># hdf5extension operations:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_new</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
 
 <div class="viewcode-block" id="AttributeSet._f_list">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_list">[docs]</a>
-    <span class="k">def</span> <span class="nf">_f_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrset</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;sys&quot;</span><span class="p">,</span> <span class="s2">&quot;user&quot;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;user&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">_f_list</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">attrset</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;sys&quot;</span><span class="p">,</span> <span class="s2">&quot;user&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;user&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a list of attribute names.</span>
 
 <span class="sd">        The attrset string selects the attribute set to be used.  A</span>
@@ -362,7 +382,6 @@
 <span class="sd">        returns both system and user attributes.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="k">if</span> <span class="n">attrset</span> <span class="o">==</span> <span class="s2">&quot;user&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamesuser</span><span class="p">[:]</span>
         <span class="k">elif</span> <span class="n">attrset</span> <span class="o">==</span> <span class="s2">&quot;sys&quot;</span><span class="p">:</span>
@@ -376,17 +395,22 @@
 
 <span class="sd">        Only PY3 supports this special method.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">({</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span>
-                    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__dir__</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span>
-                    <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">()})</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">c</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__dir__</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span>
+                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">()</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the attribute named &quot;name&quot;.&quot;&quot;&quot;</span>
-
         <span class="c1"># If attribute does not exist, raise AttributeError</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attribute </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> does not exist &quot;</span>
-                                 <span class="sa">f</span><span class="s2">&quot;in node: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Attribute </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> does not exist &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;in node: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
 
         <span class="c1"># Read the attribute from disk. This is an optimization to read</span>
         <span class="c1"># quickly system attributes that are _string_ values, but it</span>
@@ -398,16 +422,21 @@
         <span class="c1"># Check whether the value is pickled</span>
         <span class="c1"># Pickled values always seems to end with a &quot;.&quot;</span>
         <span class="n">maybe_pickled</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)</span> <span class="ow">and</span>  <span class="c1"># NumPy scalar?</span>
-            <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">bytes_</span> <span class="ow">and</span>  <span class="c1"># string type?</span>
-            <span class="n">value</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;.&#39;</span><span class="p">))</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)</span>  <span class="c1"># NumPy scalar?</span>
+            <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">bytes_</span>  <span class="c1"># string type?</span>
+            <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="n">maybe_pickled</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">[</span><span class="sa">b</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;0.&quot;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">maybe_pickled</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">[</span><span class="sa">b</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;0.&quot;</span><span class="p">]:</span>
             <span class="c1"># Workaround for a bug in many versions of Python (starting</span>
             <span class="c1"># somewhere after Python 2.6.1).  See ticket #253.</span>
             <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="n">maybe_pickled</span> <span class="ow">and</span> <span class="n">_field_fill_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-              <span class="ow">and</span> <span class="n">format_version</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)):</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="n">maybe_pickled</span>
+            <span class="ow">and</span> <span class="n">_field_fill_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">format_version</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="p">):</span>
             <span class="c1"># This format was used during the first 1.2 releases, just</span>
             <span class="c1"># for string defaults.</span>
             <span class="k">try</span><span class="p">:</span>
@@ -415,10 +444,12 @@
                 <span class="n">retval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">retval</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
                 <span class="n">retval</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># signal error avoiding exception</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="n">maybe_pickled</span> <span class="ow">and</span>
-              <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;FILTERS&#39;</span> <span class="ow">and</span>
-              <span class="n">format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
-              <span class="n">format_version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="n">maybe_pickled</span>
+            <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;FILTERS&quot;</span>
+            <span class="ow">and</span> <span class="n">format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">format_version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">):</span>
             <span class="c1"># This is a big hack, but we don&#39;t have other way to recognize</span>
             <span class="c1"># pickled filters of PyTables 1.x files.</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">_old_filters_re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">_new_filters_sub</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -438,10 +469,10 @@
                 <span class="c1"># unplicked as bytestrings. Hence try &#39;latin1&#39; first.</span>
                 <span class="c1"># Ref: http://bugs.python.org/issue6784</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">retval</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;latin1&#39;</span><span class="p">)</span>
+                    <span class="n">retval</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin1&quot;</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="n">retval</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;bytes&#39;</span><span class="p">)</span>
+                        <span class="n">retval</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;bytes&quot;</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                         <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -458,23 +489,29 @@
                 <span class="c1"># explaining how the user can tell where the problem was.</span>
                 <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
             <span class="c1"># Additional check for allowing a workaround for #307</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">retval</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">retval</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">retval</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">retval</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
                 <span class="n">retval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">retval</span><span class="p">)[()]</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;FILTERS&#39;</span> <span class="ow">and</span>
-              <span class="n">format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
-              <span class="n">format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;FILTERS&quot;</span>
+            <span class="ow">and</span> <span class="n">format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">retval</span> <span class="o">=</span> <span class="n">Filters</span><span class="o">.</span><span class="n">_unpack</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">FiltersWarning</span><span class="p">(</span><span class="s1">&#39;Failed parsing FILTERS key&#39;</span><span class="p">))</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">FiltersWarning</span><span class="p">(</span><span class="s2">&quot;Failed parsing FILTERS key&quot;</span><span class="p">))</span>
                 <span class="n">retval</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;TITLE&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="n">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span> <span class="ow">and</span>
-              <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_field_fill_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">name</span><span class="p">)):</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TITLE&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="n">issysattrname</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">_field_fill_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="p">):</span>
             <span class="c1"># system attributes should always be str</span>
             <span class="c1"># python 3, bytes and not &quot;FIELD_[0-9]+_FILL&quot;</span>
-            <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
 
@@ -492,7 +529,6 @@
 <span class="sd">        It does not log the change.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Save this attribute to disk</span>
         <span class="c1"># (overwriting an existing one if needed)</span>
         <span class="n">stvalue</span> <span class="o">=</span> <span class="n">value</span>
@@ -503,20 +539,28 @@
             <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;NROWS&quot;</span><span class="p">:</span>
                 <span class="n">stvalue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">SizeType</span><span class="p">)</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">stvalue</span><span class="p">[()]</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;FILTERS&quot;</span> <span class="ow">and</span>
-                  <span class="bp">self</span><span class="o">.</span><span class="n">_v__format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
-                  <span class="bp">self</span><span class="o">.</span><span class="n">_v__format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
+            <span class="k">elif</span> <span class="p">(</span>
+                <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;FILTERS&quot;</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__format_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__format_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">):</span>
                 <span class="n">stvalue</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">_pack</span><span class="p">()</span>
                 <span class="c1"># value will remain as a Filters instance here</span>
         <span class="c1"># Convert value from a Python scalar into a NumPy scalar</span>
         <span class="c1"># (only in case it has not been converted yet)</span>
         <span class="c1"># Fixes ticket #59</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">stvalue</span> <span class="ow">is</span> <span class="n">value</span> <span class="ow">and</span>
-                <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span>
-                                <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">stvalue</span> <span class="ow">is</span> <span class="n">value</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="nb">bytes</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="nb">complex</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">,</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">,</span>
+        <span class="p">):</span>
             <span class="c1"># Additional check for allowing a workaround for #307</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">stvalue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">stvalue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">stvalue</span><span class="p">[()]</span>
@@ -555,7 +599,6 @@
 <span class="sd">        number of attributes in a node is going to be exceeded.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">nodefile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span>
         <span class="n">attrnames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span>
 
@@ -565,13 +608,15 @@
         <span class="n">nodefile</span><span class="o">.</span><span class="n">_check_writable</span><span class="p">()</span>
 
         <span class="c1"># Check if there are too many attributes.</span>
-        <span class="n">max_node_attrs</span> <span class="o">=</span> <span class="n">nodefile</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;MAX_NODE_ATTRS&#39;</span><span class="p">]</span>
+        <span class="n">max_node_attrs</span> <span class="o">=</span> <span class="n">nodefile</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;MAX_NODE_ATTRS&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attrnames</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">max_node_attrs</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
-<span class="s2">node ``</span><span class="si">%s</span><span class="s2">`` is exceeding the recommended maximum number of attributes (</span><span class="si">%d</span><span class="s2">);</span><span class="se">\</span>
-<span class="s2">be ready to see PyTables asking for *lots* of memory and possibly slow I/O&quot;&quot;&quot;</span>
-                          <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">,</span> <span class="n">max_node_attrs</span><span class="p">),</span>
-                          <span class="n">PerformanceWarning</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="sd">node ``%s`` is exceeding the recommended maximum number of attributes (%d);\</span>
+<span class="sd">be ready to see PyTables asking for *lots* of memory and possibly slow I/O&quot;&quot;&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">,</span> <span class="n">max_node_attrs</span><span class="p">),</span>
+                <span class="n">PerformanceWarning</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="n">undo_enabled</span> <span class="o">=</span> <span class="n">nodefile</span><span class="o">.</span><span class="n">is_undo_enabled</span><span class="p">()</span>
         <span class="c1"># Log old attribute removal (if any).</span>
@@ -586,13 +631,13 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_g_log_add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_log_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s1">&#39;ADDATTR&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s2">&quot;ADDATTR&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g_del_and_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">nodefile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span>
         <span class="n">node_pathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span>
         <span class="c1"># Log *before* moving to use the right shadow name.</span>
-        <span class="n">nodefile</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s1">&#39;DELATTR&#39;</span><span class="p">,</span> <span class="n">node_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">nodefile</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s2">&quot;DELATTR&quot;</span><span class="p">,</span> <span class="n">node_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="n">attr_to_shadow</span><span class="p">(</span><span class="n">nodefile</span><span class="p">,</span> <span class="n">node_pathname</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_g__delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -603,7 +648,6 @@
 <span class="sd">        It does not log the change.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Delete the attribute from disk</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_node</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
@@ -626,14 +670,14 @@
 <span class="sd">        specified, an ``AttributeError`` is raised.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">nodefile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodefile</span>
 
         <span class="c1"># Check if attribute exists</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
                 <span class="s2">&quot;Attribute (&#39;</span><span class="si">%s</span><span class="s2">&#39;) does not exist in node &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">))</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">)</span>
+            <span class="p">)</span>
 
         <span class="n">nodefile</span><span class="o">.</span><span class="n">_check_writable</span><span class="p">()</span>
 
@@ -644,42 +688,40 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_g__delattr</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The dictionary like interface for __getattr__().&quot;&quot;&quot;</span>
-
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Implement a dictionary like interface for `__getattr__()`.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="c1"># Capture the AttributeError and re-raise a KeyError one</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
                 <span class="s2">&quot;Attribute (&#39;</span><span class="si">%s</span><span class="s2">&#39;) does not exist in node &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">))</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">)</span>
+            <span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The dictionary like interface for __setattr__().&quot;&quot;&quot;</span>
-
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Implement a dictionary like interface for `__setattr__()`.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The dictionary like interface for __delattr__().&quot;&quot;&quot;</span>
-
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Implement a dictionary like interface for `__delattr__()`.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="fm">__delattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="c1"># Capture the AttributeError and re-raise a KeyError one</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
                 <span class="s2">&quot;Attribute (&#39;</span><span class="si">%s</span><span class="s2">&#39;) does not exist in node &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">))</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span><span class="p">)</span>
+            <span class="p">)</span>
 
 <div class="viewcode-block" id="AttributeSet.__contains__">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet.__contains__">[docs]</a>
     <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Is there an attribute with that name?</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the set contains an attribute with the specified name.</span>
 
 <span class="sd">        A true value is returned if the attribute set has an attribute</span>
 <span class="sd">        with the given name, false otherwise.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span></div>
 
 
@@ -687,7 +729,6 @@
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_rename">[docs]</a>
     <span class="k">def</span> <span class="nf">_f_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">newattrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Rename an attribute from oldattrname to newattrname.&quot;&quot;&quot;</span>
-
         <span class="k">if</span> <span class="n">oldattrname</span> <span class="o">==</span> <span class="n">newattrname</span><span class="p">:</span>
             <span class="c1"># Do nothing</span>
             <span class="k">return</span>
@@ -702,10 +743,12 @@
         <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oldattrname</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                <span class="n">newset</span><span class="p">:</span> <span class="s2">&quot;AttributeSet&quot;</span><span class="p">,</span>
-                <span class="n">set_attr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">copyclass</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_g_copy</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">newset</span><span class="p">:</span> <span class="n">AttributeSet</span><span class="p">,</span>
+        <span class="n">set_attr</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">copyclass</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy set attributes.</span>
 
 <span class="sd">        Copies all user and allowed system PyTables attributes to the</span>
@@ -725,8 +768,7 @@
 <span class="sd">           The *copyClass* parameter has been renamed into *copyclass*.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">copysysattrs</span> <span class="o">=</span> <span class="n">newset</span><span class="o">.</span><span class="n">_v__nodefile</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;PYTABLES_SYS_ATTRS&#39;</span><span class="p">]</span>
+        <span class="n">copysysattrs</span> <span class="o">=</span> <span class="n">newset</span><span class="o">.</span><span class="n">_v__nodefile</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;PYTABLES_SYS_ATTRS&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">set_attr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">set_attr</span> <span class="o">=</span> <span class="n">newset</span><span class="o">.</span><span class="n">_g__setattr</span>
 
@@ -737,11 +779,13 @@
         <span class="c1"># Copy the system attributes that we are allowed to.</span>
         <span class="k">if</span> <span class="n">copysysattrs</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">attrname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnamessys</span><span class="p">:</span>
-                <span class="k">if</span> <span class="p">((</span><span class="n">attrname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SYS_ATTRS_NOTTOBECOPIED</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">attrname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SYS_ATTRS_NOTTOBECOPIED</span><span class="p">)</span>
                     <span class="c1"># Do not copy the FIELD_ attributes in tables as this can</span>
                     <span class="c1"># be really *slow* (don&#39;t know exactly the reason).</span>
                     <span class="c1"># See #304.</span>
-                        <span class="ow">not</span> <span class="n">attrname</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;FIELD_&quot;</span><span class="p">)):</span>
+                    <span class="ow">and</span> <span class="ow">not</span> <span class="n">attrname</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;FIELD_&quot;</span><span class="p">)</span>
+                <span class="p">):</span>
                     <span class="n">set_attr</span><span class="p">(</span><span class="n">attrname</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">))</span>
             <span class="c1"># Copy CLASS and VERSION attributes if requested</span>
             <span class="k">if</span> <span class="n">copyclass</span><span class="p">:</span>
@@ -751,7 +795,7 @@
 
 <div class="viewcode-block" id="AttributeSet._f_copy">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.attributeset.AttributeSet._f_copy">[docs]</a>
-    <span class="k">def</span> <span class="nf">_f_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="s2">&quot;Node&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_f_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy attributes to the where node.</span>
 
 <span class="sd">        Copies all user and certain system attributes to the given where</span>
@@ -759,11 +803,10 @@
 <span class="sd">        the existing ones.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># AttributeSet must be defined in order to define a Node.</span>
         <span class="c1"># However, we need to know Node here.</span>
         <span class="c1"># Using class_name_dict avoids a circular import.</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">class_name_dict</span><span class="p">[</span><span class="s1">&#39;Node&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">class_name_dict</span><span class="p">[</span><span class="s2">&quot;Node&quot;</span><span class="p">]):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;destination object is not a node: </span><span class="si">{</span><span class="n">where</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_g_copy</span><span class="p">(</span><span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">)</span></div>
 
@@ -774,8 +817,7 @@
         <span class="k">pass</span>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The string representation for this object.&quot;&quot;&quot;</span>
-
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the string representation for the object.&quot;&quot;&quot;</span>
         <span class="c1"># The pathname</span>
         <span class="n">pathname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v__nodepath</span>
         <span class="c1"># Get this class name</span>
@@ -785,19 +827,20 @@
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pathname</span><span class="si">}</span><span class="s2">._v_attrs (</span><span class="si">{</span><span class="n">classname</span><span class="si">}</span><span class="s2">), </span><span class="si">{</span><span class="n">attrnumber</span><span class="si">}</span><span class="s2"> attributes&quot;</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;A detailed string representation for this object.&quot;&quot;&quot;</span>
-
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detailed string representation for this object.&quot;&quot;&quot;</span>
         <span class="c1"># print additional info only if there are attributes to show</span>
         <span class="n">attrnames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_attrnames</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">attrnames</span><span class="p">:</span>
-            <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s1"> := </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">attr</span><span class="p">)</span><span class="si">!r}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrnames</span><span class="p">]</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="si">!s}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">   [&quot;</span> <span class="o">+</span> <span class="s1">&#39;,</span><span class="se">\n</span><span class="s1">    &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rep</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;]&quot;</span>
+            <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2"> := </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">attr</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrnames</span><span class="p">]</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="si">!s}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">   [&quot;</span> <span class="o">+</span> <span class="s2">&quot;,</span><span class="se">\n</span><span class="s2">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rep</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;]&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
 
 <span class="k">class</span> <span class="nc">NotLoggedAttributeSet</span><span class="p">(</span><span class="n">AttributeSet</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Attribut set without automatic logging.&quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">_g_log_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>
 
@@ -812,7 +855,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2011–2024, PyTables maintainers.</p>
+    <p>&#169; Copyright 2011–2025, PyTables maintainers.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

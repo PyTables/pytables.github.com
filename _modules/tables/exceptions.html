@@ -1,21 +1,21 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.exceptions &mdash; PyTables 3.10.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+  <title>tables.exceptions &mdash; PyTables 3.10.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/documentation_options.js?v=5ca81ab5"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=6b5090df"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -45,9 +45,6 @@
             
               <img src="../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
-              <div class="version">
-                3.10.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -96,11 +93,12 @@
   <h1>Source code for tables.exceptions</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Declare exceptions and warnings that are specific to PyTables.&quot;&quot;&quot;</span>
 
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">traceback</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
-
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;ChunkError&quot;</span><span class="p">,</span>
@@ -127,7 +125,7 @@
 <span class="p">]</span>
 
 
-<span class="n">__docformat__</span> <span class="o">=</span> <span class="s1">&#39;reStructuredText&#39;</span>
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s2">&quot;reStructuredText&quot;</span>
 <span class="sd">&quot;&quot;&quot;The format of documentation strings in this module.&quot;&quot;&quot;</span>
 
 
@@ -171,7 +169,9 @@
     <span class="c1"># NOTE: in order to avoid circular dependencies between modules the</span>
     <span class="c1">#       _dump_h5_backtrace method is set at initialization time in</span>
     <span class="c1">#       the utilsextension.pyx.</span>
-    <span class="n">_dump_h5_backtrace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_dump_h5_backtrace</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="n">DEFAULT_H5_BACKTRACE_POLICY</span> <span class="o">=</span> <span class="s2">&quot;VERBOSE&quot;</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Default policy for HDF5 backtrace handling</span>
@@ -196,8 +196,11 @@
 <span class="sd">    .. versionadded:: 2.4</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+<div class="viewcode-block" id="HDF5ExtError.set_policy_from_env">
+<a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.HDF5ExtError.set_policy_from_env">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">set_policy_from_env</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the policy from environment variables.&quot;&quot;&quot;</span>
         <span class="n">envmap</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;IGNORE&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
             <span class="s2">&quot;FALSE&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
@@ -211,20 +214,23 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">newvalue</span> <span class="o">=</span> <span class="n">envmap</span><span class="p">[</span><span class="n">envvalue</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Invalid value for the environment variable &quot;</span>
-                          <span class="s2">&quot;&#39;PT_DEFAULT_H5_BACKTRACE_POLICY&#39;.  The default &quot;</span>
-                          <span class="s2">&quot;policy for HDF5 back trace management in PyTables &quot;</span>
-                          <span class="s2">&quot;will be: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">oldvalue</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Invalid value for the environment variable &quot;</span>
+                <span class="s2">&quot;&#39;PT_DEFAULT_H5_BACKTRACE_POLICY&#39;.  The default &quot;</span>
+                <span class="s2">&quot;policy for HDF5 back trace management in PyTables &quot;</span>
+                <span class="s2">&quot;will be: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">oldvalue</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">DEFAULT_H5_BACKTRACE_POLICY</span> <span class="o">=</span> <span class="n">newvalue</span>
 
-        <span class="k">return</span> <span class="n">oldvalue</span>
+        <span class="k">return</span> <span class="n">oldvalue</span></div>
+
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_h5bt_policy</span> <span class="o">=</span> <span class="n">kargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;h5bt&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_H5_BACKTRACE_POLICY</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_h5bt_policy</span> <span class="o">=</span> <span class="n">kargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;h5bt&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_H5_BACKTRACE_POLICY</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_h5bt_policy</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dump_h5_backtrace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">h5backtrace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dump_h5_backtrace</span><span class="p">()</span>
@@ -255,7 +261,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">h5backtrace</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a sting representation of the exception.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a sting representation of the exception.</span>
 
 <span class="sd">        The actual result depends on policy set in the initializer</span>
 <span class="sd">        :meth:`HDF5ExtError.__init__`.</span>
@@ -263,15 +269,16 @@
 <span class="sd">        .. versionadded:: 2.4</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">verbose</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_h5bt_policy</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;VERBOSE&#39;</span><span class="p">,</span> <span class="s1">&#39;verbose&#39;</span><span class="p">))</span>
+        <span class="n">verbose</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_h5bt_policy</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;VERBOSE&quot;</span><span class="p">,</span> <span class="s2">&quot;verbose&quot;</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5backtrace</span><span class="p">:</span>
-            <span class="n">bt</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
-                <span class="s2">&quot;HDF5 error back trace</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">format_h5_backtrace</span><span class="p">(),</span>
-                <span class="s2">&quot;End of HDF5 error back trace&quot;</span>
-            <span class="p">])</span>
+            <span class="n">bt</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="s2">&quot;HDF5 error back trace</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">format_h5_backtrace</span><span class="p">(),</span>
+                    <span class="s2">&quot;End of HDF5 error back trace&quot;</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
@@ -287,9 +294,14 @@
 
 <div class="viewcode-block" id="HDF5ExtError.format_h5_backtrace">
 <a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.HDF5ExtError.format_h5_backtrace">[docs]</a>
-    <span class="k">def</span> <span class="nf">format_h5_backtrace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtrace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the HDF5 trace back represented as a list of tuples.</span>
-<span class="sd">        (see :attr:`HDF5ExtError.h5backtrace`) into a string.</span>
+    <span class="k">def</span> <span class="nf">format_h5_backtrace</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">backtrace</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the HDF5 trace back into a string.</span>
+
+<span class="sd">        The HDF5 trace back is represented as a list of tuples.</span>
+
+<span class="sd">        See :attr:`HDF5ExtError.h5backtrace`.</span>
 
 <span class="sd">        .. versionadded:: 2.4</span>
 
@@ -298,9 +310,9 @@
             <span class="n">backtrace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5backtrace</span>
 
         <span class="k">if</span> <span class="n">backtrace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s1">&#39;No HDF5 back trace available&#39;</span>
+            <span class="k">return</span> <span class="s2">&quot;No HDF5 back trace available&quot;</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_list</span><span class="p">(</span><span class="n">backtrace</span><span class="p">))</span></div>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_list</span><span class="p">(</span><span class="n">backtrace</span><span class="p">))</span></div>
 </div>
 
 
@@ -311,6 +323,7 @@
 
 <span class="c1"># The following exceptions are concretions of the ``ValueError`` exceptions</span>
 <span class="c1"># raised by ``file`` objects on certain operations.</span>
+
 
 <div class="viewcode-block" id="ClosedNodeError">
 <a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.ClosedNodeError">[docs]</a>
@@ -342,7 +355,9 @@
 <div class="viewcode-block" id="FileModeError">
 <a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.FileModeError">[docs]</a>
 <span class="k">class</span> <span class="nc">FileModeError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The operation can not be carried out because the mode in which the</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;FIle mode error.</span>
+
+<span class="sd">    The operation can not be carried out because the mode in which the</span>
 <span class="sd">    hosting file is opened is not adequate.</span>
 
 <span class="sd">    For instance, removing an existing leaf from a read-only file is not</span>
@@ -535,16 +550,17 @@
 <span class="sd">    experimental and that users have to use with care.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">pass</span></div>
 
 
 
 <span class="k">class</span> <span class="nc">UnclosedFileWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Warning raised when there are still open files at program exit</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Warning raised when there are still open files at program exit.</span>
 
-<span class="sd">    Pytables will close remaining open files at exit, but raise </span>
-<span class="sd">    this warning.</span>
+<span class="sd">    PyTables will close remaining open files at exit, but raise this warning.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">pass</span>
 
 
@@ -558,6 +574,7 @@
 <span class="sd">    base for more specific exceptions.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">pass</span></div>
 
 
@@ -571,6 +588,7 @@
 <span class="sd">    instance.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">pass</span></div>
 
 
@@ -578,13 +596,16 @@
 <div class="viewcode-block" id="NotChunkAlignedError">
 <a class="viewcode-back" href="../../usersguide/libref/helper_classes.html#tables.NotChunkAlignedError">[docs]</a>
 <span class="k">class</span> <span class="nc">NotChunkAlignedError</span><span class="p">(</span><span class="n">ChunkError</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A direct chunk read/write operation was given coordinates that do not</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Coordinate not aligned to the chunks.</span>
+
+<span class="sd">    A direct chunk read/write operation was given coordinates that do not</span>
 <span class="sd">    match the chunk&#39;s start.</span>
 
 <span class="sd">    These operations require coordinates that are integer multiples of the</span>
 <span class="sd">    dataset&#39;s chunksize.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">pass</span></div>
 
 
@@ -600,6 +621,7 @@
 <span class="sd">    can be written, in which case it is created in storage.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">pass</span></div>
 
 </pre></div>
@@ -611,7 +633,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2011–2024, PyTables maintainers.</p>
+    <p>&#169; Copyright 2011–2025, PyTables maintainers.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

@@ -1,21 +1,21 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.atom &mdash; PyTables 3.10.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+  <title>tables.atom &mdash; PyTables 3.10.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/documentation_options.js?v=5ca81ab5"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=6b5090df"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -45,9 +45,6 @@
             
               <img src="../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
-              <div class="version">
-                3.10.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -96,30 +93,31 @@
   <h1>Source code for tables.atom</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Atom classes for describing dataset contents.&quot;&quot;&quot;</span>
 
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">dataclass_transform</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">Union</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">dataclass_transform</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">DTypeLike</span>
 
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">SizeType</span>
 <span class="kn">from</span> <span class="nn">.misc.enum</span> <span class="kn">import</span> <span class="n">Enum</span>
-
-<span class="kn">import</span> <span class="nn">pickle</span>
-
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">FlavorWarning</span>
 
 <span class="n">Shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">SizeType</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 
-<span class="n">__docformat__</span> <span class="o">=</span> <span class="s1">&#39;reStructuredText&#39;</span>
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s2">&quot;reStructuredText&quot;</span>
 <span class="sd">&quot;&quot;&quot;The format of documentation strings in this module.&quot;&quot;&quot;</span>
 
 <span class="n">all_types</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># filled as atom classes are created</span>
 <span class="sd">&quot;&quot;&quot;Set of all PyTables types.&quot;&quot;&quot;</span>
 
-<span class="n">atom_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># filled as atom classes are created</span>
+<span class="n">atom_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># filled as atom classes are created</span>
 <span class="sd">&quot;&quot;&quot;Maps atom kinds to item sizes and atom classes.</span>
 
 <span class="sd">If there is a fixed set of possible item sizes for a given kind, the</span>
@@ -131,11 +129,12 @@
 <span class="sd">&quot;&quot;&quot;Maps atom kinds to their default atom type (if any).&quot;&quot;&quot;</span>
 
 
-<span class="n">_type_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^([a-z]+)([0-9]*)$&#39;</span><span class="p">)</span>
+<span class="n">_type_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^([a-z]+)([0-9]*)$&quot;</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="split_type">
 <a class="viewcode-back" href="../../usersguide/libref/top_level.html#tables.split_type">[docs]</a>
-<span class="k">def</span> <span class="nf">split_type</span><span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]:</span>
+<span class="k">def</span> <span class="nf">split_type</span><span class="p">(</span><span class="n">type_</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Split a PyTables type into a PyTables kind and an item size.</span>
 
 <span class="sd">    Returns a tuple of (kind, itemsize). If no item size is present in the type</span>
@@ -155,55 +154,53 @@
 <span class="sd">        ValueError: malformed type: &#39;foo bar&#39;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">match</span> <span class="o">=</span> <span class="n">_type_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">_type_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">type_</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;malformed type: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;malformed type: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">type_</span><span class="p">)</span>
     <span class="n">kind</span><span class="p">,</span> <span class="n">precision</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
     <span class="n">itemsize</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">precision</span><span class="p">:</span>
         <span class="n">precision</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
         <span class="n">itemsize</span><span class="p">,</span> <span class="n">remainder</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">remainder</span><span class="p">:</span>  <span class="c1"># 0 could be a valid item size</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;precision must be a multiple of 8: </span><span class="si">%d</span><span class="s2">&quot;</span>
-                             <span class="o">%</span> <span class="n">precision</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;precision must be a multiple of 8: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">precision</span>
+            <span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">)</span></div>
 
 
 
-<span class="k">def</span> <span class="nf">_invalid_itemsize_error</span><span class="p">(</span><span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">itemsizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="ne">ValueError</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">_invalid_itemsize_error</span><span class="p">(</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">itemsizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="ne">ValueError</span><span class="p">:</span>
     <span class="n">isizes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">itemsizes</span><span class="p">)</span>
-    <span class="k">return</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid item size for kind ``</span><span class="si">%s</span><span class="s2">``: </span><span class="si">%r</span><span class="s2">; &quot;</span>
-                      <span class="s2">&quot;it must be one of ``</span><span class="si">%r</span><span class="s2">``&quot;</span>
-                      <span class="o">%</span> <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">isizes</span><span class="p">))</span>
+    <span class="k">return</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="s2">&quot;invalid item size for kind ``</span><span class="si">%s</span><span class="s2">``: </span><span class="si">%r</span><span class="s2">; &quot;</span>
+        <span class="s2">&quot;it must be one of ``</span><span class="si">%r</span><span class="s2">``&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">isizes</span><span class="p">)</span>
+    <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_normalize_shape</span><span class="p">(</span><span class="n">shape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">_normalize_shape</span><span class="p">(</span><span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that the `shape` is safe to be used and return it as a tuple.&quot;&quot;&quot;</span>
-
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
         <span class="k">if</span> <span class="n">shape</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;shape value must be greater than 0: </span><span class="si">%d</span><span class="s2">&quot;</span>
-                             <span class="o">%</span> <span class="n">shape</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;shape value must be greater than 0: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">shape</span><span class="p">)</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">shape</span><span class="p">,)</span>  <span class="c1"># N is a shorthand for (N,)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;shape must be an integer or sequence: </span><span class="si">%r</span><span class="s2">&quot;</span>
-                        <span class="o">%</span> <span class="p">(</span><span class="n">shape</span><span class="p">,))</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;shape must be an integer or sequence: </span><span class="si">{</span><span class="n">shape</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># XXX Get from HDF5 library if possible.</span>
     <span class="c1"># HDF5 does not support ranks greater than 32</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">32</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;shapes with rank &gt; 32 are not supported: </span><span class="si">{</span><span class="n">shape</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;shapes with rank &gt; 32 are not supported: </span><span class="si">{</span><span class="n">shape</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_normalize_default</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">DTypeLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return `value` as a valid default of NumPy type `dtype`.&quot;&quot;&quot;</span>
-
     <span class="c1"># Create NumPy objects as defaults</span>
     <span class="c1"># This is better in order to serialize them as attributes</span>
     <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -236,10 +233,13 @@
 
     <span class="k">def</span> <span class="nf">dispatched_cmp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">other_method</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">other_method_name</span><span class="p">)</span>
+            <span class="n">other_method</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
+                <span class="n">other</span><span class="p">,</span> <span class="n">other_method_name</span>
+            <span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="n">other_method</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">dispatched_cmp</span>
 
 
@@ -257,10 +257,10 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">bases</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">dict_</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dict_</span><span class="p">)</span>
 
-        <span class="n">kind</span> <span class="o">=</span> <span class="n">dict_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;kind&#39;</span><span class="p">)</span>
-        <span class="n">itemsize</span> <span class="o">=</span> <span class="n">dict_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;itemsize&#39;</span><span class="p">)</span>
-        <span class="n">type_</span> <span class="o">=</span> <span class="n">dict_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">)</span>
-        <span class="n">deftype</span> <span class="o">=</span> <span class="n">dict_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;_deftype&#39;</span><span class="p">)</span>
+        <span class="n">kind</span> <span class="o">=</span> <span class="n">dict_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kind&quot;</span><span class="p">)</span>
+        <span class="n">itemsize</span> <span class="o">=</span> <span class="n">dict_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;itemsize&quot;</span><span class="p">)</span>
+        <span class="n">type_</span> <span class="o">=</span> <span class="n">dict_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span>
+        <span class="n">deftype</span> <span class="o">=</span> <span class="n">dict_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_deftype&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">and</span> <span class="n">deftype</span><span class="p">:</span>
             <span class="n">deftype_from_kind</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span> <span class="o">=</span> <span class="n">deftype</span>
@@ -268,7 +268,7 @@
         <span class="k">if</span> <span class="n">type_</span><span class="p">:</span>
             <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">type_</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">kind</span> <span class="ow">and</span> <span class="n">itemsize</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">itemsize</span><span class="p">,</span> <span class="s1">&#39;__int__&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">and</span> <span class="n">itemsize</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">itemsize</span><span class="p">,</span> <span class="s2">&quot;__int__&quot;</span><span class="p">):</span>
             <span class="c1"># Atom classes with a non-fixed item size do have an</span>
             <span class="c1"># ``itemsize``, but it&#39;s not a number (e.g. property).</span>
             <span class="n">atom_map</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span>
@@ -277,7 +277,7 @@
         <span class="k">if</span> <span class="n">kind</span><span class="p">:</span>  <span class="c1"># first definition of kind, make new entry</span>
             <span class="n">atom_map</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="k">if</span> <span class="n">itemsize</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">itemsize</span><span class="p">,</span> <span class="s1">&#39;__int__&#39;</span><span class="p">):</span>  <span class="c1"># fixed</span>
+        <span class="k">if</span> <span class="n">itemsize</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">itemsize</span><span class="p">,</span> <span class="s2">&quot;__int__&quot;</span><span class="p">):</span>  <span class="c1"># fixed</span>
             <span class="n">kind</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">kind</span>  <span class="c1"># maybe from superclasses</span>
             <span class="n">atom_map</span><span class="p">[</span><span class="n">kind</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">itemsize</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">cls</span>
 
@@ -388,18 +388,20 @@
 
     <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span>
 
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># noqa: A003</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">prefix</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the atom class prefix.&quot;&quot;&quot;</span>
         <span class="n">cname</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="k">return</span> <span class="n">cname</span><span class="p">[:</span><span class="n">cname</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;Atom&#39;</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">cname</span><span class="p">[:</span> <span class="n">cname</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;Atom&quot;</span><span class="p">)]</span>
 
 <div class="viewcode-block" id="Atom.from_sctype">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Atom.from_sctype">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_sctype</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">sctype</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">],</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Atom&#39;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_sctype</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">sctype</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Atom</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an Atom from a NumPy scalar type sctype.</span>
 
 <span class="sd">        Optional shape and default value may be specified as the</span>
@@ -418,15 +420,16 @@
 <span class="sd">            Float64Atom(shape=(), dflt=0.0)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sctype</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
-           <span class="ow">or</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">sctype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sctype</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">sctype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">):</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sctype</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
             <span class="k">if</span> <span class="s2">&quot;,&quot;</span> <span class="ow">in</span> <span class="n">sctype</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown NumPy scalar type: </span><span class="si">{</span><span class="n">sctype</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">sctype</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown NumPy scalar type: </span><span class="si">{</span><span class="n">sctype</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;unknown NumPy scalar type: </span><span class="si">{</span><span class="n">sctype</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">flexible</span><span class="p">)</span> <span class="ow">and</span> <span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown NumPy scalar type: </span><span class="si">{</span><span class="n">sctype</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -439,7 +442,7 @@
 <div class="viewcode-block" id="Atom.from_dtype">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Atom.from_dtype">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dtype</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Atom&#39;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_dtype</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Atom</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an Atom from a NumPy dtype.</span>
 
 <span class="sd">        An optional default value may be specified as the dflt</span>
@@ -466,23 +469,26 @@
         <span class="n">basedtype</span> <span class="o">=</span> <span class="n">dtype</span><span class="o">.</span><span class="n">base</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dtype</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;compound data types are not supported: </span><span class="si">%r</span><span class="s2">&quot;</span>
-                             <span class="o">%</span> <span class="n">dtype</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;compound data types are not supported: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">dtype</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;nested data types are not supported: </span><span class="si">%r</span><span class="s2">&quot;</span>
-                             <span class="o">%</span> <span class="n">dtype</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span>  <span class="c1"># can not reuse something like &#39;string80&#39;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;nested data types are not supported: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">dtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;S&quot;</span><span class="p">:</span>  <span class="c1"># can not reuse something like &#39;string80&#39;</span>
             <span class="n">itemsize</span> <span class="o">=</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">itemsize</span>
-            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;U&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;U&quot;</span><span class="p">:</span>
             <span class="c1"># workaround for unicode type (standard string type in Python 3)</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;support for unicode type is very limited, and &quot;</span>
-                          <span class="s2">&quot;only works for strings that can be cast as ascii&quot;</span><span class="p">,</span>
-                          <span class="n">FlavorWarning</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;support for unicode type is very limited, and &quot;</span>
+                <span class="s2">&quot;only works for strings that can be cast as ascii&quot;</span><span class="p">,</span>
+                <span class="n">FlavorWarning</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="n">itemsize</span> <span class="o">=</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">//</span> <span class="mi">4</span>
-            <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">itemsize</span><span class="p">)</span> <span class="ow">in</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="p">(</span>
-                <span class="s2">&quot;something went wrong in handling unicode.&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">itemsize</span><span class="p">)</span> <span class="ow">in</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">str</span>
+            <span class="p">),</span> <span class="s2">&quot;something went wrong in handling unicode.&quot;</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
         <span class="c1"># Most NumPy types have direct correspondence with PyTables types.</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_type</span><span class="p">(</span><span class="n">basedtype</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
@@ -490,7 +496,9 @@
 <div class="viewcode-block" id="Atom.from_type">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Atom.from_type">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Atom&#39;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_type</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">type_</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Atom</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an Atom from a PyTables type.</span>
 
 <span class="sd">        Optional shape and default value may be specified as the</span>
@@ -510,17 +518,22 @@
 <span class="sd">            ValueError: unknown type: &#39;Float64&#39;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">if</span> <span class="nb">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_types</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown type: </span><span class="si">{</span><span class="nb">type</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span> <span class="o">=</span> <span class="n">split_type</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">type_</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_types</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown type: </span><span class="si">{</span><span class="n">type_</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span> <span class="o">=</span> <span class="n">split_type</span><span class="p">(</span><span class="n">type_</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Atom.from_kind">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Atom.from_kind">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_kind</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Atom&quot;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_kind</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Atom</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an Atom from a PyTables kind.</span>
 
 <span class="sd">        Optional item size, shape and default value may be</span>
@@ -553,37 +566,36 @@
 <span class="sd">            ValueError: the ``enum`` kind is not supported...</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;shape&#39;</span><span class="p">:</span> <span class="n">shape</span><span class="p">}</span>
+        <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;shape&quot;</span><span class="p">:</span> <span class="n">shape</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">atom_map</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown kind: </span><span class="si">{</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="c1"># This incompatibility detection may get out-of-date and is</span>
         <span class="c1"># too hard-wired, but I couldn&#39;t come up with something</span>
         <span class="c1"># smarter.  -- Ivan (2007-02-08)</span>
-        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;enum&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;the ``</span><span class="si">%s</span><span class="s2">`` kind is not supported; &quot;</span>
-                             <span class="s2">&quot;please use the appropriate constructor&quot;</span>
-                             <span class="o">%</span> <span class="n">kind</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;enum&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;the ``</span><span class="si">%s</span><span class="s2">`` kind is not supported; &quot;</span>
+                <span class="s2">&quot;please use the appropriate constructor&quot;</span> <span class="o">%</span> <span class="n">kind</span>
+            <span class="p">)</span>
         <span class="c1"># If no `itemsize` is given, try to get the default type of the</span>
         <span class="c1"># kind (which has a fixed item size).</span>
         <span class="k">if</span> <span class="n">itemsize</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">deftype_from_kind</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;no default item size for kind ``</span><span class="si">%s</span><span class="s2">``&quot;</span>
-                                 <span class="o">%</span> <span class="n">kind</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;no default item size for kind ``</span><span class="si">%s</span><span class="s2">``&quot;</span> <span class="o">%</span> <span class="n">kind</span><span class="p">)</span>
             <span class="n">type_</span> <span class="o">=</span> <span class="n">deftype_from_kind</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span>
             <span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span> <span class="o">=</span> <span class="n">split_type</span><span class="p">(</span><span class="n">type_</span><span class="p">)</span>
         <span class="n">kdata</span> <span class="o">=</span> <span class="n">atom_map</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span>
         <span class="c1"># Look up the class and set a possible item size.</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">):</span>  <span class="c1"># atom class: non-fixed item size</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">):</span>  <span class="c1"># atom class: non-fixed item size</span>
             <span class="n">atomclass</span> <span class="o">=</span> <span class="n">kdata</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;itemsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">itemsize</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;itemsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">itemsize</span>
         <span class="k">else</span><span class="p">:</span>  <span class="c1"># dictionary: fixed item size</span>
             <span class="k">if</span> <span class="n">itemsize</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kdata</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">_invalid_itemsize_error</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">kdata</span><span class="p">)</span>
             <span class="n">atomclass</span> <span class="o">=</span> <span class="n">kdata</span><span class="p">[</span><span class="n">itemsize</span><span class="p">]</span>
         <span class="c1"># Only set a `dflt` argument if given (`None` may not be understood).</span>
         <span class="k">if</span> <span class="n">dflt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;dflt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dflt</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;dflt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dflt</span>
 
         <span class="k">return</span> <span class="n">atomclass</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
@@ -595,21 +607,25 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">recarrtype</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;String type to be used in numpy.rec.array().&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the string type to be used in `numpy.rec.array()`.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The number of dimensions of the atom.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of dimensions of the atom.</span>
 
-<span class="sd">        .. versionadded:: 2.4&quot;&quot;&quot;</span>
+<span class="sd">        .. versionadded:: 2.4</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nptype</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">],</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;``</span><span class="si">%s</span><span class="s2">`` is an abstract class; &quot;</span>
-                                      <span class="s2">&quot;please use one of its subclasses&quot;</span>
-                                      <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">nptype</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;``</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">`` is an abstract class; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;please use one of its subclasses&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span> <span class="o">=</span> <span class="n">_normalize_shape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The shape of the atom (a tuple for scalar atoms).&quot;&quot;&quot;</span>
         <span class="c1"># Curiously enough, NumPy isn&#39;t generally able to accept NumPy</span>
@@ -630,14 +646,14 @@
 <span class="sd">        as NumPy objects.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="n">args</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;shape=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">, dflt=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span><span class="si">!r}</span><span class="s1">&#39;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">itemsize</span><span class="p">,</span> <span class="s1">&#39;__int__&#39;</span><span class="p">):</span>  <span class="c1"># non-fixed</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;itemsize=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">itemsize</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1">&#39;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">(</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;shape=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, dflt=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span><span class="si">!r}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">itemsize</span><span class="p">,</span> <span class="s2">&quot;__int__&quot;</span><span class="p">):</span>  <span class="c1"># non-fixed</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;itemsize=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">itemsize</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">)&quot;</span>
 
-    <span class="fm">__eq__</span> <span class="o">=</span> <span class="n">_cmp_dispatcher</span><span class="p">(</span><span class="s1">&#39;_is_equal_to_atom&#39;</span><span class="p">)</span>
+    <span class="fm">__eq__</span> <span class="o">=</span> <span class="n">_cmp_dispatcher</span><span class="p">(</span><span class="s2">&quot;_is_equal_to_atom&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;Atom&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Atom</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
     <span class="c1"># XXX: API incompatible change for PyTables 3 line</span>
@@ -648,7 +664,7 @@
 
 <div class="viewcode-block" id="Atom.copy">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Atom.copy">[docs]</a>
-    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">override</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Atom&quot;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">override</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Atom</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a copy of the atom, possibly overriding some arguments.</span>
 
 <span class="sd">        Constructor arguments to be overridden must be passed as</span>
@@ -668,7 +684,7 @@
 <span class="sd">            &gt;&gt;&gt; atom1.copy(foobar=42) #doctest: +ELLIPSIS</span>
 <span class="sd">            Traceback (most recent call last):</span>
 <span class="sd">            ...</span>
-<span class="sd">            TypeError: ...__init__() got an unexpected keyword argument &#39;foobar&#39;</span>
+<span class="sd">            TypeError: ...__init__() got an unexpected keyword argument ...</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">newargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_init_args</span><span class="p">()</span>
@@ -685,261 +701,304 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
         <span class="n">parameters</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span>
-        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">arg</span> <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="ow">is</span> <span class="n">p</span><span class="o">.</span><span class="n">POSITIONAL_OR_KEYWORD</span><span class="p">]</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">arg</span>
+            <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="ow">is</span> <span class="n">p</span><span class="o">.</span><span class="n">POSITIONAL_OR_KEYWORD</span>
+        <span class="p">]</span>
 
-        <span class="k">return</span> <span class="p">{</span><span class="n">arg</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">arg</span> <span class="o">!=</span> <span class="s1">&#39;self&#39;</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">arg</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">arg</span> <span class="o">!=</span> <span class="s2">&quot;self&quot;</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">_is_equal_to_atom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom</span><span class="p">:</span> <span class="s2">&quot;Atom&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this object equal to the given `atom`?&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_is_equal_to_atom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom</span><span class="p">:</span> <span class="n">Atom</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the object is equal to the given `atom`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">type</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">shape</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">itemsize</span>
+            <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">dflt</span><span class="p">)</span>
+        <span class="p">)</span></div>
 
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">type</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">shape</span>
-                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">itemsize</span>
-                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span> <span class="o">==</span> <span class="n">atom</span><span class="o">.</span><span class="n">dflt</span><span class="p">))</span></div>
 
 
-
-<span class="k">def</span> <span class="nf">_abstract_atom_init</span><span class="p">(</span><span class="n">deftype</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">defvalue</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Atom</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="k">def</span> <span class="nf">_abstract_atom_init</span><span class="p">(</span>
+    <span class="n">deftype</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">defvalue</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Atom</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a constructor for an abstract `Atom` class.&quot;&quot;&quot;</span>
-
     <span class="n">defitemsize</span> <span class="o">=</span> <span class="n">split_type</span><span class="p">(</span><span class="n">deftype</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Atom</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="n">defitemsize</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span><span class="o">=</span><span class="n">defvalue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>  <span class="c1"># noqa: N807</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="n">Atom</span><span class="p">,</span>
+        <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">defitemsize</span><span class="p">,</span>
+        <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">defvalue</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="n">atom_map</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">atomclass</span> <span class="o">=</span> <span class="n">atom_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">][</span><span class="n">itemsize</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">_invalid_itemsize_error</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span>
-                                          <span class="n">atom_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="n">_invalid_itemsize_error</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">atom_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">]</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">=</span> <span class="n">atomclass</span>
         <span class="n">atomclass</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="fm">__init__</span>
 
 
 <div class="viewcode-block" id="StringAtom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.StringAtom">[docs]</a>
-<span class="k">class</span> <span class="nc">StringAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">StringAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines an atom of type string.</span>
 
 <span class="sd">    The item size is the *maximum* length in characters of strings.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
-    <span class="n">_defvalue</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>  <span class="c1"># noqa: A003</span>
+    <span class="n">_defvalue</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
 
     <span class="nd">@property</span>  <span class="c1"># type: ignore[misc]</span>
-    <span class="k">def</span> <span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span> <span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Size in bytes of a sigle item in the atom.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">itemsize</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]</span><span class="o">=</span><span class="n">_defvalue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">itemsize</span><span class="p">,</span> <span class="s1">&#39;__int__&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">itemsize</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid item size for kind ``</span><span class="si">%s</span><span class="s2">``: </span><span class="si">%r</span><span class="s2">; &quot;</span>
-                             <span class="s2">&quot;it must be a positive integer&quot;</span>
-                             <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">))</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;S</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">itemsize</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="n">_defvalue</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">itemsize</span><span class="p">,</span> <span class="s2">&quot;__int__&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">itemsize</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;invalid item size for kind ``string``: </span><span class="si">{</span><span class="n">itemsize</span><span class="si">!r}</span><span class="s2">; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;it must be a positive integer&quot;</span>
+            <span class="p">)</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;S</span><span class="si">{</span><span class="n">itemsize</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="BoolAtom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.BoolAtom">[docs]</a>
-<span class="k">class</span> <span class="nc">BoolAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">BoolAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines an atom of type bool.&quot;&quot;&quot;</span>
 
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;bool&#39;</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bool&quot;</span>
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;bool&#39;</span>
-    <span class="n">_deftype</span> <span class="o">=</span> <span class="s1">&#39;bool8&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bool&quot;</span>  <span class="c1"># noqa: A003</span>
+    <span class="n">_deftype</span> <span class="o">=</span> <span class="s2">&quot;bool8&quot;</span>
     <span class="n">_defvalue</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="n">_defvalue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">_defvalue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="IntAtom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.IntAtom">[docs]</a>
-<span class="k">class</span> <span class="nc">IntAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">IntAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines an atom of a signed integral type (int kind).&quot;&quot;&quot;</span>
 
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;int&#39;</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;int&quot;</span>
     <span class="n">signed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">_deftype</span> <span class="o">=</span> <span class="s1">&#39;int32&#39;</span>
+    <span class="n">_deftype</span> <span class="o">=</span> <span class="s2">&quot;int32&quot;</span>
     <span class="n">_defvalue</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="fm">__init__</span> <span class="o">=</span> <span class="n">_abstract_atom_init</span><span class="p">(</span><span class="n">_deftype</span><span class="p">,</span> <span class="n">_defvalue</span><span class="p">)</span> <span class="c1"># type: ignore[assignment]</span></div>
+    <span class="fm">__init__</span> <span class="o">=</span> <span class="n">_abstract_atom_init</span><span class="p">(</span>
+        <span class="n">_deftype</span><span class="p">,</span> <span class="n">_defvalue</span>
+    <span class="p">)</span>  <span class="c1"># type: ignore[assignment]</span></div>
 
 
 
 <div class="viewcode-block" id="UIntAtom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.UIntAtom">[docs]</a>
-<span class="k">class</span> <span class="nc">UIntAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">UIntAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines an atom of an unsigned integral type (uint kind).&quot;&quot;&quot;</span>
 
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;uint&#39;</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;uint&quot;</span>
     <span class="n">signed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="n">_deftype</span> <span class="o">=</span> <span class="s1">&#39;uint32&#39;</span>
+    <span class="n">_deftype</span> <span class="o">=</span> <span class="s2">&quot;uint32&quot;</span>
     <span class="n">_defvalue</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="fm">__init__</span> <span class="o">=</span> <span class="n">_abstract_atom_init</span><span class="p">(</span><span class="n">_deftype</span><span class="p">,</span> <span class="n">_defvalue</span><span class="p">)</span> <span class="c1"># type: ignore[assignment]</span></div>
+    <span class="fm">__init__</span> <span class="o">=</span> <span class="n">_abstract_atom_init</span><span class="p">(</span>
+        <span class="n">_deftype</span><span class="p">,</span> <span class="n">_defvalue</span>
+    <span class="p">)</span>  <span class="c1"># type: ignore[assignment]</span></div>
 
 
 
 <div class="viewcode-block" id="FloatAtom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.FloatAtom">[docs]</a>
-<span class="k">class</span> <span class="nc">FloatAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">FloatAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines an atom of a floating point type (float kind).&quot;&quot;&quot;</span>
 
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;float&#39;</span>
-    <span class="n">_deftype</span> <span class="o">=</span> <span class="s1">&#39;float64&#39;</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;float&quot;</span>
+    <span class="n">_deftype</span> <span class="o">=</span> <span class="s2">&quot;float64&quot;</span>
     <span class="n">_defvalue</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="fm">__init__</span> <span class="o">=</span> <span class="n">_abstract_atom_init</span><span class="p">(</span><span class="n">_deftype</span><span class="p">,</span> <span class="n">_defvalue</span><span class="p">)</span> <span class="c1"># type: ignore[assignment]</span></div>
+    <span class="fm">__init__</span> <span class="o">=</span> <span class="n">_abstract_atom_init</span><span class="p">(</span>
+        <span class="n">_deftype</span><span class="p">,</span> <span class="n">_defvalue</span>
+    <span class="p">)</span>  <span class="c1"># type: ignore[assignment]</span></div>
 
 
 
 <div class="viewcode-block" id="Int8Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Int8Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">Int8Atom</span><span class="p">(</span><span class="n">IntAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">Int8Atom</span><span class="p">(</span><span class="n">IntAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Atom for 8 bit integers.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;int8&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;int8&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;int8&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="Int16Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Int16Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">Int16Atom</span><span class="p">(</span><span class="n">IntAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">Int16Atom</span><span class="p">(</span><span class="n">IntAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Atom for 12 bit integers.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;int16&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;int16&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;int16&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;int16&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="Int32Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Int32Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">Int32Atom</span><span class="p">(</span><span class="n">IntAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">Int32Atom</span><span class="p">(</span><span class="n">IntAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Atom for 32 bit integers.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;int32&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;int32&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="Int64Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Int64Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">Int64Atom</span><span class="p">(</span><span class="n">IntAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">Int64Atom</span><span class="p">(</span><span class="n">IntAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Atom for 64 bit integers.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;int64&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;int64&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;int64&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="UInt8Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.UInt8Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">UInt8Atom</span><span class="p">(</span><span class="n">UIntAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">UInt8Atom</span><span class="p">(</span><span class="n">UIntAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Atom for 8 bit unsoged integers.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;uint8&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;uint8&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;uint8&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;uint8&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="UInt16Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.UInt16Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">UInt16Atom</span><span class="p">(</span><span class="n">UIntAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">UInt16Atom</span><span class="p">(</span><span class="n">UIntAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Atom for 16 bit unsigned integers.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;uint16&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;uint16&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;uint16&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;uint16&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="UInt32Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.UInt32Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">UInt32Atom</span><span class="p">(</span><span class="n">UIntAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">UInt32Atom</span><span class="p">(</span><span class="n">UIntAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Atom for 32 bit unsigned integers.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;uint32&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;uint32&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;uint32&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;uint32&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="UInt64Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.UInt64Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">UInt64Atom</span><span class="p">(</span><span class="n">UIntAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">UInt64Atom</span><span class="p">(</span><span class="n">UIntAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Atom for 16 bit unsigned integers.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;uint64&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;uint64&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;uint64&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;uint64&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float16&#39;</span><span class="p">):</span>
-    <span class="k">class</span> <span class="nc">Float16Atom</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s2">&quot;float16&quot;</span><span class="p">):</span>
+
+    <span class="k">class</span> <span class="nc">Float16Atom</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;FLoat 16 atom.&quot;&quot;&quot;</span>
 
         <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
-        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;float16&#39;</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;float16&quot;</span>  <span class="c1"># noqa: A003</span>
 
-        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;float16&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;float16&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="Float32Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Float32Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">Float32Atom</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">Float32Atom</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Float 32 atom.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;float32&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;float32&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="Float64Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Float64Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">Float64Atom</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">Float64Atom</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Float 64 atom.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;float64&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;float64&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float96&#39;</span><span class="p">):</span>
-    <span class="k">class</span> <span class="nc">Float96Atom</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s2">&quot;float96&quot;</span><span class="p">):</span>
+
+    <span class="k">class</span> <span class="nc">Float96Atom</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Float 96 atom.&quot;&quot;&quot;</span>
 
         <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span>
-        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;float96&#39;</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;float96&quot;</span>  <span class="c1"># noqa: A003</span>
 
-        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;float96&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;float96&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
 
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float128&#39;</span><span class="p">):</span>
-    <span class="k">class</span> <span class="nc">Float128Atom</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s2">&quot;float128&quot;</span><span class="p">):</span>
+
+    <span class="k">class</span> <span class="nc">Float128Atom</span><span class="p">(</span><span class="n">FloatAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Float 128 atom.&quot;&quot;&quot;</span>
 
         <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span>
-        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;float128&#39;</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;float128&quot;</span>  <span class="c1"># noqa: A003</span>
 
-        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;float128&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;float128&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="ComplexAtom">
@@ -959,31 +1018,33 @@
     <span class="c1"># Everything will be back to normality when people has stopped</span>
     <span class="c1"># using the old bottom-level complex classes.</span>
 
-    <span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;complex&#39;</span>
-    <span class="n">_deftype</span> <span class="o">=</span> <span class="s1">&#39;complex128&#39;</span>
+    <span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;complex&quot;</span>
+    <span class="n">_deftype</span> <span class="o">=</span> <span class="s2">&quot;complex128&quot;</span>
     <span class="n">_defvalue</span> <span class="o">=</span> <span class="mi">0</span><span class="n">j</span>
     <span class="n">_isizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">]</span>
 
-    <span class="nd">@property</span> <span class="c1"># type: ignore[misc]</span>
-    <span class="k">def</span> <span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="c1"># type: ignore[override]</span>
+    <span class="nd">@property</span>  <span class="c1"># type: ignore[misc]</span>
+    <span class="k">def</span> <span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Size in bytes of a sigle item in the atom.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">itemsize</span>
 
     <span class="c1"># Only instances have a `type` attribute, so complex types must be</span>
     <span class="c1"># registered by hand.</span>
-    <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;complex64&#39;</span><span class="p">)</span>
-    <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;complex128&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;complex192&#39;</span><span class="p">):</span>
-        <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;complex192&#39;</span><span class="p">)</span>
+    <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;complex64&quot;</span><span class="p">)</span>
+    <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;complex128&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s2">&quot;complex192&quot;</span><span class="p">):</span>
+        <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;complex192&quot;</span><span class="p">)</span>
         <span class="n">_isizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;complex256&#39;</span><span class="p">):</span>
-        <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;complex256&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s2">&quot;complex256&quot;</span><span class="p">):</span>
+        <span class="n">all_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;complex256&quot;</span><span class="p">)</span>
         <span class="n">_isizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span><span class="o">=</span><span class="n">_defvalue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">_defvalue</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">itemsize</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isizes</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">_invalid_itemsize_error</span><span class="p">(</span><span class="s1">&#39;complex&#39;</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isizes</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">_invalid_itemsize_error</span><span class="p">(</span><span class="s2">&quot;complex&quot;</span><span class="p">,</span> <span class="n">itemsize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isizes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">itemsize</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
         <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
@@ -991,22 +1052,25 @@
 <span class="k">class</span> <span class="nc">_ComplexErrorAtom</span><span class="p">(</span><span class="n">ComplexAtom</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="nb">type</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Reminds the user to stop using the old complex atom names.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="o">=</span><span class="n">ComplexAtom</span><span class="o">.</span><span class="n">_defvalue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="o">=</span><span class="n">ComplexAtom</span><span class="o">.</span><span class="n">_defvalue</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
             <span class="s2">&quot;to avoid confusions with PyTables 1.X complex atom names, &quot;</span>
             <span class="s2">&quot;please use ``ComplexAtom(itemsize=N)``, &quot;</span>
             <span class="s2">&quot;where N=8 for single precision complex atoms, &quot;</span>
-            <span class="s2">&quot;and N=16 for double precision complex atoms&quot;</span><span class="p">)</span>
+            <span class="s2">&quot;and N=16 for double precision complex atoms&quot;</span>
+        <span class="p">)</span>
 
 
 <span class="n">Complex32Atom</span> <span class="o">=</span> <span class="n">Complex64Atom</span> <span class="o">=</span> <span class="n">Complex128Atom</span> <span class="o">=</span> <span class="n">_ComplexErrorAtom</span>
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;complex192&#39;</span><span class="p">):</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s2">&quot;complex192&quot;</span><span class="p">):</span>
     <span class="n">Complex192Atom</span> <span class="o">=</span> <span class="n">_ComplexErrorAtom</span>
-<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;complex256&#39;</span><span class="p">):</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s2">&quot;complex256&quot;</span><span class="p">):</span>
     <span class="n">Complex256Atom</span> <span class="o">=</span> <span class="n">_ComplexErrorAtom</span>
 
 
-<span class="k">class</span> <span class="nc">TimeAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">TimeAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines an atom of time type (time kind).</span>
 
 <span class="sd">    There are two distinct supported types of time: a 32 bit integer value and</span>
@@ -1016,37 +1080,39 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;time&#39;</span>
-    <span class="n">_deftype</span> <span class="o">=</span> <span class="s1">&#39;time32&#39;</span>
-    <span class="n">_defvalue</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="fm">__init__</span> <span class="o">=</span> <span class="n">_abstract_atom_init</span><span class="p">(</span><span class="n">_deftype</span><span class="p">,</span> <span class="n">_defvalue</span><span class="p">)</span> <span class="c1"># type: ignore[assignment]</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;time&quot;</span>
+    <span class="n">_deftype</span> <span class="o">=</span> <span class="s2">&quot;time32&quot;</span>
+    <span class="n">_defvalue</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="fm">__init__</span> <span class="o">=</span> <span class="n">_abstract_atom_init</span><span class="p">(</span>
+        <span class="n">_deftype</span><span class="p">,</span> <span class="n">_defvalue</span>
+    <span class="p">)</span>  <span class="c1"># type: ignore[assignment]</span>
 
 
 <div class="viewcode-block" id="Time32Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Time32Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">Time32Atom</span><span class="p">(</span><span class="n">TimeAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">Time32Atom</span><span class="p">(</span><span class="n">TimeAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines an atom of type time32.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;time32&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;time32&quot;</span>  <span class="c1"># noqa: A003</span>
     <span class="n">_defvalue</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="o">=</span><span class="n">_defvalue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="o">=</span><span class="n">_defvalue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="Time64Atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Time64Atom">[docs]</a>
-<span class="k">class</span> <span class="nc">Time64Atom</span><span class="p">(</span><span class="n">TimeAtom</span><span class="p">):</span> <span class="c1"># type: ignore[misc]</span>
+<span class="k">class</span> <span class="nc">Time64Atom</span><span class="p">(</span><span class="n">TimeAtom</span><span class="p">):</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines an atom of type time64.&quot;&quot;&quot;</span>
 
     <span class="n">itemsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;time64&#39;</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;time64&quot;</span>  <span class="c1"># noqa: A003</span>
     <span class="n">_defvalue</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="n">_defvalue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">dflt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">_defvalue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dflt</span><span class="p">)</span></div>
 
 
 
@@ -1103,7 +1169,6 @@
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-
 <span class="sd">    The next C enum construction::</span>
 
 <span class="sd">        enum myEnum {</span>
@@ -1144,20 +1209,21 @@
     <span class="c1"># However, resetting ``__metaclass__`` to ``type`` doesn&#39;t seem to</span>
     <span class="c1"># work and I don&#39;t feel like creating a subclass of ``MetaAtom``.</span>
 
-    <span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;enum&#39;</span>
-    <span class="nb">type</span> <span class="o">=</span> <span class="s1">&#39;enum&#39;</span>
+    <span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;enum&quot;</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;enum&quot;</span>  <span class="c1"># noqa: A003</span>
 
-    <span class="nd">@property</span> <span class="c1"># type: ignore[misc]</span>
-    <span class="k">def</span> <span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="c1"># type: ignore[override]</span>
+    <span class="nd">@property</span>  <span class="c1"># type: ignore[misc]</span>
+    <span class="k">def</span> <span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Size in bytes of a single item in the atom.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">itemsize</span>
 
     <span class="k">def</span> <span class="nf">_checkbase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="n">Atom</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check the `base` storage atom.&quot;&quot;&quot;</span>
-
-        <span class="k">if</span> <span class="n">base</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;enum&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;can not use an enumerated atom &quot;</span>
-                            <span class="s2">&quot;as a storage atom: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">base</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">base</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;enum&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;can not use an enumerated atom &quot;</span>
+                <span class="s2">&quot;as a storage atom: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">base</span>
+            <span class="p">)</span>
 
         <span class="c1"># Check whether the storage atom can represent concrete values</span>
         <span class="c1"># in the enumeration...</span>
@@ -1170,42 +1236,58 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">npvalues</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">npgenvalues</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">basedtype</span><span class="o">.</span><span class="n">base</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;storage atom type is incompatible with &quot;</span>
-                            <span class="s2">&quot;concrete values in the enumeration&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;storage atom type is incompatible with &quot;</span>
+                <span class="s2">&quot;concrete values in the enumeration&quot;</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="n">npvalues</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">basedtype</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;storage atom shape does not match that of &quot;</span>
-                            <span class="s2">&quot;concrete values in the enumeration&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;storage atom shape does not match that of &quot;</span>
+                <span class="s2">&quot;concrete values in the enumeration&quot;</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="n">npvalues</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">!=</span> <span class="n">npgenvalues</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;storage atom type lacks precision for &quot;</span>
-                            <span class="s2">&quot;concrete values in the enumeration&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;storage atom type lacks precision for &quot;</span>
+                <span class="s2">&quot;concrete values in the enumeration&quot;</span>
+            <span class="p">)</span>
 
         <span class="c1"># ...with some implementation limitations.</span>
-        <span class="k">if</span> <span class="n">npvalues</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;u&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;only integer concrete values &quot;</span>
-                                      <span class="s2">&quot;are supported for the moment, sorry&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">npvalues</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;i&quot;</span><span class="p">,</span> <span class="s2">&quot;u&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;only integer concrete values &quot;</span>
+                <span class="s2">&quot;are supported for the moment, sorry&quot;</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npvalues</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;only scalar concrete values &quot;</span>
-                                      <span class="s2">&quot;are supported for the moment, sorry&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;only scalar concrete values &quot;</span>
+                <span class="s2">&quot;are supported for the moment, sorry&quot;</span>
+            <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_init_args</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a dictionary of instance constructor arguments.&quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">enum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">enum</span><span class="p">,</span> <span class="n">dflt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_defname</span><span class="p">,</span>
-                    <span class="n">base</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;enum&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">enum</span><span class="p">,</span>
+            <span class="s2">&quot;dflt&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_defname</span><span class="p">,</span>
+            <span class="s2">&quot;base&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="p">,</span>
+            <span class="s2">&quot;shape&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+        <span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">_is_equal_to_atom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this object equal to the given `atom`?&quot;&quot;&quot;</span>
-
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the object is equal to the given `atom`.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">_is_equal_to_enumatom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enumatom</span><span class="p">:</span> <span class="s2">&quot;EnumAtom&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this object equal to the given `enumatom`?&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_is_equal_to_enumatom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enumatom</span><span class="p">:</span> <span class="n">EnumAtom</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the object is equal to the given `enumatom`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enum</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">enum</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">shape</span>
+            <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">dflt</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">base</span>
+        <span class="p">)</span>
 
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enum</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">enum</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">shape</span>
-                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dflt</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">dflt</span><span class="p">)</span>
-                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">==</span> <span class="n">enumatom</span><span class="o">.</span><span class="n">base</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enum</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Enum</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Atom</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">enum</span><span class="p">:</span> <span class="n">Enum</span> <span class="o">|</span> <span class="n">Any</span><span class="p">,</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="n">Atom</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enum</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
             <span class="n">enum</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="n">enum</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enum</span> <span class="o">=</span> <span class="n">enum</span>
@@ -1223,7 +1305,7 @@
         <span class="c1"># These are kept to ease dumping this particular</span>
         <span class="c1"># representation of the enumeration to storage.</span>
         <span class="n">names</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">enum</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">enum</span><span class="p">:</span>
             <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
             <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="n">basedtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">dtype</span>
@@ -1234,10 +1316,14 @@
         <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basedtype</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;EnumAtom(enum=</span><span class="si">%r</span><span class="s1">, dflt=</span><span class="si">%r</span><span class="s1">, base=</span><span class="si">%r</span><span class="s1">, shape=</span><span class="si">%r</span><span class="s1">)&#39;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enum</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_defname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s2">&quot;EnumAtom(enum=</span><span class="si">{!r}</span><span class="s2">, dflt=</span><span class="si">{!r}</span><span class="s2">, base=</span><span class="si">{!r}</span><span class="s2">, shape=</span><span class="si">{!r}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enum</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_defname</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+        <span class="p">)</span>
 
-    <span class="fm">__eq__</span> <span class="o">=</span> <span class="n">_cmp_dispatcher</span><span class="p">(</span><span class="s1">&#39;_is_equal_to_enumatom&#39;</span><span class="p">)</span></div>
+    <span class="fm">__eq__</span> <span class="o">=</span> <span class="n">_cmp_dispatcher</span><span class="p">(</span><span class="s2">&quot;_is_equal_to_enumatom&quot;</span><span class="p">)</span></div>
 
 
     <span class="c1"># XXX: API incompatible change for PyTables 3 line</span>
@@ -1249,24 +1335,26 @@
 
 <span class="k">class</span> <span class="nc">ReferenceAtom</span><span class="p">(</span><span class="n">Atom</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines an atom of type object to read references.</span>
+
 <span class="sd">    This atom is read-only.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;reference&#39;</span>
-    <span class="nb">type</span> <span class="o">=</span> <span class="s1">&#39;object&#39;</span>
-    <span class="n">_deftype</span> <span class="o">=</span> <span class="s1">&#39;NoneType&#39;</span>
+    <span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;reference&quot;</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;object&quot;</span>  <span class="c1"># noqa: A003</span>
+    <span class="n">_deftype</span> <span class="o">=</span> <span class="s2">&quot;NoneType&quot;</span>
     <span class="n">_defvalue</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="nd">@property</span> <span class="c1"># type: ignore[misc]</span>
-    <span class="k">def</span> <span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="c1"># type: ignore[override]</span>
+    <span class="nd">@property</span>  <span class="c1"># type: ignore[misc]</span>
+    <span class="k">def</span> <span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Size in bytes of a single item in the atom.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">itemsize</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="o">=</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="p">())</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">Atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_defvalue</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;ReferenceAtom(shape=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;ReferenceAtom(shape=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">)&quot;</span>
+
 
 <span class="c1"># Pseudo-atom classes</span>
 <span class="c1"># ===================</span>
@@ -1299,16 +1387,14 @@
     <span class="n">base</span><span class="p">:</span> <span class="n">Atom</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">()&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">()&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
 
     <span class="k">def</span> <span class="nf">toarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert an `object_` into an array of base atoms.&quot;&quot;&quot;</span>
-
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="k">def</span> <span class="nf">fromarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert an `array` of base atoms into an object.&quot;&quot;&quot;</span>
-
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
 
@@ -1319,13 +1405,13 @@
 
     <span class="k">def</span> <span class="nf">toarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="n">buffer_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tobuffer</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
-        <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">buffer</span><span class="o">=</span><span class="n">buffer_</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
-                           <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">buffer_</span><span class="p">))</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span>
+            <span class="n">buffer</span><span class="o">=</span><span class="n">buffer_</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">buffer_</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">array</span>
 
     <span class="k">def</span> <span class="nf">_tobuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert an `object_` into a buffer.&quot;&quot;&quot;</span>
-
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
 
@@ -1346,7 +1432,7 @@
 
 <span class="sd">        &gt;&gt;&gt; s = &#39;A unicode string: hbar = \u210f&#39;</span>
 <span class="sd">        &gt;&gt;&gt; bytestring = s.encode(&#39;utf-8&#39;)</span>
-<span class="sd">        &gt;&gt;&gt; VLArray.append(bytestring) # doctest: +SKIP</span>
+<span class="sd">        &gt;&gt;&gt; VLArray.append(bytestring) # noqa: F821  # doctest: +SKIP</span>
 
 <span class="sd">    For full Unicode support, using VLUnicodeAtom (see :ref:`VLUnicodeAtom`) is</span>
 <span class="sd">    recommended.</span>
@@ -1357,8 +1443,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;vlstring&#39;</span>
-    <span class="nb">type</span> <span class="o">=</span> <span class="s1">&#39;vlstring&#39;</span>
+    <span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;vlstring&quot;</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;vlstring&quot;</span>  <span class="c1"># noqa: A003</span>
     <span class="n">base</span> <span class="o">=</span> <span class="n">UInt8Atom</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_tobuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">bytes_</span><span class="p">:</span>
@@ -1369,6 +1455,7 @@
 <div class="viewcode-block" id="VLStringAtom.fromarray">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.VLStringAtom.fromarray">[docs]</a>
     <span class="k">def</span> <span class="nf">fromarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert array data into bytes.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">array</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span></div>
 </div>
 
@@ -1395,8 +1482,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;vlunicode&#39;</span>
-    <span class="nb">type</span> <span class="o">=</span> <span class="s1">&#39;vlunicode&#39;</span>
+    <span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;vlunicode&quot;</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;vlunicode&quot;</span>  <span class="c1"># noqa: A003</span>
     <span class="n">base</span> <span class="o">=</span> <span class="n">UInt32Atom</span><span class="p">()</span>
 
     <span class="c1"># numpy.unicode_ no more implements the buffer interface in Python 3</span>
@@ -1409,12 +1496,12 @@
 <div class="viewcode-block" id="VLUnicodeAtom.toarray">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.VLUnicodeAtom.toarray">[docs]</a>
     <span class="k">def</span> <span class="nf">toarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a string into a numpy array.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object_</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;object is not a string: </span><span class="si">{</span><span class="n">object_</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">ustr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">object_</span><span class="p">)</span>
-        <span class="n">uarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ustr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span>
-            <span class="n">buffer</span><span class="o">=</span><span class="n">uarr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">ustr</span><span class="p">))</span></div>
+        <span class="n">uarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ustr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;U&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">buffer</span><span class="o">=</span><span class="n">uarr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">ustr</span><span class="p">))</span></div>
 
 
     <span class="k">def</span> <span class="nf">_tobuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">:</span>
@@ -1428,10 +1515,11 @@
 <div class="viewcode-block" id="VLUnicodeAtom.fromarray">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.VLUnicodeAtom.fromarray">[docs]</a>
     <span class="k">def</span> <span class="nf">fromarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert array data into a string.&quot;&quot;&quot;</span>
         <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">length</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s1">&#39;&#39;</span>  <span class="c1"># ``array.view(&#39;U0&#39;)`` raises a `TypeError`</span>
-        <span class="k">return</span> <span class="n">array</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s1">&#39;U</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">length</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># ``array.view(&#39;U0&#39;)`` raises a `TypeError`</span>
+        <span class="k">return</span> <span class="n">array</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s2">&quot;U</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">length</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
 </div>
 
 
@@ -1454,8 +1542,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;object&#39;</span>
-    <span class="nb">type</span> <span class="o">=</span> <span class="s1">&#39;object&#39;</span>
+    <span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;object&quot;</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;object&quot;</span>  <span class="c1"># noqa: A003</span>
     <span class="n">base</span> <span class="o">=</span> <span class="n">UInt8Atom</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_tobuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
@@ -1463,7 +1551,11 @@
 
 <div class="viewcode-block" id="ObjectAtom.fromarray">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.ObjectAtom.fromarray">[docs]</a>
-    <span class="k">def</span> <span class="nf">fromarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">fromarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize data contained in the input array.</span>
+
+<span class="sd">        A Python object is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># We have to check for an empty array because of a possible</span>
         <span class="c1"># bug in HDF5 which makes it claim that a dataset has one</span>
         <span class="c1"># record when in fact it is empty.</span>
@@ -1481,7 +1573,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2011–2024, PyTables maintainers.</p>
+    <p>&#169; Copyright 2011–2025, PyTables maintainers.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

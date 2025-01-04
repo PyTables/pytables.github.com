@@ -1,21 +1,21 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.expression &mdash; PyTables 3.10.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+  <title>tables.expression &mdash; PyTables 3.10.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/documentation_options.js?v=5ca81ab5"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=6b5090df"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -45,9 +45,6 @@
             
               <img src="../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
-              <div class="version">
-                3.10.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -96,12 +93,16 @@
   <h1>Source code for tables.expression</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Here is defined the Expr class.&quot;&quot;&quot;</span>
 
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterator</span>
 
-<span class="kn">import</span> <span class="nn">numexpr</span> <span class="k">as</span> <span class="nn">ne</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numexpr</span> <span class="k">as</span> <span class="nn">ne</span>
+
 <span class="kn">import</span> <span class="nn">tables</span> <span class="k">as</span> <span class="nn">tb</span>
 
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">PerformanceWarning</span>
@@ -239,7 +240,12 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">uservars</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">uservars</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">append_mode</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The append mode for user-provided output containers.&quot;&quot;&quot;</span>
@@ -247,29 +253,29 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Common main dimension for inputs in expression.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The names of variables in expression (list).&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">out</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ContainerType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out</span><span class="p">:</span> <span class="n">ContainerType</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The user-provided container (if any) for the expression outcome.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">o_start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The start range selection for the user-provided output.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">o_stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_stop</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The stop range selection for the user-provided output.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">o_step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">o_step</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The step range selection for the user-provided output.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Common shape for the arrays in expression.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The start range selection for the input.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The stop range selection for the input.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The step range selection for the input.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The values of variables in expression (list).&quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ne</span><span class="o">.</span><span class="n">interpreter</span><span class="o">.</span><span class="n">NumExpr</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span><span class="p">:</span> <span class="n">ne</span><span class="o">.</span><span class="n">interpreter</span><span class="o">.</span><span class="n">NumExpr</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The compiled expression.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_single_row_out</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_single_row_out</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A sample of the output with just a single row.&quot;&quot;&quot;</span>
 
         <span class="c1"># First, get the signature for the arrays in expression</span>
@@ -309,9 +315,9 @@
         <span class="n">types_</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">vars_</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;atom&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;atom&quot;</span><span class="p">):</span>
                 <span class="n">types_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;dtype&#39;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;dtype&quot;</span><span class="p">):</span>
                 <span class="n">types_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># try to convert into a NumPy array</span>
@@ -320,8 +326,10 @@
             <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
         <span class="c1"># Create a signature for the expression</span>
-        <span class="n">signature</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">getType</span><span class="p">(</span><span class="n">type_</span><span class="p">))</span>
-                     <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">type_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">,</span> <span class="n">types_</span><span class="p">)]</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">getType</span><span class="p">(</span><span class="n">type_</span><span class="p">))</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">type_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">,</span> <span class="n">types_</span><span class="p">)</span>
+        <span class="p">]</span>
 
         <span class="c1"># Compile the expression</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_expr</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">necompiler</span><span class="o">.</span><span class="n">NumExpr</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">signature</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -331,10 +339,12 @@
 
     <span class="c1"># The next method is similar to their counterpart in `Table`, but</span>
     <span class="c1"># adapted to the `Expr` own requirements.</span>
-    <span class="k">def</span> <span class="nf">_required_expr_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                            <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-                            <span class="n">uservars</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
-                            <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">_required_expr_vars</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">uservars</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the variables required by the `expression`.</span>
 
 <span class="sd">        A new dictionary defining the variables used in the `expression`</span>
@@ -355,7 +365,6 @@
 <span class="sd">        or global variables.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Get the names of variables used in the expression.</span>
         <span class="n">exprvars_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exprvars_cache</span>
         <span class="k">if</span> <span class="n">expression</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exprvars_cache</span><span class="p">:</span>
@@ -364,10 +373,13 @@
                 <span class="c1"># Remove 10 (arbitrary) elements from the cache</span>
                 <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">exprvars_cache</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]:</span>
                     <span class="k">del</span> <span class="n">exprvars_cache</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
-            <span class="n">cexpr</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="s1">&#39;&lt;string&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;eval&#39;</span><span class="p">)</span>
-            <span class="n">exprvars</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">cexpr</span><span class="o">.</span><span class="n">co_names</span>
-                        <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span> <span class="s1">&#39;True&#39;</span><span class="p">]</span>
-                        <span class="ow">and</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ne</span><span class="o">.</span><span class="n">expressions</span><span class="o">.</span><span class="n">functions</span><span class="p">]</span>
+            <span class="n">cexpr</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="s2">&quot;&lt;string&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;eval&quot;</span><span class="p">)</span>
+            <span class="n">exprvars</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">var</span>
+                <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">cexpr</span><span class="o">.</span><span class="n">co_names</span>
+                <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;False&quot;</span><span class="p">,</span> <span class="s2">&quot;True&quot;</span><span class="p">]</span>
+                <span class="ow">and</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ne</span><span class="o">.</span><span class="n">expressions</span><span class="o">.</span><span class="n">functions</span>
+            <span class="p">]</span>
             <span class="n">exprvars_cache</span><span class="p">[</span><span class="n">expression</span><span class="p">]</span> <span class="o">=</span> <span class="n">exprvars</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">exprvars</span> <span class="o">=</span> <span class="n">exprvars_cache</span><span class="p">[</span><span class="n">expression</span><span class="p">]</span>
@@ -395,28 +407,32 @@
                 <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;name ``</span><span class="si">%s</span><span class="s2">`` is not defined&quot;</span> <span class="o">%</span> <span class="n">var</span><span class="p">)</span>
 
             <span class="c1"># Check the value.</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;dtype&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="s1">&#39;u8&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">&quot;dtype&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;u8&quot;</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
                     <span class="s2">&quot;variable ``</span><span class="si">%s</span><span class="s2">`` refers to &quot;</span>
                     <span class="s2">&quot;a 64-bit unsigned integer object, that is &quot;</span>
-                    <span class="s2">&quot;not yet supported in expressions, sorry; &quot;</span> <span class="o">%</span> <span class="n">var</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;_v_colpathnames&#39;</span><span class="p">):</span>  <span class="c1"># nested column</span>
+                    <span class="s2">&quot;not yet supported in expressions, sorry; &quot;</span> <span class="o">%</span> <span class="n">var</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">&quot;_v_colpathnames&quot;</span><span class="p">):</span>  <span class="c1"># nested column</span>
                 <span class="c1"># This branch is never reached because the compile step</span>
                 <span class="c1"># above already raise a ``TypeError`` for nested</span>
                 <span class="c1"># columns, but that could change in the future.  So it</span>
                 <span class="c1"># is best to let this here.</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
                     <span class="s2">&quot;variable ``</span><span class="si">%s</span><span class="s2">`` refers to a nested column, &quot;</span>
-                    <span class="s2">&quot;not allowed in expressions&quot;</span> <span class="o">%</span> <span class="n">var</span><span class="p">)</span>
+                    <span class="s2">&quot;not allowed in expressions&quot;</span> <span class="o">%</span> <span class="n">var</span>
+                <span class="p">)</span>
             <span class="n">reqvars</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
         <span class="k">return</span> <span class="n">reqvars</span>
 
 <div class="viewcode-block" id="Expr.set_inputs_range">
 <a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_inputs_range">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_inputs_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                         <span class="n">start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                         <span class="n">stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                         <span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">set_inputs_range</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">stop</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">step</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Define a range for all inputs in expression.</span>
 
 <span class="sd">        The computation will only take place for the range defined by</span>
@@ -427,7 +443,6 @@
 <span class="sd">        used instead.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">start</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="n">stop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">step</span></div>
@@ -435,7 +450,9 @@
 
 <div class="viewcode-block" id="Expr.set_output">
 <a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_output">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">:</span> <span class="n">ContainerType</span><span class="p">,</span> <span class="n">append_mode</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">set_output</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">:</span> <span class="n">ContainerType</span><span class="p">,</span> <span class="n">append_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set out as container for output as well as the append_mode.</span>
 
 <span class="sd">        The out must be a container that is meant to keep the outcome of</span>
@@ -455,25 +472,28 @@
 <span class="sd">        elements are unaffected.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">&quot;__setitem__&quot;</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;You need to pass a settable multidimensional container &quot;</span>
-                <span class="s2">&quot;as output&quot;</span><span class="p">)</span>
+                <span class="s2">&quot;as output&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">out</span>
         <span class="k">if</span> <span class="n">append_mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">&quot;append&quot;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;For activating the ``append`` mode, you need a container &quot;</span>
-                <span class="s2">&quot;with an `append()` method (like the `EArray`)&quot;</span><span class="p">)</span>
+                <span class="s2">&quot;with an `append()` method (like the `EArray`)&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">append_mode</span> <span class="o">=</span> <span class="n">append_mode</span></div>
 
 
 <div class="viewcode-block" id="Expr.set_output_range">
 <a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.set_output_range">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_output_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                         <span class="n">start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                         <span class="n">stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                         <span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">set_output_range</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">stop</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">step</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Define a range for user-provided output object.</span>
 
 <span class="sd">        The output object will only be modified in the range specified by the</span>
@@ -482,10 +502,10 @@
 <span class="sd">        like a NumPy container).</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-                <span class="s2">&quot;You need to pass an output object to `setOut()` first&quot;</span><span class="p">)</span>
+                <span class="s2">&quot;You need to pass an output object to `setOut()` first&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">o_start</span> <span class="o">=</span> <span class="n">start</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">o_stop</span> <span class="o">=</span> <span class="n">stop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">o_step</span> <span class="o">=</span> <span class="n">step</span></div>
@@ -493,15 +513,14 @@
 
     <span class="c1"># Although the next code is similar to the method in `Leaf`, it</span>
     <span class="c1"># allows the use of pure NumPy objects.</span>
-    <span class="k">def</span> <span class="nf">_calc_nrowsinbuf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_calc_nrowsinbuf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the number of rows that will fit in a buffer.&quot;&quot;&quot;</span>
-
         <span class="c1"># Compute the rowsize for the *leading* dimension</span>
-        <span class="n">shape_</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">object_</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">shape_</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">shape_</span><span class="p">:</span>
             <span class="n">shape_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
 
-        <span class="n">rowsize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">shape_</span><span class="p">)</span> <span class="o">*</span> <span class="n">object_</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span>
+        <span class="n">rowsize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">shape_</span><span class="p">)</span> <span class="o">*</span> <span class="n">obj</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span>
 
         <span class="c1"># Compute the nrowsinbuf</span>
         <span class="c1"># Multiplying the I/O buffer size by 4 gives optimal results</span>
@@ -515,23 +534,23 @@
             <span class="c1"># If rowsize is too large, issue a Performance warning</span>
             <span class="n">maxrowsize</span> <span class="o">=</span> <span class="n">BUFFER_TIMES</span> <span class="o">*</span> <span class="n">buffersize</span>
             <span class="k">if</span> <span class="n">rowsize</span> <span class="o">&gt;</span> <span class="n">maxrowsize</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
-<span class="s2">The object ``</span><span class="si">%s</span><span class="s2">`` is exceeding the maximum recommended rowsize (</span><span class="si">%d</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s2">The object ``</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">`` is exceeding the maximum recommended rowsize (</span><span class="si">{</span><span class="n">maxrowsize</span><span class="si">}</span>
 <span class="s2">bytes); be ready to see PyTables asking for *lots* of memory and</span>
 <span class="s2">possibly slow I/O.  You may want to reduce the rowsize by trimming the</span>
 <span class="s2">value of dimensions that are orthogonal (and preferably close) to the</span>
-<span class="s2">*leading* dimension of this object.&quot;&quot;&quot;</span>
-                              <span class="o">%</span> <span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">maxrowsize</span><span class="p">),</span>
-                              <span class="n">PerformanceWarning</span><span class="p">)</span>
+<span class="s2">*leading* dimension of this object.&quot;&quot;&quot;</span><span class="p">,</span>
+                    <span class="n">PerformanceWarning</span><span class="p">,</span>
+                    <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">nrowsinbuf</span>
 
-    <span class="k">def</span> <span class="nf">_guess_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
-        <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="nb">int</span><span class="p">],</span>
-        <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-    <span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">_guess_shape</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Guess the shape of the output of the expression.&quot;&quot;&quot;</span>
-
         <span class="c1"># First, compute the maximum dimension of inputs and maindim</span>
         <span class="c1"># (if it exists)</span>
         <span class="n">maxndim</span> <span class="o">=</span> <span class="mi">0</span>
@@ -577,24 +596,33 @@
             <span class="n">shape</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">maindim</span><span class="p">,</span> <span class="n">minlen</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span>
 
-    <span class="k">def</span> <span class="nf">_get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-      <span class="n">shape</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-      <span class="n">maindim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-      <span class="n">itermode</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span>
-  <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
-        <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">],</span>
-        <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ContainerType</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
-    <span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">_get_info</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">maindim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">itermode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span>
+        <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+        <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="n">ContainerType</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return various info needed for evaluating the computation loop.&quot;&quot;&quot;</span>
-
         <span class="c1"># Compute the shape of the resulting container having</span>
         <span class="c1"># in account new possible values of start, stop and step in</span>
         <span class="c1"># the inputs range</span>
         <span class="k">if</span> <span class="n">maindim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">])</span>
-            <span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
-                <span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">])</span>
+            <span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)))</span>
             <span class="n">i_nrows</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="n">maindim</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span>
@@ -602,7 +630,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">itermode</span><span class="p">:</span>
             <span class="c1"># Create a container for output if not defined yet</span>
-            <span class="n">o_maindim</span> <span class="o">=</span> <span class="mi">0</span>    <span class="c1"># Default maindim</span>
+            <span class="n">o_maindim</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Default maindim</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_single_row_out</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
                 <span class="c1"># Get the trivial values for start, stop and step</span>
@@ -622,20 +650,22 @@
                 <span class="n">o_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
                 <span class="n">s</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">o_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">o_stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">o_step</span><span class="p">)</span>
                 <span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">o_shape</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">])</span>
-                <span class="n">o_shape</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">o_shape</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">],</span>
-                                         <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span><span class="p">)))</span>
+                <span class="n">o_shape</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                    <span class="n">o_shape</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span><span class="p">))</span>
+                <span class="p">)</span>
 
                 <span class="c1"># Check that the shape of output is consistent with inputs</span>
-                <span class="n">tr_oshape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">o_shape</span><span class="p">)</span>   <span class="c1"># this implies a copy</span>
+                <span class="n">tr_oshape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">o_shape</span><span class="p">)</span>  <span class="c1"># this implies a copy</span>
                 <span class="n">olen_</span> <span class="o">=</span> <span class="n">tr_oshape</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">o_maindim</span><span class="p">)</span>
-                <span class="n">tr_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>      <span class="c1"># do a copy</span>
+                <span class="n">tr_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># do a copy</span>
                 <span class="k">if</span> <span class="n">maindim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">len_</span> <span class="o">=</span> <span class="n">tr_shape</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">o_maindim</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">len_</span> <span class="o">=</span> <span class="mi">1</span>
                 <span class="k">if</span> <span class="n">tr_oshape</span> <span class="o">!=</span> <span class="n">tr_shape</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="s2">&quot;Shape for out container does not match expression&quot;</span><span class="p">)</span>
+                        <span class="s2">&quot;Shape for out container does not match expression&quot;</span>
+                    <span class="p">)</span>
                 <span class="c1"># Force the input length to fit in `out`</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">append_mode</span> <span class="ow">and</span> <span class="n">olen_</span> <span class="o">&lt;</span> <span class="n">len_</span><span class="p">:</span>
                     <span class="n">shape</span><span class="p">[</span><span class="n">o_maindim</span><span class="p">]</span> <span class="o">=</span> <span class="n">olen_</span>
@@ -644,8 +674,9 @@
         <span class="c1"># Get the positions of inputs that should be sliced (the others</span>
         <span class="c1"># will be broadcasted)</span>
         <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">slice_pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="n">ndim</span><span class="p">]</span>
+        <span class="n">slice_pos</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="n">ndim</span>
+        <span class="p">]</span>
 
         <span class="c1"># The size of the I/O buffer</span>
         <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">1</span>
@@ -657,15 +688,26 @@
                     <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="n">nrows</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">itermode</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">i_nrows</span><span class="p">,</span> <span class="n">slice_pos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">nrowsinbuf</span><span class="p">,</span>
-                    <span class="n">out</span><span class="p">,</span> <span class="n">o_maindim</span><span class="p">,</span> <span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">i_nrows</span><span class="p">,</span>
+                <span class="n">slice_pos</span><span class="p">,</span>
+                <span class="n">start</span><span class="p">,</span>
+                <span class="n">stop</span><span class="p">,</span>
+                <span class="n">step</span><span class="p">,</span>
+                <span class="n">nrowsinbuf</span><span class="p">,</span>
+                <span class="n">out</span><span class="p">,</span>
+                <span class="n">o_maindim</span><span class="p">,</span>
+                <span class="n">o_start</span><span class="p">,</span>
+                <span class="n">o_stop</span><span class="p">,</span>
+                <span class="n">o_step</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># For itermode, we don&#39;t need the out info</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">i_nrows</span><span class="p">,</span> <span class="n">slice_pos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">nrowsinbuf</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Expr.eval">
 <a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.eval">[docs]</a>
-    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ContainerType</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ContainerType</span><span class="p">:</span>  <span class="c1"># noqa: A003</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the expression and return the outcome.</span>
 
 <span class="sd">        Because of performance reasons, the computation order tries to go along</span>
@@ -696,13 +738,22 @@
 <span class="sd">            on-disk container may consume all your available memory.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">values</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span>
 
         <span class="c1"># Get different info we need for the main computation loop</span>
-        <span class="p">(</span><span class="n">i_nrows</span><span class="p">,</span> <span class="n">slice_pos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">nrowsinbuf</span><span class="p">,</span>
-         <span class="n">out</span><span class="p">,</span> <span class="n">o_maindim</span><span class="p">,</span> <span class="n">o_start</span><span class="p">,</span> <span class="n">o_stop</span><span class="p">,</span> <span class="n">o_step</span><span class="p">)</span> <span class="o">=</span> \
-            <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span><span class="p">)</span>
+        <span class="p">(</span>
+            <span class="n">i_nrows</span><span class="p">,</span>
+            <span class="n">slice_pos</span><span class="p">,</span>
+            <span class="n">start</span><span class="p">,</span>
+            <span class="n">stop</span><span class="p">,</span>
+            <span class="n">step</span><span class="p">,</span>
+            <span class="n">nrowsinbuf</span><span class="p">,</span>
+            <span class="n">out</span><span class="p">,</span>
+            <span class="n">o_maindim</span><span class="p">,</span>
+            <span class="n">o_start</span><span class="p">,</span>
+            <span class="n">o_stop</span><span class="p">,</span>
+            <span class="n">o_step</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">i_nrows</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># No elements to compute</span>
@@ -719,7 +770,7 @@
         <span class="c1"># This is a hack to prevent doing unnecessary flavor conversions</span>
         <span class="c1"># while reading buffers</span>
         <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;maindim&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">&quot;maindim&quot;</span><span class="p">):</span>
                 <span class="n">val</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># Start the computation itself</span>
@@ -755,7 +806,7 @@
 
         <span class="c1"># Activate the conversion again (default)</span>
         <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;maindim&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">&quot;maindim&quot;</span><span class="p">):</span>
                 <span class="n">val</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">return</span> <span class="n">out</span></div>
@@ -763,19 +814,19 @@
 
 <div class="viewcode-block" id="Expr.__iter__">
 <a class="viewcode-back" href="../../usersguide/libref/expr_class.html#tables.Expr.__iter__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="s2">&quot;Row&quot;</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Row</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over the rows of the outcome of the expression.</span>
 
 <span class="sd">        This iterator always returns rows as NumPy objects, so a possible out</span>
 <span class="sd">        container specified in :meth:`Expr.set_output` method is ignored here.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">values</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maindim</span>
 
         <span class="c1"># Get different info we need for the main computation loop</span>
-        <span class="p">(</span><span class="n">i_nrows</span><span class="p">,</span> <span class="n">slice_pos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">nrowsinbuf</span><span class="p">)</span> <span class="o">=</span> \
-            <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span><span class="p">,</span> <span class="n">itermode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">i_nrows</span><span class="p">,</span> <span class="n">slice_pos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">nrowsinbuf</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span>
+            <span class="n">shape</span><span class="p">,</span> <span class="n">maindim</span><span class="p">,</span> <span class="n">itermode</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">i_nrows</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># No elements to compute</span>
@@ -788,7 +839,7 @@
         <span class="c1"># This is a hack to prevent doing unnecessary flavor conversions</span>
         <span class="c1"># while reading buffers</span>
         <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;maindim&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">&quot;maindim&quot;</span><span class="p">):</span>
                 <span class="n">val</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># Start the computation itself</span>
@@ -814,7 +865,7 @@
 
         <span class="c1"># Activate the conversion again (default)</span>
         <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;maindim&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">&quot;maindim&quot;</span><span class="p">):</span>
                 <span class="n">val</span><span class="o">.</span><span class="n">_v_convert</span> <span class="o">=</span> <span class="kc">True</span></div>
 </div>
 
@@ -828,11 +879,12 @@
     <span class="n">f</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="s2">&quot;/tmp/expression.h5&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
 
     <span class="c1"># Create some arrays</span>
-    <span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
-    <span class="n">b</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
-    <span class="n">c</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;out&#39;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
-                          <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_carray</span><span class="p">(</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span> <span class="n">atom</span><span class="o">=</span><span class="n">tb</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span>
+    <span class="p">)</span>
 
     <span class="n">expr</span> <span class="o">=</span> <span class="n">Expr</span><span class="p">(</span><span class="s2">&quot;a * b + c&quot;</span><span class="p">)</span>
     <span class="n">expr</span><span class="o">.</span><span class="n">set_output</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
@@ -851,7 +903,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2011–2024, PyTables maintainers.</p>
+    <p>&#169; Copyright 2011–2025, PyTables maintainers.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

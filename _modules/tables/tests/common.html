@@ -1,21 +1,21 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.tests.common &mdash; PyTables 3.10.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+  <title>tables.tests.common &mdash; PyTables 3.10.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../../_static/documentation_options.js?v=5ca81ab5"></script>
-        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6b5090df"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -45,9 +45,6 @@
             
               <img src="../../../_static/logo-pytables-small.png" class="logo" alt="Logo"/>
           </a>
-              <div class="version">
-                3.10.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -102,20 +99,20 @@
 <span class="kn">import</span> <span class="nn">locale</span>
 <span class="kn">import</span> <span class="nn">platform</span>
 <span class="kn">import</span> <span class="nn">tempfile</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
 <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">perf_counter</span> <span class="k">as</span> <span class="n">clock</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numexpr</span> <span class="k">as</span> <span class="nn">ne</span>
 <span class="kn">from</span> <span class="nn">packaging.version</span> <span class="kn">import</span> <span class="n">Version</span>
 
-<span class="kn">import</span> <span class="nn">unittest</span>
-
-<span class="kn">import</span> <span class="nn">numexpr</span> <span class="k">as</span> <span class="nn">ne</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
 <span class="kn">import</span> <span class="nn">tables</span> <span class="k">as</span> <span class="nn">tb</span>
+<span class="kn">from</span> <span class="nn">tables.utilsextension</span> <span class="kn">import</span> <span class="n">which_lib_version</span>
 
 <span class="n">hdf5_version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">tb</span><span class="o">.</span><span class="n">hdf5_version</span><span class="p">)</span>
-<span class="n">blosc_version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">blosc2_version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc2&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">blosc_version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">blosc2_version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc2&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
 
 
 <span class="n">verbose</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;VERBOSE&quot;</span><span class="p">,</span> <span class="s2">&quot;FALSE&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;TRUE&quot;</span>
@@ -131,39 +128,41 @@
 <span class="k">def</span> <span class="nf">parse_argv</span><span class="p">(</span><span class="n">argv</span><span class="p">):</span>
     <span class="k">global</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">heavy</span>
 
-    <span class="k">if</span> <span class="s1">&#39;verbose&#39;</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">&quot;verbose&quot;</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>
         <span class="n">verbose</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">)</span>
+        <span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;verbose&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="s1">&#39;silent&#39;</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>  <span class="c1"># take care of old flag, just in case</span>
+    <span class="k">if</span> <span class="s2">&quot;silent&quot;</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>  <span class="c1"># take care of old flag, just in case</span>
         <span class="n">verbose</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;silent&#39;</span><span class="p">)</span>
+        <span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;silent&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="s1">&#39;--heavy&#39;</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">&quot;--heavy&quot;</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>
         <span class="n">heavy</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;--heavy&#39;</span><span class="p">)</span>
+        <span class="n">argv</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;--heavy&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">argv</span>
 
 
-<span class="n">zlib_avail</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;zlib&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-<span class="n">lzo_avail</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;lzo&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-<span class="n">bzip2_avail</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;bzip2&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-<span class="n">blosc_avail</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-<span class="n">blosc2_avail</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc2&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="n">zlib_avail</span> <span class="o">=</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;zlib&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="n">lzo_avail</span> <span class="o">=</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;lzo&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="n">bzip2_avail</span> <span class="o">=</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;bzip2&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="n">blosc_avail</span> <span class="o">=</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="n">blosc2_avail</span> <span class="o">=</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc2&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
 
 <span class="k">def</span> <span class="nf">print_heavy</span><span class="p">(</span><span class="n">heavy</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">heavy</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;Performing the complete test suite!&quot;&quot;&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
-<span class="s2">Performing only a light (yet comprehensive) subset of the test suite.</span>
-<span class="s2">If you want a more complete test, try passing the --heavy flag to this script</span>
-<span class="s2">(or set the &#39;heavy&#39; parameter in case you are using tables.test() call).</span>
-<span class="s2">The whole suite will take more than 4 hours to complete on a relatively</span>
-<span class="s2">modern CPU and around 512 MB of main memory.&quot;&quot;&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-=&#39;</span> <span class="o">*</span> <span class="mi">38</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="sd">Performing only a light (yet comprehensive) subset of the test suite.</span>
+<span class="sd">If you want a more complete test, try passing the --heavy flag to this script</span>
+<span class="sd">(or set the &#39;heavy&#39; parameter in case you are using tables.test() call).</span>
+<span class="sd">The whole suite will take more than 4 hours to complete on a relatively</span>
+<span class="sd">modern CPU and around 512 MB of main memory.&quot;&quot;&quot;</span>
+        <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-=&quot;</span> <span class="o">*</span> <span class="mi">38</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="print_versions">
@@ -171,11 +170,11 @@
 <span class="k">def</span> <span class="nf">print_versions</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Print all the versions of software that PyTables relies on.&quot;&quot;&quot;</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-=&#39;</span> <span class="o">*</span> <span class="mi">38</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-=&quot;</span> <span class="o">*</span> <span class="mi">38</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PyTables version:    </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tb</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;HDF5 version:        </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;hdf5&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;HDF5 version:        </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;hdf5&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NumPy version:       </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
-    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;zlib&quot;</span><span class="p">)</span>
+    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;zlib&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ne</span><span class="o">.</span><span class="n">use_vml</span><span class="p">:</span>
         <span class="c1"># Get only the main version number and strip out all the rest</span>
         <span class="n">vml_version</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">get_vml_version</span><span class="p">()</span>
@@ -186,50 +185,49 @@
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Numexpr version:     </span><span class="si">{</span><span class="n">ne</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">vml_avail</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">tinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Zlib version:        </span><span class="si">{</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> (in Python interpreter)&quot;</span><span class="p">)</span>
-    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;lzo&quot;</span><span class="p">)</span>
+    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;lzo&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">tinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;LZO version:         </span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">tinfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
-    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;bzip2&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LZO version:         </span><span class="si">{</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;bzip2&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">tinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;BZIP2 version:       </span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">tinfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
-    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;BZIP2 version:       </span><span class="si">{</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">tinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">blosc_date</span> <span class="o">=</span> <span class="n">tinfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Blosc version:       </span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">blosc_date</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Blosc version:       </span><span class="si">{</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">blosc_date</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="n">blosc_cinfo</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">blosc_get_complib_info</span><span class="p">()</span>
-        <span class="n">blosc_cinfo</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">blosc_cinfo</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-        <span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Blosc compressors:   </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc_cinfo</span><span class="p">))</span>
-        <span class="n">blosc_finfo</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;shuffle&#39;</span><span class="p">,</span> <span class="s1">&#39;bitshuffle&#39;</span><span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Blosc filters:       </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc_finfo</span><span class="p">))</span>
-    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc2&quot;</span><span class="p">)</span>
+        <span class="n">blosc_cinfo</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">blosc_cinfo</span><span class="o">.</span><span class="n">items</span><span class="p">())]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Blosc compressors:   </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc_cinfo</span><span class="p">))</span>
+        <span class="n">blosc_finfo</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;shuffle&quot;</span><span class="p">,</span> <span class="s2">&quot;bitshuffle&quot;</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Blosc filters:       </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc_finfo</span><span class="p">))</span>
+    <span class="n">tinfo</span> <span class="o">=</span> <span class="n">which_lib_version</span><span class="p">(</span><span class="s2">&quot;blosc2&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">tinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">blosc2_date</span> <span class="o">=</span> <span class="n">tinfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Blosc2 version:      </span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">blosc2_date</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Blosc2 version:      </span><span class="si">{</span><span class="n">tinfo</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">blosc2_date</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="n">blosc2_cinfo</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">blosc2_get_complib_info</span><span class="p">()</span>
         <span class="n">blosc2_cinfo</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">blosc2_cinfo</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">blosc2_cinfo</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
         <span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Blosc2 compressors:  </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc2_cinfo</span><span class="p">))</span>
-        <span class="n">blosc2_finfo</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;shuffle&#39;</span><span class="p">,</span> <span class="s1">&#39;bitshuffle&#39;</span><span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Blosc2 filters:      </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc2_finfo</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Blosc2 compressors:  </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc2_cinfo</span><span class="p">))</span>
+        <span class="n">blosc2_finfo</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;shuffle&quot;</span><span class="p">,</span> <span class="s2">&quot;bitshuffle&quot;</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Blosc2 filters:      </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blosc2_finfo</span><span class="p">))</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">from</span> <span class="nn">Cython</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">cython_version</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Cython version:      </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">cython_version</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cython version:      </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cython_version</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
         <span class="k">pass</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Python version:      </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Platform:            </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">platform</span><span class="o">.</span><span class="n">platform</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Python version:      </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Platform:            </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">platform</span><span class="o">.</span><span class="n">platform</span><span class="p">())</span>
     <span class="c1"># if os.name == &#39;posix&#39;:</span>
     <span class="c1">#     (sysname, nodename, release, version, machine) = os.uname()</span>
     <span class="c1">#     print(&#39;Platform:          %s-%s&#39; % (sys.platform, machine))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Byte-ordering:       </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Detected cores:      </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">tb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">detect_number_of_cores</span><span class="p">())</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Default encoding:    </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">getdefaultencoding</span><span class="p">())</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Default FS encoding: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">getfilesystemencoding</span><span class="p">())</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Default locale:      (</span><span class="si">%s</span><span class="s1">, </span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="n">locale</span><span class="o">.</span><span class="n">getdefaultlocale</span><span class="p">())</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-=&#39;</span> <span class="o">*</span> <span class="mi">38</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Byte-ordering:       </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Detected cores:      </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">detect_number_of_cores</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Default encoding:    </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">getdefaultencoding</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Default FS encoding: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">getfilesystemencoding</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Default locale:      (</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="n">locale</span><span class="o">.</span><span class="n">getdefaultlocale</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-=&quot;</span> <span class="o">*</span> <span class="mi">38</span><span class="p">)</span>
 
     <span class="c1"># This should improve readability whan tests are run by CI tools</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
@@ -238,7 +236,8 @@
 
 <span class="k">def</span> <span class="nf">test_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
     <span class="kn">from</span> <span class="nn">importlib</span> <span class="kn">import</span> <span class="n">resources</span>
-    <span class="k">return</span> <span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s1">&#39;tables.tests&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">filename</span>
+
+    <span class="k">return</span> <span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s2">&quot;tables.tests&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="n">filename</span>
 
 
 <span class="k">def</span> <span class="nf">verbosePrint</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">nonl</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -246,7 +245,7 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="k">return</span>
     <span class="k">if</span> <span class="n">nonl</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 
@@ -260,8 +259,9 @@
         <span class="c1"># Scalar case</span>
         <span class="k">return</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span>
 
-    <span class="k">if</span> <span class="p">((</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">())</span> <span class="ow">and</span>
-            <span class="p">(</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">())):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">())</span> <span class="ow">and</span> <span class="p">(</span>
+        <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">()</span>
+    <span class="p">):</span>
         <span class="k">return</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span>
 
     <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
@@ -296,7 +296,7 @@
             <span class="k">return</span> <span class="mi">0</span>
 
     <span class="c1"># Multidimensional case</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Some of the elements in arrays are not equal&quot;</span><span class="p">)</span>
@@ -316,8 +316,11 @@
     <span class="n">t1</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">arr1</span><span class="p">)</span>
     <span class="n">t2</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">arr2</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">check_type</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">((</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">arr1</span><span class="p">,</span> <span class="s1">&#39;dtype&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">arr1</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">arr2</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="ow">or</span>
-                           <span class="nb">issubclass</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span> <span class="n">t1</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="n">check_type</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
+        <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">arr1</span><span class="p">,</span> <span class="s2">&quot;dtype&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">arr1</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">arr2</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span> <span class="n">t1</span><span class="p">)</span>
+    <span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">arr1</span> <span class="o">==</span> <span class="n">arr2</span><span class="p">)</span>
@@ -327,16 +330,16 @@
     <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">tearDown</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">!=</span> <span class="s1">&#39;instancemethod&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">!=</span> <span class="s2">&quot;instancemethod&quot;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">_getName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the name of this test case.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">_getMethodName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the name of the method currently running in the test case.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">_verboseHeader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Print a nice header for the current test method if verbose.&quot;&quot;&quot;</span>
@@ -346,7 +349,7 @@
             <span class="n">methodName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getMethodName</span><span class="p">()</span>
 
             <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Running </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">methodName</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">title</span><span class="p">)))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">title</span><span class="p">)))</span>
 
     <span class="k">def</span> <span class="nf">_checkEqualityGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node1</span><span class="p">,</span> <span class="n">node2</span><span class="p">,</span> <span class="n">hardlink</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
@@ -355,14 +358,17 @@
         <span class="k">if</span> <span class="n">hardlink</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
                 <span class="n">node1</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">!=</span> <span class="n">node2</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span>
-                <span class="s2">&quot;node1 and node2 have the same pathnames.&quot;</span><span class="p">)</span>
+                <span class="s2">&quot;node1 and node2 have the same pathnames.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
                 <span class="n">node1</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">==</span> <span class="n">node2</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span>
-                <span class="s2">&quot;node1 and node2 does not have the same pathnames.&quot;</span><span class="p">)</span>
+                <span class="s2">&quot;node1 and node2 does not have the same pathnames.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
             <span class="n">node1</span><span class="o">.</span><span class="n">_v_children</span> <span class="o">==</span> <span class="n">node2</span><span class="o">.</span><span class="n">_v_children</span><span class="p">,</span>
-            <span class="s2">&quot;node1 and node2 does not have the same children.&quot;</span><span class="p">)</span>
+            <span class="s2">&quot;node1 and node2 does not have the same children.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_checkEqualityLeaf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node1</span><span class="p">,</span> <span class="n">node2</span><span class="p">,</span> <span class="n">hardlink</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
@@ -371,14 +377,17 @@
         <span class="k">if</span> <span class="n">hardlink</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
                 <span class="n">node1</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">!=</span> <span class="n">node2</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span>
-                <span class="s2">&quot;node1 and node2 have the same pathnames.&quot;</span><span class="p">)</span>
+                <span class="s2">&quot;node1 and node2 have the same pathnames.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
                 <span class="n">node1</span><span class="o">.</span><span class="n">_v_pathname</span> <span class="o">==</span> <span class="n">node2</span><span class="o">.</span><span class="n">_v_pathname</span><span class="p">,</span>
-                <span class="s2">&quot;node1 and node2 does not have the same pathnames.&quot;</span><span class="p">)</span>
+                <span class="s2">&quot;node1 and node2 does not have the same pathnames.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
             <span class="n">areArraysEqual</span><span class="p">(</span><span class="n">node1</span><span class="p">[:],</span> <span class="n">node2</span><span class="p">[:]),</span>
-            <span class="s2">&quot;node1 and node2 does not have the same values.&quot;</span><span class="p">)</span>
+            <span class="s2">&quot;node1 and node2 does not have the same values.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">TestFileMixin</span><span class="p">:</span>
@@ -388,7 +397,8 @@
     <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(),</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(),</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Close ``h5file``.&quot;&quot;&quot;</span>
@@ -398,11 +408,11 @@
 
 
 <span class="k">class</span> <span class="nc">TempFileMixin</span><span class="p">:</span>
-    <span class="n">open_mode</span> <span class="o">=</span> <span class="s1">&#39;w&#39;</span>
+    <span class="n">open_mode</span> <span class="o">=</span> <span class="s2">&quot;w&quot;</span>
     <span class="n">open_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">_getTempFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(),</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.h5&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(),</span> <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.h5&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set ``h5file`` and ``h5fname`` instance attributes.</span>
@@ -415,18 +425,21 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getTempFileName</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(),</span>
-            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(),</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Close ``h5file`` and remove ``h5fname``.&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">h5file</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>   <span class="c1"># comment this for debug only</span>
+        <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h5fname</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>  <span class="c1"># comment this for debug only</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">tearDown</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_reopen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_reopen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reopen ``h5file`` in the specified ``mode``.</span>
 
 <span class="sd">        Returns a true or false value depending on whether the file was</span>
@@ -470,6 +483,7 @@
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">unittest</span> <span class="kn">import</span> <span class="n">makeSuite</span> <span class="k">as</span> <span class="n">make_suite</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+
     <span class="k">def</span> <span class="nf">make_suite</span><span class="p">(</span><span class="n">test_case_class</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">loader</span> <span class="o">=</span> <span class="n">unittest</span><span class="o">.</span><span class="n">TestLoader</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">prefix</span><span class="p">:</span>
@@ -484,7 +498,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2011–2024, PyTables maintainers.</p>
+    <p>&#169; Copyright 2011–2025, PyTables maintainers.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
