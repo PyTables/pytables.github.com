@@ -5,15 +5,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.vlarray &mdash; PyTables 3.10.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+  <title>tables.vlarray &mdash; PyTables 3.11.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6b5090df"></script>
+      <script src="../../_static/documentation_options.js?v=8905d4f5"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -93,20 +93,20 @@
   <h1>Source code for tables.vlarray</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Here is defined the VLArray class.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">operator</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">operator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">hdf5extension</span>
-<span class="kn">from</span> <span class="nn">.atom</span> <span class="kn">import</span> <span class="n">ObjectAtom</span><span class="p">,</span> <span class="n">VLStringAtom</span><span class="p">,</span> <span class="n">VLUnicodeAtom</span>
-<span class="kn">from</span> <span class="nn">.leaf</span> <span class="kn">import</span> <span class="n">Leaf</span><span class="p">,</span> <span class="n">calc_chunksize</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">hdf5extension</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.atom</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObjectAtom</span><span class="p">,</span> <span class="n">VLStringAtom</span><span class="p">,</span> <span class="n">VLUnicodeAtom</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.leaf</span><span class="w"> </span><span class="kn">import</span> <span class="n">Leaf</span><span class="p">,</span> <span class="n">calc_chunksize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">convert_to_np_atom</span><span class="p">,</span>
     <span class="n">convert_to_np_atom2</span><span class="p">,</span>
     <span class="n">idx2long</span><span class="p">,</span>
@@ -115,12 +115,12 @@
     <span class="n">is_idx</span><span class="p">,</span>
     <span class="n">lazyattr</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.flavor</span> <span class="kn">import</span> <span class="n">internal_to_flavor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.flavor</span><span class="w"> </span><span class="kn">import</span> <span class="n">internal_to_flavor</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">.atom</span> <span class="kn">import</span> <span class="n">Atom</span><span class="p">,</span> <span class="n">Enum</span>
-    <span class="kn">from</span> <span class="nn">.group</span> <span class="kn">import</span> <span class="n">Group</span>
-    <span class="kn">from</span> <span class="nn">.filters</span> <span class="kn">import</span> <span class="n">Filters</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.atom</span><span class="w"> </span><span class="kn">import</span> <span class="n">Atom</span><span class="p">,</span> <span class="n">Enum</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.group</span><span class="w"> </span><span class="kn">import</span> <span class="n">Group</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.filters</span><span class="w"> </span><span class="kn">import</span> <span class="n">Filters</span>
 
 <span class="c1"># default version for VLARRAY objects</span>
 <span class="c1"># obversion = &quot;1.0&quot;    # initial version</span>
@@ -133,7 +133,7 @@
 
 <div class="viewcode-block" id="VLArray">
 <a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray">[docs]</a>
-<span class="k">class</span> <span class="nc">VLArray</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">VLArray</span><span class="p">,</span> <span class="n">Leaf</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VLArray</span><span class="p">(</span><span class="n">hdf5extension</span><span class="o">.</span><span class="n">VLArray</span><span class="p">,</span> <span class="n">Leaf</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This class represents variable length (ragged) arrays in an HDF5 file.</span>
 
 <span class="sd">    Instances of this class represent array objects in the object tree</span>
@@ -316,17 +316,17 @@
     <span class="n">_c_classid</span> <span class="o">=</span> <span class="s2">&quot;VLARRAY&quot;</span>
 
     <span class="nd">@lazyattr</span>
-    <span class="k">def</span> <span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the NumPy ``dtype`` that most closely matches this array.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">dtype</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the shape of the stored array.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">size_on_disk</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">size_on_disk</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the size on disk of the `VLArray` object.</span>
 
 <span class="sd">        The HDF5 library does not include a function to determine size_on_disk</span>
@@ -336,7 +336,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;size_on_disk not implemented for VLArrays&quot;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">size_in_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">size_in_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Size of the array&#39;s data in bytes.</span>
 
 <span class="sd">        .. note::</span>
@@ -352,7 +352,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_memory_size</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">parentnode</span><span class="p">:</span> <span class="n">Group</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -456,12 +456,12 @@
             <span class="n">parentnode</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">new</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">byteorder</span><span class="p">,</span> <span class="n">_log</span><span class="p">,</span> <span class="n">track_times</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_g_post_init_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_g_post_init_hook</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># maybe enough for most applications</span>
 
     <span class="c1"># This is too specific for moving it into Leaf</span>
-    <span class="k">def</span> <span class="nf">_calc_chunkshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expectedrows</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calc_chunkshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expectedrows</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the size for the HDF5 chunk.&quot;&quot;&quot;</span>
         <span class="c1"># For computing the chunkshape for HDF5 VL types, we have to</span>
         <span class="c1"># choose the itemsize of the *each* element of the atom and</span>
@@ -488,7 +488,7 @@
             <span class="n">chunkshape</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">SizeType</span><span class="p">(</span><span class="n">chunkshape</span><span class="p">),)</span>
 
-    <span class="k">def</span> <span class="nf">_g_create</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_g_create</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a variable length array (ragged array).&quot;&quot;&quot;</span>
         <span class="n">atom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_version</span> <span class="o">=</span> <span class="n">obversion</span>
@@ -532,7 +532,7 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span>
 
-    <span class="k">def</span> <span class="nf">_g_open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_g_open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the metadata info for an array in file.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_chunkshape</span><span class="p">,</span> <span class="n">atom</span> <span class="o">=</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_open_array</span><span class="p">()</span>
@@ -559,7 +559,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">atom</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_objectid</span>
 
-    <span class="k">def</span> <span class="nf">_getnobjects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nparr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getnobjects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nparr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of objects in a NumPy array.&quot;&quot;&quot;</span>
         <span class="c1"># Check for zero dimensionality array</span>
         <span class="n">zerodims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nparr</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
@@ -599,7 +599,7 @@
 
 <div class="viewcode-block" id="VLArray.get_enum">
 <a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.get_enum">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_enum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Enum</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_enum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Enum</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the enumerated type associated with this array.</span>
 
 <span class="sd">        If this array is of an enumerated type, the corresponding Enum instance</span>
@@ -617,7 +617,7 @@
 
 <div class="viewcode-block" id="VLArray.append">
 <a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.append">[docs]</a>
-    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a sequence of data to the end of the dataset.</span>
 
 <span class="sd">        This method appends the objects in the sequence to a *single row* in</span>
@@ -657,7 +657,7 @@
 
 <div class="viewcode-block" id="VLArray.iterrows">
 <a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.iterrows">[docs]</a>
-    <span class="k">def</span> <span class="nf">iterrows</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">iterrows</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">stop</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -686,7 +686,7 @@
 <span class="sd">           In PyTables &lt; 3.0 only one element was returned.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
             <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_loop</span><span class="p">()</span>
@@ -695,7 +695,7 @@
 
 <div class="viewcode-block" id="VLArray.__iter__">
 <a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.__iter__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VLArray</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VLArray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over the rows of the array.</span>
 
 <span class="sd">        This is equivalent to calling :meth:`VLArray.iterrows` with default</span>
@@ -723,7 +723,7 @@
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_init_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the __iter__ iterator.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nrowsread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_startb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span>
@@ -733,7 +733,7 @@
 
 <div class="viewcode-block" id="VLArray.__next__">
 <a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.__next__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the next element of the array during an iteration.</span>
 
 <span class="sd">        The element is returned as a list of objects of the current</span>
@@ -758,7 +758,7 @@
 
 <div class="viewcode-block" id="VLArray.__getitem__">
 <a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a row or a range of rows from the array.</span>
@@ -796,7 +796,7 @@
             <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c1"># To support negative values</span>
                 <span class="n">key</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span>
-            <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
             <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range</span><span class="p">(</span>
@@ -811,7 +811,7 @@
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid index or slice: </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_assign_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_assign_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign the `values` to the positions stated in `coords`.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">nrow</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">nrow</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrows</span><span class="p">:</span>
@@ -854,7 +854,7 @@
 
 <div class="viewcode-block" id="VLArray.__setitem__">
 <a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.__setitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">key</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -925,7 +925,7 @@
     <span class="c1"># Accessor for the _read_array method in superclass</span>
 <div class="viewcode-block" id="VLArray.read">
 <a class="viewcode-back" href="../../usersguide/libref/homogenous_storage.html#tables.VLArray.read">[docs]</a>
-    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">stop</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -963,14 +963,14 @@
         <span class="k">return</span> <span class="n">outlistarr</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_read_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_read_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read rows specified in `coords`.&quot;&quot;&quot;</span>
         <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">:</span>
             <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">idx2long</span><span class="p">(</span><span class="n">coord</span><span class="p">),</span> <span class="n">idx2long</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">rows</span>
 
-    <span class="k">def</span> <span class="nf">_g_copy_with_stats</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_g_copy_with_stats</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">group</span><span class="p">:</span> <span class="n">Group</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1002,7 +1002,7 @@
         <span class="c1"># In the future, some analysis can be done in order to buffer</span>
         <span class="c1"># the copy process.</span>
         <span class="n">nrowsinbuf</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_range_read</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
         <span class="c1"># Optimized version (no conversions, no type and shape checks, etc...)</span>
         <span class="n">nrowscopied</span> <span class="o">=</span> <span class="n">SizeType</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">nbytes</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1023,7 +1023,7 @@
         <span class="n">obj</span><span class="o">.</span><span class="n">nrows</span> <span class="o">=</span> <span class="n">nrowscopied</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">nbytes</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;`VLArray` string representation.</span>
 
 <span class="sd">        Provides more metainfo w.r.t standard __str__.</span>

@@ -5,15 +5,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tables.description &mdash; PyTables 3.10.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+  <title>tables.description &mdash; PyTables 3.11.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6b5090df"></script>
+      <script src="../../_static/documentation_options.js?v=8905d4f5"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -93,29 +93,29 @@
   <h1>Source code for tables.description</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Classes for describing columns for ``Table`` objects.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Sequence</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">atom</span>
-<span class="kn">from</span> <span class="nn">.path</span> <span class="kn">import</span> <span class="n">check_name_validity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">atom</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_name_validity</span>
 
 <span class="n">__docformat__</span> <span class="o">=</span> <span class="s2">&quot;reStructuredText&quot;</span>
 <span class="sd">&quot;&quot;&quot;The format of documentation strings in this module.&quot;&quot;&quot;</span>
 
 
-<span class="k">def</span> <span class="nf">same_position</span><span class="p">(</span>
-    <span class="n">oldmethod</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Col</span><span class="p">,</span> <span class="n">Col</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">same_position</span><span class="p">(</span>
+    <span class="n">oldmethod</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Col</span><span class="p">,</span> <span class="n">Col</span><span class="p">],</span> <span class="nb">bool</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Col</span><span class="p">,</span> <span class="n">Col</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate `oldmethod` to also compare the `_v_pos` attribute.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">newmethod</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Col</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Col</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">newmethod</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Col</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Col</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">other</span><span class="o">.</span><span class="n">_v_pos</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
@@ -129,7 +129,7 @@
 
 <div class="viewcode-block" id="Col">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Col">[docs]</a>
-<span class="k">class</span> <span class="nc">Col</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">Atom</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="nb">type</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Col</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">Atom</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="nb">type</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines a non-nested column.</span>
 
 <span class="sd">    Col instances are used as a means to declare the different properties of a</span>
@@ -178,7 +178,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Maps column prefixes to column classes.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">prefix</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prefix</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the column class prefix.&quot;&quot;&quot;</span>
         <span class="n">cname</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="k">return</span> <span class="n">cname</span><span class="p">[:</span> <span class="n">cname</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;Col&quot;</span><span class="p">)]</span>
@@ -186,7 +186,7 @@
 <div class="viewcode-block" id="Col.from_atom">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.Col.from_atom">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_atom</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_atom</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">atom</span><span class="p">:</span> <span class="n">atom</span><span class="o">.</span><span class="n">Atom</span><span class="p">,</span>
         <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -204,7 +204,7 @@
 
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_sctype</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_sctype</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">sctype</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
         <span class="n">shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
@@ -223,7 +223,7 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_atom</span><span class="p">(</span><span class="n">newatom</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dtype</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dtype</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">dtype</span><span class="p">,</span>
         <span class="n">dflt</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -243,7 +243,7 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_atom</span><span class="p">(</span><span class="n">newatom</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">_offset</span><span class="o">=</span><span class="n">_offset</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_type</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_type</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">type_</span><span class="p">,</span>
         <span class="n">shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
@@ -260,7 +260,7 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_atom</span><span class="p">(</span><span class="n">newatom</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_kind</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_kind</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">kind</span><span class="p">,</span>
         <span class="n">itemsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -280,7 +280,7 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_atom</span><span class="p">(</span><span class="n">newatom</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_subclass_from_prefix</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">Col</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_subclass_from_prefix</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">Col</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a column subclass for the given `prefix`.&quot;&quot;&quot;</span>
         <span class="n">cname</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">Col&quot;</span> <span class="o">%</span> <span class="n">prefix</span>
         <span class="n">class_from_prefix</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_class_from_prefix</span>
@@ -288,7 +288,7 @@
             <span class="k">return</span> <span class="n">class_from_prefix</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span>
         <span class="n">atombase</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">Atom&quot;</span> <span class="o">%</span> <span class="n">prefix</span><span class="p">)</span>
 
-        <span class="k">class</span> <span class="nc">NewCol</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">atombase</span><span class="p">):</span>
+        <span class="k">class</span><span class="w"> </span><span class="nc">NewCol</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">atombase</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Defines a non-nested column of a particular type.</span>
 
 <span class="sd">            The constructor accepts the same arguments as the equivalent</span>
@@ -300,7 +300,7 @@
 
 <span class="sd">            &quot;&quot;&quot;</span>
 
-            <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">pos</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;pos&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                 <span class="n">col_attrs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;attrs&quot;</span><span class="p">,</span> <span class="p">{})</span>
                 <span class="n">offset</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;_offset&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -334,7 +334,7 @@
         <span class="n">class_from_prefix</span><span class="p">[</span><span class="n">prefix</span><span class="p">]</span> <span class="o">=</span> <span class="n">NewCol</span>
         <span class="k">return</span> <span class="n">NewCol</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="c1"># Reuse the atom representation.</span>
         <span class="n">atomrepr</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
         <span class="n">lpar</span> <span class="o">=</span> <span class="n">atomrepr</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">)</span>
@@ -348,7 +348,7 @@
             <span class="p">)</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">classname</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">atomargs</span><span class="si">}</span><span class="s2">, pos=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_pos</span><span class="si">}</span><span class="s2">)&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_get_init_args</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_init_args</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a dictionary of instance constructor arguments.&quot;&quot;&quot;</span>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">arg</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;shape&quot;</span><span class="p">,</span> <span class="s2">&quot;dflt&quot;</span><span class="p">)}</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_v_pos&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -356,7 +356,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">_generate_col_classes</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">Col</span><span class="p">]]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_generate_col_classes</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">Col</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate all column classes.&quot;&quot;&quot;</span>
     <span class="c1"># Abstract classes are not in the class map.</span>
     <span class="n">cprefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Int&quot;</span><span class="p">,</span> <span class="s2">&quot;UInt&quot;</span><span class="p">,</span> <span class="s2">&quot;Float&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">]</span>
@@ -428,7 +428,7 @@
 <span class="c1"># =========================</span>
 <div class="viewcode-block" id="Description">
 <a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Description">[docs]</a>
-<span class="k">class</span> <span class="nc">Description</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Description</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This class represents descriptions of the structure of tables.</span>
 
 <span class="sd">    An instance of this class is automatically bound to Table (see</span>
@@ -563,7 +563,7 @@
 <span class="sd">           and attribute copies.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">classdict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="n">nestedlvl</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
@@ -765,7 +765,7 @@
         <span class="n">newdict</span><span class="p">[</span><span class="s2">&quot;_v_itemsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span>
         <span class="n">newdict</span><span class="p">[</span><span class="s2">&quot;_v_offsets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">dtype</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">_g_set_nested_names_descr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_g_set_nested_names_descr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the nested names and descriptions for nested datatypes.&quot;&quot;&quot;</span>
         <span class="n">names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_names</span>
         <span class="n">fmts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_nested_formats</span>
@@ -781,7 +781,7 @@
                 <span class="c1"># set the _v_is_nested flag</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_v_is_nested</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="nf">_g_set_path_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_g_set_path_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the pathnames for arbitrary nested descriptions.</span>
 
 <span class="sd">        This method sets the ``_v_pathname`` and ``_v_pathnames``</span>
@@ -790,13 +790,13 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">def</span> <span class="nf">get_cols_in_order</span><span class="p">(</span><span class="n">description</span><span class="p">:</span> <span class="n">Description</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Col</span><span class="p">]:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_cols_in_order</span><span class="p">(</span><span class="n">description</span><span class="p">:</span> <span class="n">Description</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Col</span><span class="p">]:</span>
             <span class="k">return</span> <span class="p">[</span>
                 <span class="n">description</span><span class="o">.</span><span class="n">_v_colobjects</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span>
                 <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">description</span><span class="o">.</span><span class="n">_v_names</span>
             <span class="p">]</span>
 
-        <span class="k">def</span> <span class="nf">join_paths</span><span class="p">(</span><span class="n">path1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path2</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">join_paths</span><span class="p">(</span><span class="n">path1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path2</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">path1</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">path2</span>
             <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">path2</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -861,7 +861,7 @@
 
 <div class="viewcode-block" id="Description._f_walk">
 <a class="viewcode-back" href="../../usersguide/libref/structured_storage.html#tables.Description._f_walk">[docs]</a>
-    <span class="k">def</span> <span class="nf">_f_walk</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_f_walk</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;All&quot;</span><span class="p">,</span> <span class="s2">&quot;Col&quot;</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;All&quot;</span><span class="p">,</span>  <span class="c1"># noqa: A002</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Col</span> <span class="o">|</span> <span class="n">Description</span><span class="p">]:</span>
@@ -894,7 +894,7 @@
                         <span class="k">yield</span> <span class="n">new_object</span>  <span class="c1"># yield column</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Give a detailed Description column representation.&quot;&quot;&quot;</span>
         <span class="n">rep</span> <span class="o">=</span> <span class="p">[</span>
             <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="s2">&quot;  &quot;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">_v_nestedlvl</span><span class="si">}</span><span class="s1">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&quot;: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_colobjects</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">!r}</span><span class="s1">&#39;</span>
@@ -902,16 +902,16 @@
         <span class="p">]</span>
         <span class="k">return</span> <span class="s2">&quot;{</span><span class="se">\n</span><span class="s2">  </span><span class="si">%s</span><span class="s2">}&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;,</span><span class="se">\n</span><span class="s2">  &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rep</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Give a brief Description representation.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Description(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_nested_descr</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
 
-<span class="k">class</span> <span class="nc">MetaIsDescription</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MetaIsDescription</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper metaclass to return the class variables as a dictionary.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">classname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">bases</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">classdict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MetaIsDescription</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a new class with a &quot;columns&quot; attribute filled.&quot;&quot;&quot;</span>
@@ -935,7 +935,7 @@
 
 <div class="viewcode-block" id="IsDescription">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.IsDescription">[docs]</a>
-<span class="k">class</span> <span class="nc">IsDescription</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">MetaIsDescription</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">IsDescription</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">MetaIsDescription</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Description of the structure of a table or nested column.</span>
 
 <span class="sd">    This class is designed to be used as an easy, yet meaningful way to</span>
@@ -983,7 +983,7 @@
 
 <div class="viewcode-block" id="descr_from_dtype">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.descr_from_dtype">[docs]</a>
-<span class="k">def</span> <span class="nf">descr_from_dtype</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">descr_from_dtype</span><span class="p">(</span>
     <span class="n">dtype_</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">DTypeLike</span><span class="p">,</span> <span class="n">ptparams</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Description</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a description instance and byteorder from a (nested) NumPy dtype.&quot;&quot;&quot;</span>
@@ -1025,7 +1025,7 @@
 
 <div class="viewcode-block" id="dtype_from_descr">
 <a class="viewcode-back" href="../../usersguide/libref/declarative_classes.html#tables.dtype_from_descr">[docs]</a>
-<span class="k">def</span> <span class="nf">dtype_from_descr</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">dtype_from_descr</span><span class="p">(</span>
     <span class="n">descr</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="nb">type</span><span class="p">[</span><span class="n">IsDescription</span><span class="p">]</span> <span class="o">|</span> <span class="n">IsDescription</span><span class="p">,</span>
     <span class="n">byteorder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">ptparams</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1059,12 +1059,12 @@
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Test code.&quot;&quot;&quot;</span>
 
-    <span class="k">class</span> <span class="nc">Info</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>  <span class="c1"># noqa: D101</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Info</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>  <span class="c1"># noqa: D101</span>
         <span class="n">_v_pos</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="n">Name</span> <span class="o">=</span> <span class="n">UInt32Col</span><span class="p">()</span>
         <span class="n">Value</span> <span class="o">=</span> <span class="n">Float64Col</span><span class="p">()</span>
 
-    <span class="k">class</span> <span class="nc">Test</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Test</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A description that has several columns.&quot;&quot;&quot;</span>
 
         <span class="n">x</span> <span class="o">=</span> <span class="n">Col</span><span class="o">.</span><span class="n">from_type</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1074,20 +1074,20 @@
         <span class="c1"># color = UInt32Col(2)</span>
         <span class="n">Info</span> <span class="o">=</span> <span class="n">Info</span><span class="p">()</span>
 
-        <span class="k">class</span> <span class="nc">LInfo</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>  <span class="c1"># noqa: D106</span>
+        <span class="k">class</span><span class="w"> </span><span class="nc">LInfo</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>  <span class="c1"># noqa: D106</span>
             <span class="n">_v_pos</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">UInt32Col</span><span class="p">()</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">Float64Col</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">y2</span> <span class="o">=</span> <span class="n">Col</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="n">dflt</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">pos</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">z2</span> <span class="o">=</span> <span class="n">UInt8Col</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-            <span class="k">class</span> <span class="nc">LInfo2</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>  <span class="c1"># noqa: D106</span>
+            <span class="k">class</span><span class="w"> </span><span class="nc">LInfo2</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>  <span class="c1"># noqa: D106</span>
                 <span class="n">y3</span> <span class="o">=</span> <span class="n">Col</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="n">dflt</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
                 <span class="n">z3</span> <span class="o">=</span> <span class="n">UInt8Col</span><span class="p">(</span><span class="n">dflt</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                 <span class="n">name</span> <span class="o">=</span> <span class="n">UInt32Col</span><span class="p">()</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">Float64Col</span><span class="p">()</span>
 
-                <span class="k">class</span> <span class="nc">LInfo3</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>  <span class="c1"># noqa: D106</span>
+                <span class="k">class</span><span class="w"> </span><span class="nc">LInfo3</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>  <span class="c1"># noqa: D106</span>
                     <span class="n">name</span> <span class="o">=</span> <span class="n">UInt32Col</span><span class="p">()</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="n">Float64Col</span><span class="p">()</span>
                     <span class="n">y4</span> <span class="o">=</span> <span class="n">Col</span><span class="o">.</span><span class="n">from_kind</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="n">dflt</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
@@ -1152,10 +1152,10 @@
             <span class="c1"># pass</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;leaf --&gt;&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">_v_name</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
-    <span class="k">class</span> <span class="nc">TestDescParent</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>  <span class="c1"># noqa: D101</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">TestDescParent</span><span class="p">(</span><span class="n">IsDescription</span><span class="p">):</span>  <span class="c1"># noqa: D101</span>
         <span class="n">c</span> <span class="o">=</span> <span class="n">Int32Col</span><span class="p">()</span>
 
-    <span class="k">class</span> <span class="nc">TestDesc</span><span class="p">(</span><span class="n">TestDescParent</span><span class="p">):</span>  <span class="c1"># noqa: D101</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">TestDesc</span><span class="p">(</span><span class="n">TestDescParent</span><span class="p">):</span>  <span class="c1"># noqa: D101</span>
         <span class="k">pass</span>
 
     <span class="k">assert</span> <span class="s2">&quot;c&quot;</span> <span class="ow">in</span> <span class="n">TestDesc</span><span class="o">.</span><span class="n">columns</span>
